@@ -4,10 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "migrate:local": "wrangler d1 migrations apply nyuzi-db --local",
+    "migrate:remote": "wrangler d1 migrations apply nyuzi-db --remote"
   },
   "dependencies": {
     "@nyuzi/db": "*",
+    "drizzle-orm": "^0.38.4",
     "hono": "^4.7.2"
   },
   "devDependencies": {

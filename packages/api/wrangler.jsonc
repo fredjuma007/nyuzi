@@ -8,7 +8,8 @@
     {
       "binding": "DB",
       "database_name": "nyuzi-db",
-      "database_id": "local-nyuzi-db"
+      "database_id": "local-nyuzi-db",
+      "migrations_dir": "migrations"
     }
   ]
 }
