@@ -56,6 +56,11 @@ interface NyuziResponse {
     container.getAttribute("data-accent-color") ||
     "#6366f1";
 
+  const reactionType =
+    currentScript?.getAttribute("data-reaction") ||
+    container.getAttribute("data-reaction") ||
+    "heart";
+
   // 3. Attach Shadow DOM for complete CSS isolation
   const shadow = container.shadowRoot || container.attachShadow({ mode: "open" });
   shadow.innerHTML = "";
@@ -111,6 +116,21 @@ interface NyuziResponse {
     } catch {
       return "recently";
     }
+  }
+
+  function renderReactionIcon(filled: boolean): string {
+    if (reactionType === "upvote") {
+      return `<span style="font-size:0.75rem;">▲</span>`;
+    }
+    return `<svg class="nyuzi-heart-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="${filled ? "currentColor" : "none"}" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>`;
+  }
+
+  function renderReplyIcon(): string {
+    return `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>`;
+  }
+
+  function renderLinkIcon(): string {
+    return `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
   }
 
   // Scoped CSS
@@ -380,9 +400,27 @@ interface NyuziResponse {
     .nyuzi-action-btn:hover {
       color: var(--nyuzi-accent);
     }
+    .nyuzi-action-btn svg {
+      flex-shrink: 0;
+      transition: transform 0.15s, stroke 0.15s, fill 0.15s;
+    }
+    .nyuzi-action-btn:hover svg.nyuzi-heart-icon {
+      stroke: #e11d48;
+      transform: scale(1.15);
+    }
     .nyuzi-action-btn.upvoted {
-      color: var(--nyuzi-accent);
-      font-weight: 700;
+      color: #e11d48;
+      font-weight: 600;
+    }
+    .nyuzi-action-btn.upvoted svg.nyuzi-heart-icon {
+      fill: #e11d48;
+      stroke: #e11d48;
+      animation: nyuzi-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes nyuzi-pop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.35); }
+      100% { transform: scale(1); }
     }
     .nyuzi-highlight {
       animation: nyuzi-flash 2.5s ease-out;
@@ -643,14 +681,17 @@ interface NyuziResponse {
           </div>
           <div class="nyuzi-content">${escapeHtml(c.content)}</div>
           <div class="nyuzi-actions">
-            <button class="nyuzi-action-btn upvote-btn ${isUpvoted ? "upvoted" : ""}" data-id="${c.id}">
-              ▲ ${c.upvotes > 0 ? c.upvotes : "Upvote"}
+            <button class="nyuzi-action-btn upvote-btn ${isUpvoted ? "upvoted" : ""}" data-id="${c.id}" title="${isUpvoted ? "Unlike" : "Like"}">
+              ${renderReactionIcon(isUpvoted)}
+              <span>${c.upvotes > 0 ? c.upvotes : (reactionType === "heart" ? "Like" : "Upvote")}</span>
             </button>
             <button class="nyuzi-action-btn reply-trigger" data-id="${c.id}">
-              💬 Reply
+              ${renderReplyIcon()}
+              <span>Reply</span>
             </button>
             <button class="nyuzi-action-btn copy-link-btn" data-id="${c.id}" title="Copy direct link to this comment">
-              🔗 Copy Link
+              ${renderLinkIcon()}
+              <span>Copy Link</span>
             </button>
           </div>
 
