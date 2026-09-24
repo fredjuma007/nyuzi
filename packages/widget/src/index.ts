@@ -55,7 +55,10 @@ interface NyuziResponse {
   const shadow = container.attachShadow({ mode: "open" });
 
   // Widget State
-  const threadUrl = window.location.href.split("#")[0];
+  const threadUrl =
+    currentScript?.getAttribute("data-thread-url") ||
+    container.getAttribute("data-thread-url") ||
+    window.location.href.split("#")[0];
   const threadTitle = document.title || "Discussion";
   let commentsList: NyuziComment[] = [];
   let totalComments = 0;
