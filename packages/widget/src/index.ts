@@ -512,18 +512,34 @@ interface NyuziResponse {
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
-      transition: color 0.15s;
+      gap: 0.35rem;
+      transition: color 0.15s, opacity 0.15s, transform 0.15s;
     }
     .nyuzi-brand:hover {
-      color: var(--nyuzi-accent);
+      opacity: 0.95;
+      transform: translateY(-0.5px);
     }
     .nyuzi-brand strong {
-      font-weight: 600;
-      color: var(--nyuzi-text-secondary);
+      font-weight: 700;
+      color: #f56220;
+      letter-spacing: -0.01em;
+      transition: color 0.15s, text-shadow 0.15s;
     }
     .nyuzi-brand:hover strong {
-      color: var(--nyuzi-accent);
+      color: #ea580c;
+      text-shadow: 0 0 12px rgba(245, 98, 32, 0.5);
+    }
+    .nyuzi-brand-dot {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #f56220;
+      box-shadow: 0 0 6px rgba(245, 98, 32, 0.6);
+      transition: transform 0.15s;
+    }
+    .nyuzi-brand:hover .nyuzi-brand-dot {
+      transform: scale(1.2);
     }
   `;
 
@@ -806,8 +822,10 @@ interface NyuziResponse {
 
         <!-- Footer -->
         <div class="nyuzi-footer">
-          <a href="https://github.com/fredjuma007/nyuzi" target="_blank" rel="noreferrer" class="nyuzi-brand">
-            Powered by <strong>Nyuzi</strong>
+          <a href="https://nyuzi-yap.vercel.app/" target="_blank" rel="noreferrer" class="nyuzi-brand" title="NyuziYap — Privacy-first, edge-powered comments">
+            <span class="nyuzi-brand-dot"></span>
+            <span>Powered by</span>
+            <strong>NyuziYap</strong>
           </a>
         </div>
       </div>
