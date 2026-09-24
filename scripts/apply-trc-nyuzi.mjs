@@ -35,6 +35,7 @@ export function NyuziComments({ blogId, className }: NyuziCommentsProps) {
     script.setAttribute("data-api", "https://nyuzi-api.fredjuma8.workers.dev")
     script.setAttribute("data-thread-url", canonicalUrl)
     script.setAttribute("data-accent-color", "#15803d") // TRC 254 forest green
+    script.setAttribute("data-reaction", "heart")
 
     document.body.appendChild(script)
 
@@ -53,6 +54,7 @@ export function NyuziComments({ blogId, className }: NyuziCommentsProps) {
         key={blogId}
         data-site-id="trc254"
         data-thread-url={canonicalUrl}
+        data-reaction="heart"
         className="min-h-[220px]"
       />
     </div>
