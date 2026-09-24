@@ -3,9 +3,9 @@ import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 export const sites = sqliteTable("sites", {
   id: text("id").primaryKey(), // site_xxx
   name: text("name").notNull(),
-  domain: text("domain").notNull(), // allowed origin e.g. "thereservedcircle.com"
+  domain: text("domain").notNull(), // allowed origin e.g. "thereservedcircle.com" or "*"
   ownerEmail: text("owner_email"),
-  turnstileEnabled: integer("turnstile_enabled", { mode: "boolean" }).notNull().default(true),
+  turnstileEnabled: integer("turnstile_enabled", { mode: "boolean" }).notNull().default(false),
   moderationRequired: integer("moderation_required", { mode: "boolean" }).notNull().default(false),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
@@ -30,6 +30,7 @@ export const comments = sqliteTable("comments", {
   status: text("status", { enum: ["approved", "pending", "spam", "deleted"] })
     .notNull()
     .default("approved"),
+  notifyOnReply: integer("notify_on_reply", { mode: "boolean" }).notNull().default(true),
   upvotes: integer("upvotes").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });

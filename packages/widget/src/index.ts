@@ -1,7 +1,6 @@
 /**
  * Nyuzi Embed Widget
- * Ultra-lightweight, edge-powered commenting client
- * Size target: <10KB
+ * Ultra-lightweight, edge-powered commenting client (<15KB)
  */
 
 interface NyuziComment {
@@ -52,10 +51,6 @@ interface NyuziResponse {
     return;
   }
 
-  if (!siteId) {
-    console.warn("[Nyuzi] Missing siteId. Set data-site-id='...' on script tag.");
-  }
-
   // 3. Attach Shadow DOM for complete CSS isolation
   const shadow = container.attachShadow({ mode: "open" });
 
@@ -65,9 +60,16 @@ interface NyuziResponse {
   let commentsList: NyuziComment[] = [];
   let totalComments = 0;
   let isLoading = true;
-  let errorMessage: string | null = null;
+  let formError: string | null = null;
   let activeReplyId: string | null = null;
   let isSubmitting = false;
+  const upvotedComments = new Set<string>();
+
+  // Load upvoted state from session
+  try {
+    const saved = sessionStorage.getItem("nyuzi_upvotes");
+    if (saved) JSON.parse(saved).forEach((id: string) => upvotedComments.add(id));
+  } catch {}
 
   // Helpers
   function escapeHtml(str: string): string {
@@ -102,7 +104,7 @@ interface NyuziResponse {
     }
   }
 
-  // Injected Scoped CSS
+  // Scoped CSS
   const styles = `
     :host {
       --nyuzi-accent: ${customAccent};
@@ -147,7 +149,7 @@ interface NyuziResponse {
     }
 
     .nyuzi-container {
-      padding: 1rem 0;
+      padding: 0.5rem 0;
     }
 
     /* Header */
@@ -155,7 +157,7 @@ interface NyuziResponse {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
       padding-bottom: 0.75rem;
       border-bottom: 1px solid var(--nyuzi-border);
     }
@@ -173,7 +175,7 @@ interface NyuziResponse {
       font-weight: 600;
       background: var(--nyuzi-input-bg);
       color: var(--nyuzi-text-secondary);
-      padding: 0.15rem 0.5rem;
+      padding: 0.15rem 0.55rem;
       border-radius: 9999px;
       border: 1px solid var(--nyuzi-border);
     }
@@ -186,14 +188,15 @@ interface NyuziResponse {
       padding: 1rem;
       margin-bottom: 2rem;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
     .nyuzi-form:focus-within {
       border-color: var(--nyuzi-accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     }
     .nyuzi-textarea {
       width: 100%;
-      min-height: 80px;
+      min-height: 85px;
       padding: 0.75rem;
       border: 1px solid var(--nyuzi-border);
       border-radius: 0.5rem;
@@ -203,11 +206,18 @@ interface NyuziResponse {
       font-size: 0.9375rem;
       resize: vertical;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, background 0.15s;
     }
     .nyuzi-textarea:focus {
       border-color: var(--nyuzi-accent);
       background: var(--nyuzi-card-bg);
+    }
+    .nyuzi-counter-row {
+      display: flex;
+      justify-content: flex-end;
+      font-size: 0.75rem;
+      color: var(--nyuzi-text-muted);
+      margin-top: 0.35rem;
     }
     .nyuzi-form-row {
       display: flex;
@@ -221,7 +231,7 @@ interface NyuziResponse {
       display: flex;
       gap: 0.5rem;
       flex: 1;
-      min-width: 250px;
+      min-width: 260px;
     }
     .nyuzi-input {
       flex: 1;
@@ -237,11 +247,25 @@ interface NyuziResponse {
       border-color: var(--nyuzi-accent);
       background: var(--nyuzi-card-bg);
     }
+    .nyuzi-optin {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8125rem;
+      color: var(--nyuzi-text-secondary);
+      cursor: pointer;
+      user-select: none;
+      margin-top: 0.5rem;
+    }
+    .nyuzi-optin input {
+      accent-color: var(--nyuzi-accent);
+      cursor: pointer;
+    }
     .nyuzi-submit-btn {
       background: var(--nyuzi-accent);
       color: #ffffff;
       border: none;
-      padding: 0.55rem 1.25rem;
+      padding: 0.55rem 1.35rem;
       border-radius: 0.5rem;
       font-size: 0.875rem;
       font-weight: 600;
@@ -254,9 +278,26 @@ interface NyuziResponse {
     .nyuzi-submit-btn:hover {
       opacity: 0.92;
     }
+    .nyuzi-submit-btn:active {
+      transform: scale(0.98);
+    }
     .nyuzi-submit-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+    }
+
+    /* Error Alert */
+    .nyuzi-alert {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      padding: 0.6rem 0.85rem;
+      border-radius: 0.5rem;
+      font-size: 0.8125rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
     /* Comments Tree */
@@ -268,6 +309,7 @@ interface NyuziResponse {
     .nyuzi-comment {
       display: flex;
       gap: 0.875rem;
+      transition: background 0.2s;
     }
     .nyuzi-avatar {
       width: 36px;
@@ -310,8 +352,8 @@ interface NyuziResponse {
     }
     .nyuzi-actions {
       display: flex;
-      gap: 0.75rem;
-      margin-top: 0.4rem;
+      gap: 1rem;
+      margin-top: 0.45rem;
     }
     .nyuzi-action-btn {
       background: none;
@@ -323,11 +365,24 @@ interface NyuziResponse {
       padding: 0;
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
-      transition: color 0.15s;
+      gap: 0.3rem;
+      transition: color 0.15s, transform 0.1s;
     }
     .nyuzi-action-btn:hover {
       color: var(--nyuzi-accent);
+    }
+    .nyuzi-action-btn.upvoted {
+      color: var(--nyuzi-accent);
+      font-weight: 700;
+    }
+    .nyuzi-highlight {
+      animation: nyuzi-flash 2.5s ease-out;
+      border-radius: var(--nyuzi-radius);
+      padding: 0.25rem 0.5rem;
+    }
+    @keyframes nyuzi-flash {
+      0%, 25% { background: rgba(99, 102, 241, 0.16); }
+      100% { background: transparent; }
     }
 
     /* Nested Replies */
@@ -343,10 +398,49 @@ interface NyuziResponse {
     /* Reply Form */
     .nyuzi-reply-box {
       margin-top: 0.75rem;
-      padding: 0.75rem;
+      padding: 0.85rem;
       background: var(--nyuzi-input-bg);
       border: 1px solid var(--nyuzi-border);
-      border-radius: 0.5rem;
+      border-radius: 0.65rem;
+    }
+
+    /* Skeletons */
+    .nyuzi-skeleton {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .nyuzi-skeleton-item {
+      display: flex;
+      gap: 0.875rem;
+      align-items: flex-start;
+    }
+    .nyuzi-skeleton-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--nyuzi-border);
+      animation: nyuzi-pulse 1.5s infinite ease-in-out;
+      flex-shrink: 0;
+    }
+    .nyuzi-skeleton-lines {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .nyuzi-skeleton-line {
+      height: 14px;
+      border-radius: 4px;
+      background: var(--nyuzi-border);
+      animation: nyuzi-pulse 1.5s infinite ease-in-out;
+    }
+    .nyuzi-skeleton-line.short {
+      width: 30%;
+    }
+    @keyframes nyuzi-pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.85; }
     }
 
     /* Empty state */
@@ -354,14 +448,6 @@ interface NyuziResponse {
       text-align: center;
       padding: 2.5rem 1rem;
       color: var(--nyuzi-text-muted);
-    }
-
-    /* Loading state */
-    .nyuzi-loading {
-      text-align: center;
-      padding: 2rem 0;
-      color: var(--nyuzi-text-muted);
-      font-size: 0.875rem;
     }
 
     /* Footer */
@@ -394,6 +480,21 @@ interface NyuziResponse {
     }
   `;
 
+  // Scroll and highlight target comment if URL has #comment-xxx
+  function scrollToHashComment() {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith("#comment-")) {
+      setTimeout(() => {
+        const target = shadow.querySelector(hash);
+        if (target) {
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+          target.classList.add("nyuzi-highlight");
+          setTimeout(() => target.classList.remove("nyuzi-highlight"), 3000);
+        }
+      }, 200);
+    }
+  }
+
   // Fetch comments from API
   async function loadComments() {
     try {
@@ -409,10 +510,60 @@ interface NyuziResponse {
       totalComments = data.total || commentsList.length;
       isLoading = false;
       render();
+      scrollToHashComment();
     } catch (err: any) {
       console.error("[Nyuzi] Failed to load comments:", err);
       isLoading = false;
-      errorMessage = "Unable to load comments. Please check your connection.";
+      formError = "Unable to connect to comments server.";
+      render();
+    }
+  }
+
+  // Toggle upvote/un-upvote comment
+  async function toggleUpvote(commentId: string) {
+    const isCurrentlyUpvoted = upvotedComments.has(commentId);
+    const action = isCurrentlyUpvoted ? "unvote" : "upvote";
+    const c = commentsList.find((item) => item.id === commentId);
+
+    // Optimistic UI update
+    if (isCurrentlyUpvoted) {
+      upvotedComments.delete(commentId);
+      if (c) c.upvotes = Math.max(0, (c.upvotes || 1) - 1);
+    } else {
+      upvotedComments.add(commentId);
+      if (c) c.upvotes = (c.upvotes || 0) + 1;
+    }
+
+    try {
+      sessionStorage.setItem("nyuzi_upvotes", JSON.stringify(Array.from(upvotedComments)));
+    } catch {}
+
+    render();
+
+    try {
+      const res = await fetch(`${apiHost}/api/v1/comments/${encodeURIComponent(commentId)}/upvote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      if (!res.ok) throw new Error("Vote action failed");
+      const data = await res.json();
+      if (c && typeof data.upvotes === "number") {
+        c.upvotes = data.upvotes;
+        render();
+      }
+    } catch {
+      // Revert on failure
+      if (isCurrentlyUpvoted) {
+        upvotedComments.add(commentId);
+        if (c) c.upvotes = (c.upvotes || 0) + 1;
+      } else {
+        upvotedComments.delete(commentId);
+        if (c) c.upvotes = Math.max(0, (c.upvotes || 1) - 1);
+      }
+      try {
+        sessionStorage.setItem("nyuzi_upvotes", JSON.stringify(Array.from(upvotedComments)));
+      } catch {}
       render();
     }
   }
@@ -422,12 +573,14 @@ interface NyuziResponse {
     authorName: string,
     authorEmail: string | null,
     content: string,
+    notifyOnReply: boolean,
     parentId: string | null = null
   ) {
     if (!authorName.trim() || !content.trim()) return;
 
     try {
       isSubmitting = true;
+      formError = null;
       render();
 
       const res = await fetch(`${apiHost}/api/v1/comments`, {
@@ -441,6 +594,7 @@ interface NyuziResponse {
           authorName,
           authorEmail,
           content,
+          notifyOnReply,
         }),
       });
 
@@ -458,16 +612,17 @@ interface NyuziResponse {
       isSubmitting = false;
       render();
     } catch (err: any) {
-      alert("Error posting comment: " + (err.message || "Please try again"));
+      formError = err.message || "Failed to post comment. Please try again.";
       isSubmitting = false;
       render();
     }
   }
 
-  // Render tree
+  // Render a comment node
   function renderComment(c: NyuziComment): string {
     const replies = commentsList.filter((r) => r.parentId === c.id);
     const isReplying = activeReplyId === c.id;
+    const isUpvoted = upvotedComments.has(c.id);
 
     return `
       <div class="nyuzi-comment" id="comment-${c.id}">
@@ -479,8 +634,14 @@ interface NyuziResponse {
           </div>
           <div class="nyuzi-content">${escapeHtml(c.content)}</div>
           <div class="nyuzi-actions">
+            <button class="nyuzi-action-btn upvote-btn ${isUpvoted ? "upvoted" : ""}" data-id="${c.id}">
+              ▲ ${c.upvotes > 0 ? c.upvotes : "Upvote"}
+            </button>
             <button class="nyuzi-action-btn reply-trigger" data-id="${c.id}">
-              ðŸ’¬ Reply
+              💬 Reply
+            </button>
+            <button class="nyuzi-action-btn copy-link-btn" data-id="${c.id}" title="Copy direct link to this comment">
+              🔗 Copy Link
             </button>
           </div>
 
@@ -491,7 +652,7 @@ interface NyuziResponse {
                 <textarea class="nyuzi-textarea" id="reply-content-${c.id}" placeholder="Reply to ${escapeHtml(c.authorName)}..." required></textarea>
                 <div class="nyuzi-form-row">
                   <div class="nyuzi-inputs">
-                    <input type="text" class="nyuzi-input" id="reply-name-${c.id}" placeholder="Your Name" required />
+                    <input type="text" class="nyuzi-input" id="reply-name-${c.id}" placeholder="Your Name *" required />
                   </div>
                   <div style="display:flex; gap:0.5rem;">
                     <button class="nyuzi-action-btn cancel-reply" style="padding: 0.5rem 0.75rem;">Cancel</button>
@@ -535,24 +696,54 @@ interface NyuziResponse {
 
         <!-- Main Comment Form -->
         <div class="nyuzi-form">
-          <textarea class="nyuzi-textarea" id="nyuzi-main-content" placeholder="Share your thoughts or leave a question..." required></textarea>
+          ${
+            formError
+              ? `<div class="nyuzi-alert">
+                   <span>âš ï¸ ${escapeHtml(formError)}</span>
+                   <button class="nyuzi-action-btn" id="dismiss-error" style="color:#b91c1c;">âœ•</button>
+                 </div>`
+              : ""
+          }
+          <textarea class="nyuzi-textarea" id="nyuzi-main-content" maxlength="2000" placeholder="Share your thoughts or leave a question..." required></textarea>
+          <div class="nyuzi-counter-row">
+            <span id="nyuzi-char-count">0 / 2,000</span>
+          </div>
+
           <div class="nyuzi-form-row">
             <div class="nyuzi-inputs">
               <input type="text" class="nyuzi-input" id="nyuzi-main-name" placeholder="Name *" required />
-              <input type="email" class="nyuzi-input" id="nyuzi-main-email" placeholder="Email (private)" />
+              <input type="email" class="nyuzi-input" id="nyuzi-main-email" placeholder="Email (for reply alerts)" />
             </div>
             <button class="nyuzi-submit-btn" id="nyuzi-main-submit" ${isSubmitting ? "disabled" : ""}>
               ${isSubmitting ? "Posting..." : "Post Comment"}
             </button>
           </div>
+
+          <label class="nyuzi-optin" id="nyuzi-optin-wrapper">
+            <input type="checkbox" id="nyuzi-main-notify" checked />
+            <span>Notify me via email when someone replies</span>
+          </label>
         </div>
 
         <!-- Comments List -->
         ${
           isLoading
-            ? `<div class="nyuzi-loading">Loading discussion...</div>`
-            : errorMessage
-            ? `<div class="nyuzi-empty" style="color:#ef4444;">${errorMessage}</div>`
+            ? `<div class="nyuzi-skeleton">
+                 <div class="nyuzi-skeleton-item">
+                   <div class="nyuzi-skeleton-avatar"></div>
+                   <div class="nyuzi-skeleton-lines">
+                     <div class="nyuzi-skeleton-line short"></div>
+                     <div class="nyuzi-skeleton-line"></div>
+                   </div>
+                 </div>
+                 <div class="nyuzi-skeleton-item">
+                   <div class="nyuzi-skeleton-avatar"></div>
+                   <div class="nyuzi-skeleton-lines">
+                     <div class="nyuzi-skeleton-line short"></div>
+                     <div class="nyuzi-skeleton-line"></div>
+                   </div>
+                 </div>
+               </div>`
             : topLevelComments.length === 0
             ? `<div class="nyuzi-empty">
                  <p style="font-size:1.1rem; margin:0 0 0.25rem 0; font-weight:600; color:var(--nyuzi-text-primary);">No comments yet</p>
@@ -572,20 +763,38 @@ interface NyuziResponse {
       </div>
     `;
 
-    // Attach Event Listeners
+    // Event Listeners
+    const contentInput = shadow.getElementById("nyuzi-main-content") as HTMLTextAreaElement | null;
+    const charCount = shadow.getElementById("nyuzi-char-count");
+    if (contentInput && charCount) {
+      contentInput.addEventListener("input", () => {
+        charCount.textContent = `${contentInput.value.length} / 2,000`;
+      });
+    }
+
+    const dismissError = shadow.getElementById("dismiss-error");
+    if (dismissError) {
+      dismissError.addEventListener("click", () => {
+        formError = null;
+        render();
+      });
+    }
+
     const mainSubmit = shadow.getElementById("nyuzi-main-submit");
     if (mainSubmit) {
       mainSubmit.addEventListener("click", () => {
         const nameInput = shadow.getElementById("nyuzi-main-name") as HTMLInputElement;
         const emailInput = shadow.getElementById("nyuzi-main-email") as HTMLInputElement;
-        const contentInput = shadow.getElementById("nyuzi-main-content") as HTMLTextAreaElement;
+        const notifyCheck = shadow.getElementById("nyuzi-main-notify") as HTMLInputElement;
 
         if (!nameInput.value.trim()) {
-          nameInput.focus();
+          formError = "Please enter your name.";
+          render();
           return;
         }
-        if (!contentInput.value.trim()) {
-          contentInput.focus();
+        if (!contentInput || !contentInput.value.trim()) {
+          formError = "Comment content cannot be empty.";
+          render();
           return;
         }
 
@@ -593,10 +802,19 @@ interface NyuziResponse {
           nameInput.value.trim(),
           emailInput.value.trim() || null,
           contentInput.value.trim(),
+          notifyCheck ? notifyCheck.checked : true,
           null
         );
       });
     }
+
+    // Upvote buttons
+    shadow.querySelectorAll(".upvote-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+        if (id) toggleUpvote(id);
+      });
+    });
 
     // Reply triggers
     shadow.querySelectorAll(".reply-trigger").forEach((btn) => {
@@ -622,26 +840,54 @@ interface NyuziResponse {
         if (!parentId) return;
 
         const nameInput = shadow.getElementById(`reply-name-${parentId}`) as HTMLInputElement;
-        const contentInput = shadow.getElementById(`reply-content-${parentId}`) as HTMLTextAreaElement;
+        const replyContent = shadow.getElementById(`reply-content-${parentId}`) as HTMLTextAreaElement;
 
         if (!nameInput.value.trim()) {
-          nameInput.focus();
+          alert("Please enter your name.");
           return;
         }
-        if (!contentInput.value.trim()) {
-          contentInput.focus();
+        if (!replyContent || !replyContent.value.trim()) {
+          alert("Reply content cannot be empty.");
           return;
         }
 
         submitComment(
           nameInput.value.trim(),
           null,
-          contentInput.value.trim(),
+          replyContent.value.trim(),
+          true,
           parentId
         );
       });
     });
+
+    // Copy link buttons
+    shadow.querySelectorAll(".copy-link-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        const button = e.currentTarget as HTMLButtonElement;
+        const id = button.getAttribute("data-id");
+        if (!id) return;
+        const cleanUrl = window.location.href.split("#")[0];
+        const shareUrl = `${cleanUrl}#comment-${id}`;
+
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          const originalHtml = button.innerHTML;
+          button.innerHTML = "✓ Copied!";
+          button.style.color = "var(--nyuzi-accent)";
+          setTimeout(() => {
+            button.innerHTML = originalHtml;
+            button.style.color = "";
+          }, 2000);
+        } catch {
+          window.location.hash = `comment-${id}`;
+        }
+      });
+    });
   }
+
+  // Listen to hash changes in URL
+  window.addEventListener("hashchange", scrollToHashComment);
 
   // Initial load
   loadComments();

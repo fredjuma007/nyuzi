@@ -1,0 +1,1 @@
+ALTER TABLE `comments` ADD `notify_on_reply` integer DEFAULT 1 NOT NULL;

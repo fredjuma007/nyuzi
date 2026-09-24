@@ -1,11 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { drizzle } from "drizzle-orm/d1";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import { sites, threads, comments } from "@nyuzi/db";
 
 type Bindings = {
   DB: D1Database;
+  TURNSTILE_SECRET_KEY?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -20,6 +21,18 @@ app.use(
   })
 );
 
+// Basic edge-friendly input sanitizer
+function sanitizeContent(raw: string): string {
+  return raw
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, "")
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, "")
+    .replace(/javascript:[^"']*/gi, "")
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "")
+    .trim();
+}
+
 app.get("/", (c) => {
   return c.json({
     name: "Nyuzi Edge Comments API",
@@ -30,6 +43,7 @@ app.get("/", (c) => {
       health: "GET /health",
       getComments: "GET /api/v1/comments?siteId={id}&threadUrl={url}",
       postComment: "POST /api/v1/comments",
+      upvoteComment: "POST /api/v1/comments/:id/upvote",
     },
   });
 });
@@ -112,7 +126,17 @@ app.post("/api/v1/comments", async (c) => {
     return c.json({ error: "Invalid JSON body" }, 400);
   }
 
-  const { siteId, threadUrl, threadTitle, parentId, authorName, authorEmail, content } = body;
+  const {
+    siteId,
+    threadUrl,
+    threadTitle,
+    parentId,
+    authorName,
+    authorEmail,
+    content,
+    notifyOnReply = true,
+    turnstileToken,
+  } = body;
 
   if (!siteId || typeof siteId !== "string") {
     return c.json({ error: "siteId is required" }, 400);
@@ -127,9 +151,19 @@ app.post("/api/v1/comments", async (c) => {
     return c.json({ error: "content is required" }, 400);
   }
 
-  const cleanAuthor = authorName.trim().slice(0, 60);
-  const cleanContent = content.trim().slice(0, 3000);
-  const cleanEmail = typeof authorEmail === "string" ? authorEmail.trim().slice(0, 120) : null;
+  const cleanAuthor = sanitizeContent(authorName).slice(0, 60);
+  const cleanContent = sanitizeContent(content).slice(0, 3000);
+  const cleanEmail =
+    typeof authorEmail === "string" && authorEmail.includes("@")
+      ? authorEmail.trim().slice(0, 120)
+      : null;
+
+  if (!cleanAuthor) {
+    return c.json({ error: "Author name contains invalid characters" }, 400);
+  }
+  if (!cleanContent) {
+    return c.json({ error: "Comment content is empty or contains invalid markup" }, 400);
+  }
 
   const db = drizzle(c.env.DB);
 
@@ -148,7 +182,25 @@ app.post("/api/v1/comments", async (c) => {
     site = newSite as any;
   }
 
-  // 2. Ensure thread exists
+  // 2. Turnstile Verification (if enabled on site and secret provided)
+  if (site.turnstileEnabled && c.env.TURNSTILE_SECRET_KEY) {
+    if (!turnstileToken) {
+      return c.json({ error: "Captcha verification required" }, 400);
+    }
+    const verifyFormData = new FormData();
+    verifyFormData.append("secret", c.env.TURNSTILE_SECRET_KEY);
+    verifyFormData.append("response", turnstileToken);
+    const verifyRes = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      body: verifyFormData,
+    });
+    const verifyData: any = await verifyRes.json();
+    if (!verifyData.success) {
+      return c.json({ error: "Captcha verification failed. Please try again." }, 403);
+    }
+  }
+
+  // 3. Ensure thread exists
   let [thread] = await db
     .select()
     .from(threads)
@@ -174,7 +226,7 @@ app.post("/api/v1/comments", async (c) => {
       .where(eq(threads.id, thread.id));
   }
 
-  // 3. Create comment
+  // 4. Create comment
   const commentId = "cmt_" + crypto.randomUUID().replace(/-/g, "").slice(0, 16);
   const now = new Date();
 
@@ -187,6 +239,7 @@ app.post("/api/v1/comments", async (c) => {
     authorEmail: cleanEmail,
     content: cleanContent,
     status: "approved",
+    notifyOnReply: Boolean(notifyOnReply),
     upvotes: 0,
     createdAt: now,
   });
@@ -206,6 +259,56 @@ app.post("/api/v1/comments", async (c) => {
     },
     201
   );
+});
+
+// POST /api/v1/comments/:id/upvote
+app.post("/api/v1/comments/:id/upvote", async (c) => {
+  const commentId = c.req.param("id");
+  if (!commentId) {
+    return c.json({ error: "Comment ID required" }, 400);
+  }
+
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch {}
+
+  const isUnvote = body.action === "unvote" || body.action === "decrement";
+  const db = drizzle(c.env.DB);
+
+  // 1. Check comment exists
+  const [existing] = await db
+    .select()
+    .from(comments)
+    .where(eq(comments.id, commentId))
+    .limit(1);
+
+  if (!existing) {
+    return c.json({ error: "Comment not found" }, 404);
+  }
+
+  // 2. Update upvotes atomically in SQLite
+  if (isUnvote) {
+    await db
+      .update(comments)
+      .set({ upvotes: sql`MAX(0, ${comments.upvotes} - 1)` })
+      .where(eq(comments.id, commentId));
+  } else {
+    await db
+      .update(comments)
+      .set({ upvotes: sql`${comments.upvotes} + 1` })
+      .where(eq(comments.id, commentId));
+  }
+
+  const currentCount = existing.upvotes || 0;
+  const newCount = isUnvote ? Math.max(0, currentCount - 1) : currentCount + 1;
+
+  return c.json({
+    success: true,
+    commentId,
+    upvotes: newCount,
+    action: isUnvote ? "unvote" : "upvote",
+  });
 });
 
 export default app;
