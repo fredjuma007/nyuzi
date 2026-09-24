@@ -27,20 +27,9 @@ interface NyuziResponse {
 }
 
 (function () {
-  // 1. Identify script parameters
   const currentScript = document.currentScript as HTMLScriptElement | null;
-  const siteId =
-    currentScript?.getAttribute("data-site-id") ||
-    document.querySelector("[data-nyuzi-site-id]")?.getAttribute("data-nyuzi-site-id") ||
-    "";
 
-  const apiHost =
-    currentScript?.getAttribute("data-api") ||
-    "https://nyuzi-api.fredjuma8.workers.dev";
-
-  const customAccent = currentScript?.getAttribute("data-accent-color") || "#6366f1";
-
-  // 2. Identify target container
+  // 1. Identify target container
   let container = document.getElementById("nyuzi-comments");
   if (!container) {
     container = document.querySelector("nyuzi-comments");
@@ -51,8 +40,25 @@ interface NyuziResponse {
     return;
   }
 
+  const siteId =
+    currentScript?.getAttribute("data-site-id") ||
+    container.getAttribute("data-site-id") ||
+    document.querySelector("[data-nyuzi-site-id]")?.getAttribute("data-nyuzi-site-id") ||
+    "";
+
+  const apiHost =
+    currentScript?.getAttribute("data-api") ||
+    container.getAttribute("data-api") ||
+    "https://nyuzi-api.fredjuma8.workers.dev";
+
+  const customAccent =
+    currentScript?.getAttribute("data-accent-color") ||
+    container.getAttribute("data-accent-color") ||
+    "#6366f1";
+
   // 3. Attach Shadow DOM for complete CSS isolation
-  const shadow = container.attachShadow({ mode: "open" });
+  const shadow = container.shadowRoot || container.attachShadow({ mode: "open" });
+  shadow.innerHTML = "";
 
   // Widget State
   const threadUrl =
