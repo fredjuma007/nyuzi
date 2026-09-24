@@ -529,17 +529,16 @@ interface NyuziResponse {
       color: #ea580c;
       text-shadow: 0 0 12px rgba(245, 98, 32, 0.5);
     }
-    .nyuzi-brand-dot {
-      display: inline-block;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: #f56220;
-      box-shadow: 0 0 6px rgba(245, 98, 32, 0.6);
-      transition: transform 0.15s;
+    .nyuzi-bolt-icon {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.45));
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s;
     }
-    .nyuzi-brand:hover .nyuzi-brand-dot {
-      transform: scale(1.2);
+    .nyuzi-brand:hover .nyuzi-bolt-icon {
+      transform: scale(1.3) rotate(-8deg);
+      filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.9));
     }
   `;
 
@@ -823,7 +822,15 @@ interface NyuziResponse {
         <!-- Footer -->
         <div class="nyuzi-footer">
           <a href="https://nyuzi-yap.vercel.app/" target="_blank" rel="noreferrer" class="nyuzi-brand" title="NyuziYap — Privacy-first, edge-powered comments">
-            <span class="nyuzi-brand-dot"></span>
+            <svg class="nyuzi-bolt-icon" viewBox="0 0 24 24" fill="url(#nyuzi-bolt-grad)">
+              <defs>
+                <linearGradient id="nyuzi-bolt-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#FACC15" />
+                  <stop offset="100%" stop-color="#F56220" />
+                </linearGradient>
+              </defs>
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+            </svg>
             <span>Powered by</span>
             <strong>NyuziYap</strong>
           </a>
