@@ -36,7 +36,7 @@ interface NyuziResponse {
 
   const apiHost =
     currentScript?.getAttribute("data-api") ||
-    "http://127.0.0.1:8787";
+    "https://nyuzi-api.fredjuma8.workers.dev";
 
   const customAccent = currentScript?.getAttribute("data-accent-color") || "#6366f1";
 
