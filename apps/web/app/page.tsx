@@ -1,23 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 export default function LandingPage() {
-  const [isDark, setIsDark] = useState(true);
   const [playgroundAccent, setPlaygroundAccent] = useState("#f56220");
   const [playgroundReaction, setPlaygroundReaction] = useState<"heart" | "upvote">("heart");
   const [snippetSiteId, setSnippetSiteId] = useState("my-publication");
   const [copied, setCopied] = useState(false);
-
-  // Sync dark class with document
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDark]);
 
   // Load the live Nyuzi embed script into the playground container
   useEffect(() => {
@@ -61,166 +52,109 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col relative selection:bg-[#f56220] selection:text-white">
+    <div className="min-h-screen flex flex-col relative selection:bg-[#f56220] selection:text-white w-full max-w-full overflow-x-hidden">
       {/* Background Radial Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-6xl h-[600px] bg-radial-glow pointer-events-none opacity-80 z-0" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[450px] sm:h-[600px] bg-radial-glow pointer-events-none opacity-80 z-0 overflow-hidden" />
 
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-50 backdrop-blur-md border-b ember-border px-6 lg:px-12 py-3.5 transition-colors duration-200">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#facc15] to-[#f56220] flex items-center justify-center shadow-md shadow-[#f56220]/25 group-hover:scale-105 transition-transform duration-200">
-              <svg className="w-4 h-4 text-white fill-current" viewBox="0 0 24 24">
-                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-              </svg>
-            </div>
-            <span className="font-bold text-lg tracking-tight flex items-center gap-1">
-              <span>Nyuzi</span>
-              <span className="text-[#f56220]">Yap</span>
-            </span>
-            <span className="ml-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#f56220]/10 text-[#f56220] border border-[#f56220]/20 hidden sm:inline-block">
-              Edge Engine
-            </span>
-          </Link>
+      {/* Top Reusable Navbar */}
+      <Navbar />
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--text-secondary)]">
-            <a href="#playground" className="hover:text-[var(--brand-orange)] transition-colors">
-              Live Playground
-            </a>
-            <a href="#features" className="hover:text-[var(--brand-orange)] transition-colors">
-              Why Nyuzi
-            </a>
-            <a href="#snippet" className="hover:text-[var(--brand-orange)] transition-colors">
-              Quick Embed
-            </a>
-            <a
-              href="https://www.readingcircle254.com"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 hover:text-[var(--brand-orange)] transition-colors"
-            >
-              <span>Customer #0</span>
-              <span className="text-xs">↗</span>
-            </a>
-          </nav>
-
-          {/* Right Controls: Theme Toggle & Dashboard CTA */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsDark(!isDark)}
-              className="p-2 rounded-lg border ember-border text-sm hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)] transition-all bg-[var(--bg-card)] cursor-pointer"
-              title="Toggle Light / Dark mode"
-              aria-label="Toggle theme"
-            >
-              {isDark ? "☀️ Light" : "🌙 Dark"}
-            </button>
-
-            <Link
-              href="/dashboard"
-              className="px-4 py-2 rounded-lg bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-semibold text-sm shadow-md shadow-[#f56220]/20 transition-all hover:scale-[1.02] flex items-center gap-1.5"
-            >
-              <span>Open Dashboard</span>
-              <span>&rarr;</span>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <main className="flex-1 z-10">
-        <section className="pt-16 pb-20 px-6 lg:px-12 text-center max-w-5xl mx-auto">
+      {/* Main Content */}
+      <main className="flex-1 z-10 w-full max-w-full">
+        {/* Hero Section */}
+        <section className="pt-8 sm:pt-16 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-12 text-center max-w-5xl mx-auto w-full">
           {/* Eyebrow Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border ember-border bg-[var(--bg-card-subtle)] text-xs font-semibold mb-6 shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-[#f56220] animate-pulse" />
-            <span className="text-[var(--text-secondary)]">Sub-20ms Global Latency &bull; Cloudflare Edge D1</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border ember-border bg-[var(--bg-card-subtle)] text-[11px] sm:text-xs font-semibold mb-4 sm:mb-6 shadow-sm max-w-full">
+            <span className="w-2 h-2 rounded-full bg-[#f56220] animate-pulse shrink-0" />
+            <span className="text-[var(--text-secondary)] truncate">
+              Ultra-lightweight (&lt;15KB) &bull; Zero cookies &bull; Instant load
+            </span>
           </div>
 
           {/* Main Headline */}
-          <h1 className="font-serif-title text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
+          <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.15] mb-4 sm:mb-6 break-words px-1">
             Turn reader attention into{" "}
-            <span className="text-gradient-orange italic">a thriving community.</span>
+            <span className="text-gradient-orange italic block sm:inline">a thriving community.</span>
           </h1>
 
           {/* Subtitle */}
-          <p className="max-w-2xl mx-auto text-lg sm:text-xl text-[var(--text-secondary)] leading-relaxed mb-10">
-            The ultra-lightweight (<strong>&lt;15KB</strong>), privacy-first comment engine with automated email retention loops. Zero bloated ads. Zero ad tracking. Instant edge speed.
+          <p className="max-w-2xl mx-auto text-sm sm:text-lg text-[var(--text-secondary)] leading-relaxed mb-8 sm:mb-10 px-2 sm:px-0">
+            A fast, beautiful comment system designed for independent publications and blogs. Delight your readers with instant discussions and automatic reply alerts—without tracking cookies or bloated scripts.
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10 sm:mb-16 w-full max-w-xs sm:max-w-none mx-auto">
             <a
               href="#playground"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-base shadow-lg shadow-[#f56220]/25 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 sm:px-7 sm:py-3.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#f56220]/25 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
             >
               <span>Try Live Playground</span>
               <span>&darr;</span>
             </a>
             <a
               href="#snippet"
-              className="w-full sm:w-auto px-7 py-3.5 rounded-xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] text-[var(--text-main)] font-semibold text-base transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 sm:px-7 sm:py-3.5 rounded-xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] text-[var(--text-main)] font-semibold text-sm sm:text-base transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
             >
               <span>Get 2-Line Embed</span>
               <span>&rarr;</span>
             </a>
           </div>
 
-          {/* Metric Cards (Inspired by inspirations) */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="p-5 rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
-              <div className="text-3xl font-extrabold text-[var(--brand-orange)] mb-1">&lt; 15 KB</div>
-              <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">Featherweight</div>
-              <div className="text-xs text-[var(--text-muted)]">99% lighter than Disqus or heavy plugins</div>
+          {/* Metric Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto w-full">
+            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[var(--brand-orange)] mb-0.5 sm:mb-1">&lt; 15 KB</div>
+              <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Featherweight</div>
+              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">90% lighter than Disqus or bloated plugins</div>
             </div>
 
-            <div className="p-5 rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
-              <div className="text-3xl font-extrabold text-[#facc15] mb-1">~12 ms</div>
-              <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">Edge Latency</div>
-              <div className="text-xs text-[var(--text-muted)]">Powered globally by Cloudflare Workers & D1</div>
+            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#facc15] mb-0.5 sm:mb-1">Instant</div>
+              <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Zero Lag</div>
+              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">Loads immediately without slowing down your site</div>
             </div>
 
-            <div className="p-5 rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
-              <div className="text-3xl font-extrabold text-[var(--brand-orange)] mb-1">100%</div>
-              <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">Privacy First</div>
-              <div className="text-xs text-[var(--text-muted)]">Zero ad cookies, zero cross-site trackers</div>
+            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[var(--brand-orange)] mb-0.5 sm:mb-1">100%</div>
+              <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Privacy First</div>
+              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">Zero ad cookies, zero cross-site trackers</div>
             </div>
 
-            <div className="p-5 rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
-              <div className="text-3xl font-extrabold text-[#facc15] mb-1">Auto ⚡</div>
-              <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">Retention Loops</div>
-              <div className="text-xs text-[var(--text-muted)]">Instant Resend reply & author email alerts</div>
+            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#facc15] mb-0.5 sm:mb-1">Smart ⚡</div>
+              <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Notifications</div>
+              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">Automatic email updates that bring readers back</div>
             </div>
           </div>
         </section>
 
         {/* Live Playground Studio Section */}
-        <section id="playground" className="py-20 px-6 lg:px-12 border-t ember-border bg-[var(--bg-card-subtle)]">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <span className="text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Interactive Sandbox</span>
-              <h2 className="font-serif-title text-3xl sm:text-4xl font-bold mt-2 mb-3">
+        <section id="playground" className="py-12 sm:py-20 px-4 sm:px-6 lg:px-12 border-t ember-border bg-[var(--bg-card-subtle)] w-full">
+          <div className="max-w-6xl mx-auto w-full">
+            <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Interactive Sandbox</span>
+              <h2 className="font-serif-title text-2xl sm:text-4xl font-bold mt-1.5 sm:mt-2 mb-2 sm:mb-3">
                 Experience the widget live
               </h2>
-              <p className="text-sm sm:text-base text-[var(--text-secondary)]">
-                Customize colors and reactions below, then leave a test comment right inside the preview. Powered by our live edge worker.
+              <p className="text-xs sm:text-base text-[var(--text-secondary)] px-2">
+                Customize colors and reactions below, then leave a test comment right inside the preview.
               </p>
             </div>
 
             {/* Playground Box */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 items-start w-full">
               {/* Left Controls Column */}
-              <div className="lg:col-span-4 p-6 rounded-2xl border ember-border bg-[var(--bg-card)] space-y-6 shadow-sm">
+              <div className="lg:col-span-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] space-y-5 shadow-sm w-full">
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2.5">
                     Accent Color
                   </h3>
-                  <div className="flex flex-wrap gap-2.5">
+                  <div className="flex flex-wrap gap-2">
                     {accentColors.map((color) => (
                       <button
                         key={color.hex}
                         onClick={() => setPlaygroundAccent(color.hex)}
-                        className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                        className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                           playgroundAccent === color.hex
                             ? "ring-2 ring-offset-2 ring-[var(--brand-orange)] scale-110 shadow-md"
                             : "opacity-80 hover:opacity-100 hover:scale-105"
@@ -229,24 +163,24 @@ export default function LandingPage() {
                         title={color.name}
                       >
                         {playgroundAccent === color.hex && (
-                          <span className="text-white text-xs font-bold">✓</span>
+                          <span className="text-white text-[10px] sm:text-xs font-bold">✓</span>
                         )}
                       </button>
                     ))}
                   </div>
-                  <span className="text-xs text-[var(--text-muted)] mt-2 block">
+                  <span className="text-[11px] sm:text-xs text-[var(--text-muted)] mt-2 block">
                     Selected: <strong style={{ color: playgroundAccent }}>{playgroundAccent}</strong>
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-3">
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2.5">
                     Reaction Style
                   </h3>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setPlaygroundReaction("heart")}
-                      className={`px-3.5 py-2.5 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                      className={`px-2.5 py-2 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
                         playgroundReaction === "heart"
                           ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold"
                           : "ember-border bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]"
@@ -257,7 +191,7 @@ export default function LandingPage() {
                     </button>
                     <button
                       onClick={() => setPlaygroundReaction("upvote")}
-                      className={`px-3.5 py-2.5 rounded-xl border text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                      className={`px-2.5 py-2 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
                         playgroundReaction === "upvote"
                           ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold"
                           : "ember-border bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]"
@@ -269,33 +203,36 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[var(--bg-card-subtle)] border ember-border text-xs space-y-2">
-                  <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                    <span>Edge Worker:</span>
-                    <span className="text-emerald-500 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                      Live (Global)
-                    </span>
+                {/* Feature highlights */}
+                <div className="p-3.5 sm:p-4 rounded-xl bg-[var(--bg-card-subtle)] border ember-border text-[11px] sm:text-xs space-y-2">
+                  <div className="flex items-start gap-2 text-[var(--text-secondary)]">
+                    <span className="text-sm">🎨</span>
+                    <span><strong>Theme Adaptive:</strong> Seamlessly matches your light and dark styling.</span>
                   </div>
-                  <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                    <span>Email Dispatcher:</span>
-                    <span className="font-semibold text-[var(--brand-orange)]">Resend (Verified)</span>
+                  <div className="flex items-start gap-2 text-[var(--text-secondary)]">
+                    <span className="text-sm">🔗</span>
+                    <span><strong>Deep Linking:</strong> Direct URL anchors for sharing specific comments.</span>
                   </div>
-                  <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                    <span>Database:</span>
-                    <span className="font-semibold text-[var(--text-main)]">Cloudflare D1</span>
+                  <div className="flex items-start gap-2 text-[var(--text-secondary)]">
+                    <span className="text-sm">🛡️</span>
+                    <span><strong>Spam Protected:</strong> Built-in rate limiting and honeypot guards.</span>
                   </div>
                 </div>
               </div>
 
               {/* Right Preview Column */}
-              <div className="lg:col-span-8 p-6 sm:p-8 rounded-2xl border ember-border bg-[var(--bg-card)] shadow-lg">
-                <div className="flex items-center justify-between border-b ember-border pb-4 mb-6">
-                  <div>
-                    <span className="text-xs uppercase tracking-widest font-bold text-[var(--text-muted)]">Live Embed Preview</span>
-                    <h4 className="text-base font-bold text-[var(--text-main)]">The Future of Edge Comments</h4>
+              <div className="lg:col-span-8 p-3.5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] shadow-lg w-full overflow-hidden">
+                <div className="flex items-center justify-between border-b ember-border pb-3 sm:pb-4 mb-4 sm:mb-6 gap-2">
+                  <div className="min-w-0">
+                    <span className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-[var(--text-muted)] block truncate">
+                      Live Embed Preview
+                    </span>
+                    <h4 className="text-sm sm:text-base font-bold text-[var(--text-main)] truncate">
+                      The Art of Thoughtful Reading
+                    </h4>
+                    <span className="text-[10px] sm:text-xs text-[var(--text-muted)]">Sample Article &bull; 4 min read</span>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
                     Live Demo
                   </span>
                 </div>
@@ -305,7 +242,7 @@ export default function LandingPage() {
                   id="nyuzi-comments"
                   data-site-id="demo"
                   data-thread-url="https://nyuzi-yap.vercel.app/demo"
-                  data-thread-title="The Future of Edge Comments"
+                  data-thread-title="The Art of Thoughtful Reading"
                   data-accent-color={playgroundAccent}
                   data-reaction={playgroundReaction}
                 />
@@ -315,129 +252,129 @@ export default function LandingPage() {
         </section>
 
         {/* Feature Grid Section */}
-        <section id="features" className="py-24 px-6 lg:px-12 max-w-6xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Built For Publishers</span>
-            <h2 className="font-serif-title text-3xl sm:text-5xl font-bold mt-2 mb-4">
-              Everything modern blogs need. Nothing they don&apos;t.
+        <section id="features" className="py-14 sm:py-24 px-4 sm:px-6 lg:px-12 max-w-6xl mx-auto w-full">
+          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Built For Publications</span>
+            <h2 className="font-serif-title text-2xl sm:text-4xl lg:text-5xl font-bold mt-1.5 sm:mt-2 mb-3 sm:mb-4">
+              Everything your readers love. Nothing they don&apos;t.
             </h2>
-            <p className="text-[var(--text-secondary)] text-base">
-              Engineered from first principles to be fast, beautiful, and deeply engaging for your readers.
+            <p className="text-[var(--text-secondary)] text-xs sm:text-base">
+              Designed from first principles to be fast, elegant, and deeply engaging for your readers.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-2xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] transition-all group shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8 w-full">
+            <div className="p-5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] transition-all group shadow-sm">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center text-xl sm:text-2xl mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
                 ⚡
               </div>
-              <h3 className="text-xl font-bold mb-2">Automated Retention Loops</h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                When readers reply to each other, instant branded email notifications bring them back to the exact comment. Unbroken viral re-engagement without spamming.
+              <h3 className="text-lg sm:text-xl font-bold mb-2">Automated Reply Loops</h3>
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+                When readers reply to each other, instant branded email notifications bring them back to the exact comment. Seamless re-engagement without spamming.
               </p>
             </div>
 
-            <div className="p-8 rounded-2xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] transition-all group shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">
+            <div className="p-5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] transition-all group shadow-sm">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center text-xl sm:text-2xl mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
                 ✍️
               </div>
-              <h3 className="text-xl font-bold mb-2">Multi-Author Roster</h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                Co-authored articles or guest writers? Nyuzi automatically parses co-authors and alerts the right writer when readers comment on their work.
+              <h3 className="text-lg sm:text-xl font-bold mb-2">Author Notifications</h3>
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+                Co-authored articles or guest writers? Nyuzi automatically routes comments to the right author so writers can join the discussion immediately.
               </p>
             </div>
 
-            <div className="p-8 rounded-2xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] transition-all group shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center text-2xl mb-5 group-hover:scale-110 transition-transform">
+            <div className="p-5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] transition-all group shadow-sm">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center text-xl sm:text-2xl mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
                 🔒
               </div>
-              <h3 className="text-xl font-bold mb-2">100% Privacy & Zero Ads</h3>
-              <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                Unlike Disqus, which loads megabytes of third-party ad trackers and sells user data, Nyuzi is 100% private, GDPR-compliant, and cookie-free.
+              <h3 className="text-lg sm:text-xl font-bold mb-2">100% Private & Ad-Free</h3>
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+                No invasive third-party ad networks, no tracking beacons, and no bloated scripts. Just clean, respectful conversation for your community.
               </p>
             </div>
           </div>
         </section>
 
         {/* Quick Embed Snippet Generator */}
-        <section id="snippet" className="py-20 px-6 lg:px-12 border-t ember-border bg-[var(--bg-card-subtle)]">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center max-w-xl mx-auto mb-10">
-              <span className="text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Quick Start</span>
-              <h2 className="font-serif-title text-3xl sm:text-4xl font-bold mt-2 mb-3">
+        <section id="snippet" className="py-12 sm:py-20 px-4 sm:px-6 lg:px-12 border-t ember-border bg-[var(--bg-card-subtle)] w-full">
+          <div className="max-w-4xl mx-auto w-full">
+            <div className="text-center max-w-xl mx-auto mb-8 sm:mb-10">
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Quick Start</span>
+              <h2 className="font-serif-title text-2xl sm:text-4xl font-bold mt-1.5 sm:mt-2 mb-2 sm:mb-3">
                 Embed in 2 minutes
               </h2>
-              <p className="text-sm text-[var(--text-secondary)]">
-                Copy and paste this snippet anywhere on your website or blog template.
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
+                Copy and paste this snippet anywhere on your website or publication template.
               </p>
             </div>
 
-            <div className="p-6 sm:p-8 rounded-2xl border ember-border bg-[var(--bg-card)] shadow-md space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] shadow-md space-y-4 sm:space-y-6 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
+                  <label className="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
                     Your Site / Publication ID
                   </label>
                   <input
                     type="text"
                     value={snippetSiteId}
                     onChange={(e) => setSnippetSiteId(e.target.value.trim() || "my-publication")}
-                    className="w-full px-3.5 py-2.5 rounded-xl border ember-border bg-[var(--bg-input)] text-sm font-medium focus:outline-none focus:border-[var(--brand-orange)]"
+                    className="w-full px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl border ember-border bg-[var(--bg-input)] text-xs sm:text-sm font-medium focus:outline-none focus:border-[var(--brand-orange)]"
                     placeholder="e.g. my-tech-blog"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
+                  <label className="block text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
                     Accent Color
                   </label>
                   <input
                     type="text"
                     value={playgroundAccent}
                     onChange={(e) => setPlaygroundAccent(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border ember-border bg-[var(--bg-input)] text-sm font-medium focus:outline-none focus:border-[var(--brand-orange)] font-mono"
+                    className="w-full px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl border ember-border bg-[var(--bg-input)] text-xs sm:text-sm font-medium focus:outline-none focus:border-[var(--brand-orange)] font-mono"
                     placeholder="#f56220"
                   />
                 </div>
               </div>
 
               {/* Code Snippet Box */}
-              <div className="relative">
-                <pre className="p-4 sm:p-5 rounded-xl bg-[#090605] text-[#f8fafc] text-xs sm:text-sm font-mono overflow-x-auto border border-[#f56220]/20 leading-relaxed">
+              <div className="relative w-full overflow-hidden rounded-xl border border-[#f56220]/20">
+                <pre className="p-3 sm:p-5 bg-[#090605] text-[#f8fafc] text-[11px] sm:text-xs sm:text-sm font-mono overflow-x-auto leading-relaxed max-w-full">
                   <code>{embedCode}</code>
                 </pre>
                 <button
                   onClick={copySnippet}
-                  className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold transition-all cursor-pointer shadow"
+                  className="absolute top-2 right-2 sm:top-3 sm:right-3 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-[11px] sm:text-xs font-bold transition-all cursor-pointer shadow"
                 >
                   {copied ? "✓ Copied!" : "Copy Snippet"}
                 </button>
               </div>
 
-              <div className="text-center text-xs text-[var(--text-muted)]">
+              <div className="text-center text-[10px] sm:text-xs text-[var(--text-muted)]">
                 Works seamlessly with Next.js, Remix, Astro, Ghost, WordPress, or plain HTML.
               </div>
             </div>
           </div>
         </section>
 
-        {/* Customer #0 Case Study Banner */}
-        <section className="py-16 px-6 lg:px-12 border-t ember-border">
-          <div className="max-w-4xl mx-auto p-8 rounded-2xl border ember-border bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-card-subtle)] flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
-            <div className="space-y-2 text-center md:text-left">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#15803d]">Customer #0 Success Story</span>
-              <h3 className="text-2xl font-bold font-serif-title text-[var(--text-main)]">
+        {/* Real-World Showcase Banner */}
+        <section id="showcase" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-12 border-t ember-border w-full">
+          <div className="max-w-4xl mx-auto p-5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-card-subtle)] flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6 shadow-sm w-full">
+            <div className="space-y-1.5 sm:space-y-2 text-center md:text-left">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Production Showcase</span>
+              <h3 className="text-xl sm:text-2xl font-bold font-serif-title text-[var(--text-main)]">
                 Powering The Reading Circle
               </h3>
-              <p className="text-sm text-[var(--text-secondary)] max-w-xl">
-                76 historical comments migrated, 32 articles live, multi-author notifications, and sub-15ms edge speed for Kenya&apos;s leading literary club.
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-xl">
+                Active discussion threads, author notifications, and instant load speeds powering Kenya&apos;s premier literary community.
               </p>
             </div>
             <a
               href="https://www.readingcircle254.com/blog"
               target="_blank"
               rel="noreferrer"
-              className="px-6 py-3 rounded-xl border border-[#15803d] text-[#15803d] hover:bg-[#15803d] hover:text-white font-bold text-sm transition-all whitespace-nowrap"
+              className="w-full sm:w-auto text-center px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl border border-[var(--brand-orange)] text-[var(--brand-orange)] hover:bg-[var(--brand-orange)] hover:text-white font-bold text-xs sm:text-sm transition-all whitespace-nowrap"
             >
               View Live on TRC &rarr;
             </a>
@@ -445,26 +382,8 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t ember-border py-8 px-6 lg:px-12 bg-[var(--bg-card)] text-xs text-[var(--text-muted)]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-sm text-[var(--text-main)]">NyuziYap ⚡</span>
-            <span>&bull;</span>
-            <span>Edge-Powered Comments Infrastructure</span>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="hover:text-[var(--brand-orange)] transition-colors">
-              Site Dashboard
-            </Link>
-            <a href="https://github.com/fredjuma007/Nyuzi" target="_blank" rel="noreferrer" className="hover:text-[var(--brand-orange)] transition-colors">
-              GitHub
-            </a>
-            <span>&copy; {new Date().getFullYear()} Nyuzi. All rights reserved.</span>
-          </div>
-        </div>
-      </footer>
+      {/* Bottom Reusable Footer */}
+      <Footer />
     </div>
   );
 }
