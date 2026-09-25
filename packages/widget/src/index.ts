@@ -79,7 +79,15 @@ interface NyuziResponse {
     currentScript?.getAttribute("data-thread-url") ||
     container.getAttribute("data-thread-url") ||
     window.location.href.split("#")[0];
-  const threadTitle = document.title || "Discussion";
+  const threadTitle =
+    currentScript?.getAttribute("data-thread-title") ||
+    container.getAttribute("data-thread-title") ||
+    document.title ||
+    "Discussion";
+  const postAuthor =
+    currentScript?.getAttribute("data-author-name") ||
+    container.getAttribute("data-author-name") ||
+    "";
   let commentsList: NyuziComment[] = [];
   let totalComments = 0;
   let totalTopLevel = 0;
@@ -791,6 +799,7 @@ interface NyuziResponse {
           siteId,
           threadUrl,
           threadTitle,
+          postAuthor,
           parentId,
           authorName,
           authorEmail,

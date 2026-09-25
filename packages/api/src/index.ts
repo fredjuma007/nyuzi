@@ -3,7 +3,8 @@ import { cors } from "hono/cors";
 import { drizzle } from "drizzle-orm/d1";
 import { eq, and, asc, desc, isNull, isNotNull, sql } from "drizzle-orm";
 import { sites, threads, comments } from "@nyuzi/db";
-import { sendReplyNotificationEmail } from "./email";
+import { sendReplyNotificationEmail, sendAuthorNotificationEmail } from "./email";
+import { resolveAuthorEmails } from "./authors";
 
 type Bindings = {
   DB: D1Database;
@@ -246,6 +247,7 @@ app.post("/api/v1/comments", async (c) => {
     siteId,
     threadUrl,
     threadTitle,
+    postAuthor,
     parentId,
     authorName,
     authorEmail,
@@ -397,6 +399,39 @@ app.post("/api/v1/comments", async (c) => {
           }
         } catch (emailErr) {
           console.error("[Nyuzi Email] Trigger error:", emailErr);
+        }
+      })()
+    );
+  }
+
+  // 6. Trigger publication author notification asynchronously
+  if (c.env.RESEND_API_KEY && postAuthor) {
+    c.executionCtx.waitUntil(
+      (async () => {
+        try {
+          const authorRecipients = resolveAuthorEmails(postAuthor, siteId);
+          for (const recipient of authorRecipients) {
+            // Self-comment guard: don't alert the author if the author is the one commenting
+            if (cleanEmail && cleanEmail.toLowerCase() === recipient.email.toLowerCase()) {
+              continue;
+            }
+
+            await sendAuthorNotificationEmail({
+              apiKey: c.env.RESEND_API_KEY!,
+              toEmail: recipient.email,
+              authorName: recipient.name,
+              commenterName: cleanAuthor,
+              commentContent: cleanContent,
+              threadTitle: thread.title || threadTitle || "The Reading Circle",
+              threadUrl,
+              commentId,
+              siteName: site.name || "The Reading Circle",
+              siteId,
+              isReply: Boolean(parentId),
+            });
+          }
+        } catch (authorErr) {
+          console.error("[Nyuzi Author Alert] Trigger error:", authorErr);
         }
       })()
     );

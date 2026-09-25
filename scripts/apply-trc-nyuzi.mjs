@@ -3,9 +3,9 @@ import path from "path";
 
 const trcRoot = "C:\\Users\\fredj\\OneDrive\\Desktop\\programing\\MyProject\\JavaScript\\our_book_club";
 
-console.log("🚀 Applying Nyuzi to The Reading Circle (our_book_club)...");
+console.log("🚀 Applying Nyuzi Author Integration to The Reading Circle (our_book_club)...");
 
-// 1. Create nyuzi-comments.tsx
+// 1. Update nyuzi-comments.tsx with postAuthor and postTitle
 const nyuziCommentsPath = path.join(trcRoot, "src", "components", "blog", "nyuzi-comments.tsx");
 const nyuziCommentsContent = `"use client"
 
@@ -13,10 +13,12 @@ import { useEffect } from "react"
 
 interface NyuziCommentsProps {
   blogId: string
+  postAuthor?: string
+  postTitle?: string
   className?: string
 }
 
-export function NyuziComments({ blogId, className }: NyuziCommentsProps) {
+export function NyuziComments({ blogId, postAuthor, postTitle, className }: NyuziCommentsProps) {
   // Use canonical production URL so localhost and live site share the exact same comment thread
   const canonicalUrl = \`https://www.readingcircle254.com/blog/\${blogId}\`
 
@@ -34,6 +36,8 @@ export function NyuziComments({ blogId, className }: NyuziCommentsProps) {
     script.setAttribute("data-site-id", "trc254")
     script.setAttribute("data-api", "https://nyuzi-api.fredjuma8.workers.dev")
     script.setAttribute("data-thread-url", canonicalUrl)
+    if (postAuthor) script.setAttribute("data-author-name", postAuthor)
+    if (postTitle) script.setAttribute("data-thread-title", postTitle)
     script.setAttribute("data-accent-color", "#15803d") // TRC 254 forest green
     script.setAttribute("data-reaction", "heart")
 
@@ -45,7 +49,7 @@ export function NyuziComments({ blogId, className }: NyuziCommentsProps) {
         activeScript.remove()
       }
     }
-  }, [canonicalUrl])
+  }, [canonicalUrl, postAuthor, postTitle])
 
   return (
     <div className={className || "w-full"}>
@@ -54,6 +58,8 @@ export function NyuziComments({ blogId, className }: NyuziCommentsProps) {
         key={blogId}
         data-site-id="trc254"
         data-thread-url={canonicalUrl}
+        data-author-name={postAuthor || ""}
+        data-thread-title={postTitle || ""}
         data-reaction="heart"
       />
     </div>
@@ -62,7 +68,7 @@ export function NyuziComments({ blogId, className }: NyuziCommentsProps) {
 `;
 
 fs.writeFileSync(nyuziCommentsPath, nyuziCommentsContent, "utf-8");
-console.log("✅ Created src/components/blog/nyuzi-comments.tsx");
+console.log("✅ Updated src/components/blog/nyuzi-comments.tsx");
 
 // 2. Update blog-comments-section.tsx
 const blogCommentsPath = path.join(trcRoot, "src", "components", "blog", "blog-comments-section.tsx");
@@ -86,9 +92,17 @@ interface BlogComment {
   createdAt: string
 }
 
-export function BlogCommentsSection({ blogId }: { blogId: string }) {
+export function BlogCommentsSection({ 
+  blogId,
+  postAuthor,
+  postTitle
+}: { 
+  blogId: string
+  postAuthor?: string
+  postTitle?: string
+}) {
   if (USE_NYUZI) {
-    return <NyuziComments blogId={blogId} />
+    return <NyuziComments blogId={blogId} postAuthor={postAuthor} postTitle={postTitle} />
   }
 
   const [comments, setComments] = useState<BlogComment[]>([])
@@ -153,59 +167,18 @@ export function BlogCommentsSection({ blogId }: { blogId: string }) {
 `;
 
 fs.writeFileSync(blogCommentsPath, blogCommentsContent, "utf-8");
-console.log("✅ Updated src/components/blog/blog-comments-section.tsx (with USE_NYUZI = true)");
+console.log("✅ Updated src/components/blog/blog-comments-section.tsx");
 
-// 3. Fix BULLETED_LIST in wix-rich-text-renderer.tsx
-const rendererPath = path.join(trcRoot, "src", "components", "blog", "wix-rich-text-renderer.tsx");
-if (fs.existsSync(rendererPath)) {
-  let rendererContent = fs.readFileSync(rendererPath, "utf-8");
-
-  // Add BULLETED_LIST and NUMBERED_LIST to ListNode type
-  rendererContent = rendererContent.replace(
-    'type: "ORDERED_LIST" | "UNORDERED_LIST"',
-    'type: "ORDERED_LIST" | "UNORDERED_LIST" | "BULLETED_LIST" | "NUMBERED_LIST"'
-  );
-
-  // In renderListNode handle NUMBERED_LIST
-  rendererContent = rendererContent.replace(
-    'const ListTag = node.type === "ORDERED_LIST" ? "ol" : "ul"',
-    'const isOrdered = node.type === "ORDERED_LIST" || (node.type as string) === "NUMBERED_LIST";\n  const ListTag = isOrdered ? "ol" : "ul"'
-  );
-  rendererContent = rendererContent.replace(
-    'const listClass = node.type === "ORDERED_LIST" ? "list-decimal" : "list-disc"',
-    'const listClass = isOrdered ? "list-decimal" : "list-disc"'
-  );
-
-  // In renderNode switch case
-  rendererContent = rendererContent.replace(
-    `    case "ORDERED_LIST":
-    case "UNORDERED_LIST":
-      return renderListNode(node as ListNode, index)`,
-    `    case "ORDERED_LIST":
-    case "NUMBERED_LIST":
-    case "UNORDERED_LIST":
-    case "BULLETED_LIST":
-      return renderListNode(node as ListNode, index)`
-  );
-
-  fs.writeFileSync(rendererPath, rendererContent, "utf-8");
-  console.log("✅ Fixed BULLETED_LIST handling in src/components/blog/wix-rich-text-renderer.tsx");
-}
-
-// 4. Tighten gap between blog post and comments section
+// 3. Update src/app/blog/[id]/page.tsx
 const blogPagePath = path.join(trcRoot, "src", "app", "blog", "[id]", "page.tsx");
 if (fs.existsSync(blogPagePath)) {
   let blogPageContent = fs.readFileSync(blogPagePath, "utf-8");
   blogPageContent = blogPageContent.replace(
-    'className="mt-16 border-t border-green-700/20 dark:border-green-600/20 pt-12 max-w-3xl mx-auto"',
-    'className="mt-6 border-t border-green-700/20 dark:border-green-600/20 pt-6 max-w-3xl mx-auto"'
-  );
-  blogPageContent = blogPageContent.replace(
-    'className="mt-16 border-t border-green-700/20 dark:border-green-600/20 pt-12"',
-    'className="mt-6 border-t border-green-700/20 dark:border-green-600/20 pt-6"'
+    '<BlogCommentsSection blogId={postId} />',
+    '<BlogCommentsSection blogId={postId} postAuthor={post.author} postTitle={post.title_fld} />'
   );
   fs.writeFileSync(blogPagePath, blogPageContent, "utf-8");
-  console.log("✅ Tightened spacing between blog post and comments in src/app/blog/[id]/page.tsx");
+  console.log("✅ Updated BlogCommentsSection call in src/app/blog/[id]/page.tsx");
 }
 
-console.log("🎉 Integration complete! Ready to view on localhost:3000");
+console.log("🎉 Integration complete! Nyuzi now receives post author and title!");
