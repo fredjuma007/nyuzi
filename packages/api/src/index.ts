@@ -549,7 +549,7 @@ app.get("/api/v1/dashboard", async (c) => {
     })
     .from(comments)
     .leftJoin(threads, eq(comments.threadId, threads.id))
-    .where(eq(comments.siteId, siteId))
+    .where(and(eq(comments.siteId, siteId), sql`${comments.status} != 'deleted'`))
     .orderBy(desc(comments.createdAt))
     .limit(50);
 
@@ -567,6 +567,16 @@ app.get("/api/v1/dashboard", async (c) => {
     .orderBy(desc(threads.commentCount), desc(threads.createdAt))
     .limit(25);
 
+  // 6. Comments grouped by author for roster stats
+  const authorCounts = await db
+    .select({
+      authorName: comments.authorName,
+      count: sql<number>`count(${comments.id})`,
+    })
+    .from(comments)
+    .where(and(eq(comments.siteId, siteId), sql`${comments.status} != 'deleted'`))
+    .groupBy(comments.authorName);
+
   return c.json({
     success: true,
     site: site || {
@@ -581,6 +591,7 @@ app.get("/api/v1/dashboard", async (c) => {
     },
     comments: recentComments,
     threads: activeThreads,
+    authorCounts: authorCounts,
   });
 });
 
@@ -611,10 +622,20 @@ app.delete("/api/v1/comments/:id", async (c) => {
   const commentId = c.req.param("id");
   const db = drizzle(c.env.DB);
 
-  await db
-    .update(comments)
-    .set({ status: "deleted" })
-    .where(eq(comments.id, commentId));
+  const [existing] = await db.select().from(comments).where(eq(comments.id, commentId)).limit(1);
+  if (existing) {
+    await db
+      .update(comments)
+      .set({ status: "deleted" })
+      .where(eq(comments.id, commentId));
+
+    if (existing.threadId) {
+      await db
+        .update(threads)
+        .set({ commentCount: sql`max(0, ${threads.commentCount} - 1)` })
+        .where(eq(threads.id, existing.threadId));
+    }
+  }
 
   return c.json({ success: true, commentId, status: "deleted" });
 });

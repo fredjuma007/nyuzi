@@ -33,6 +33,7 @@ import {
   Globe,
   Radio,
   RefreshCw,
+  Pencil,
 } from "lucide-react";
 
 interface CommentItem {
@@ -115,6 +116,9 @@ export default function DashboardPage() {
   const [newAuthorName, setNewAuthorName] = useState("");
   const [newAuthorEmail, setNewAuthorEmail] = useState("");
   const [showAddAuthor, setShowAddAuthor] = useState(false);
+  const [editingAuthor, setEditingAuthor] = useState<AuthorEntry | null>(null);
+  const [editAuthorName, setEditAuthorName] = useState("");
+  const [editAuthorEmail, setEditAuthorEmail] = useState("");
 
   // Moderation Comments State (populated from real Cloudflare D1)
   const [commentsList, setCommentsList] = useState<CommentItem[]>([]);
@@ -174,18 +178,50 @@ export default function DashboardPage() {
           }
 
           if (Array.isArray(data.comments)) {
-            const mappedComments: CommentItem[] = data.comments.map((c: any) => ({
-              id: c.id,
-              authorName: c.authorName,
-              authorEmail: c.authorEmail || undefined,
-              content: c.content,
-              threadTitle: c.threadTitle || (selectedSite === "trc254" ? "The Reading Circle" : "Demo Sandbox"),
-              threadUrl: c.threadUrl || (selectedSite === "trc254" ? "https://www.readingcircle254.com/blog" : "https://nyuzi-yap.vercel.app/demo"),
-              upvotes: Number(c.upvotes) || 0,
-              createdAt: formatRelativeTime(c.createdAt),
-              status: c.status || "approved",
-            }));
+            const mappedComments: CommentItem[] = data.comments
+              .filter((c: any) => c.status !== "deleted")
+              .map((c: any) => ({
+                id: c.id,
+                authorName: c.authorName,
+                authorEmail: c.authorEmail || undefined,
+                content: c.content,
+                threadTitle: c.threadTitle || (selectedSite === "trc254" ? "The Reading Circle" : "Demo Sandbox"),
+                threadUrl: c.threadUrl || (selectedSite === "trc254" ? "https://www.readingcircle254.com/blog" : "https://nyuzi-yap.vercel.app/demo"),
+                upvotes: Number(c.upvotes) || 0,
+                createdAt: formatRelativeTime(c.createdAt),
+                status: c.status || "approved",
+              }));
             setCommentsList(mappedComments);
+
+            // Compute author discussions count from live comments in D1
+            const countsMap: Record<string, number> = {};
+            if (Array.isArray(data.authorCounts)) {
+              for (const ac of data.authorCounts) {
+                countsMap[(ac.authorName || "").toLowerCase().trim()] = Number(ac.count) || 0;
+              }
+            } else {
+              for (const c of data.comments) {
+                if (c.status !== "deleted") {
+                  const key = (c.authorName || "").toLowerCase().trim();
+                  countsMap[key] = (countsMap[key] || 0) + 1;
+                }
+              }
+            }
+
+            setAuthors((prev) =>
+              prev.map((a) => {
+                const key = a.name.toLowerCase().trim();
+                let match = countsMap[key] || 0;
+                if (!match) {
+                  for (const [k, v] of Object.entries(countsMap)) {
+                    if (k.includes(key) || key.includes(k)) {
+                      match += v;
+                    }
+                  }
+                }
+                return { ...a, discussionsCount: match };
+              })
+            );
           } else {
             setCommentsList([]);
           }
@@ -337,6 +373,10 @@ export default function DashboardPage() {
     setCommentsList((prev) =>
       prev.map((c) => (c.id === id ? { ...c, status: "deleted" as const } : c))
     );
+    setMetrics((prev) => ({
+      ...prev,
+      totalComments: Math.max(0, prev.totalComments - 1),
+    }));
     showToast("Comment removed from thread.");
     try {
       await fetch(`${API_BASE}/api/v1/comments/${id}`, {
@@ -353,6 +393,27 @@ export default function DashboardPage() {
     setAuthors(updated);
     localStorage.setItem(`nyuzi_authors_${selectedSite}`, JSON.stringify(updated));
     showToast("Author notification preferences updated.");
+  };
+
+  const handleOpenEditAuthor = (author: AuthorEntry) => {
+    setEditingAuthor(author);
+    setEditAuthorName(author.name);
+    setEditAuthorEmail(author.email);
+  };
+
+  const handleSaveEditAuthor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAuthor || !editAuthorName.trim() || !editAuthorEmail.trim()) return;
+
+    const updated = authors.map((a) =>
+      a.id === editingAuthor.id
+        ? { ...a, name: editAuthorName.trim(), email: editAuthorEmail.trim() }
+        : a
+    );
+    setAuthors(updated);
+    localStorage.setItem(`nyuzi_authors_${selectedSite}`, JSON.stringify(updated));
+    setEditingAuthor(null);
+    showToast(`Author ${editAuthorName.trim()} updated successfully!`);
   };
 
   const handleAddAuthor = (e: React.FormEvent) => {
@@ -728,7 +789,7 @@ export default function DashboardPage() {
                       </button>
                     </div>
                   ) : (
-                    commentsList.slice(0, 5).map((comment) => (
+                    commentsList.filter((c) => c.status !== "deleted").slice(0, 5).map((comment) => (
                       <div key={comment.id} className="pt-3 first:pt-0 space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2">
@@ -1090,18 +1151,97 @@ export default function DashboardPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => handleToggleAuthor(author.id)}
-                          className="px-2.5 py-1 rounded-lg border border-[var(--border-card)] text-xs font-semibold hover:border-[var(--brand-orange)] hover:text-[var(--brand-orange)] transition-colors cursor-pointer"
-                        >
-                          {author.status === "active" ? "Mute Alerts" : "Enable Alerts"}
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleOpenEditAuthor(author)}
+                            className="px-2.5 py-1 rounded-lg border border-[var(--border-card)] text-xs font-semibold hover:border-[var(--brand-orange)] hover:text-[var(--brand-orange)] transition-colors cursor-pointer flex items-center gap-1"
+                            title="Edit Author Byline or Email"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleToggleAuthor(author.id)}
+                            className="px-2.5 py-1 rounded-lg border border-[var(--border-card)] text-xs font-semibold hover:border-[var(--brand-orange)] hover:text-[var(--brand-orange)] transition-colors cursor-pointer"
+                          >
+                            {author.status === "active" ? "Mute Alerts" : "Enable Alerts"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+
+            {/* Edit Author Modal */}
+            {editingAuthor && (
+              <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                <form
+                  onSubmit={handleSaveEditAuthor}
+                  className="w-full max-w-md p-6 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-2xl space-y-4"
+                >
+                  <div className="flex items-center justify-between border-b border-[var(--border-card)] pb-3">
+                    <h4 className="text-base font-bold flex items-center gap-2">
+                      <Pencil className="w-4 h-4 text-[var(--brand-orange)]" />
+                      <span>Update Author Credentials</span>
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setEditingAuthor(null)}
+                      className="p-1 rounded-lg hover:bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                        Author Byline (matches blog post)
+                      </label>
+                      <input
+                        type="text"
+                        value={editAuthorName}
+                        onChange={(e) => setEditAuthorName(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs focus:outline-none focus:border-[var(--brand-orange)] font-medium"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                        Notification Email (Resend target)
+                      </label>
+                      <input
+                        type="email"
+                        value={editAuthorEmail}
+                        onChange={(e) => setEditAuthorEmail(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs focus:outline-none focus:border-[var(--brand-orange)] font-mono"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-[var(--border-card)]">
+                    <button
+                      type="button"
+                      onClick={() => setEditingAuthor(null)}
+                      className="px-3.5 py-1.5 rounded-lg border border-[var(--border-card)] text-xs font-semibold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1.5 rounded-lg bg-[var(--brand-orange)] text-white text-xs font-bold shadow hover:bg-[var(--brand-orange-hover)] cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Save Changes</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         )}
 
