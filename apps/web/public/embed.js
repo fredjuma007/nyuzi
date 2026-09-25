@@ -1,6 +1,6 @@
-"use strict";(()=>{(function(){let g=document.currentScript,c=document.getElementById("nyuzi-comments");if(c||(c=document.querySelector("nyuzi-comments")),!c){console.warn("[Nyuzi] No container found (#nyuzi-comments or <nyuzi-comments>).");return}let k=g?.getAttribute("data-site-id")||c.getAttribute("data-site-id")||document.querySelector("[data-nyuzi-site-id]")?.getAttribute("data-nyuzi-site-id")||"",x=g?.getAttribute("data-api")||c.getAttribute("data-api")||"https://nyuzi-api.fredjuma8.workers.dev",A=g?.getAttribute("data-accent-color")||c.getAttribute("data-accent-color")||"#6366f1",$=g?.getAttribute("data-reaction")||c.getAttribute("data-reaction")||"heart",o=c.shadowRoot||c.attachShadow({mode:"open"});o.innerHTML="";let E=g?.getAttribute("data-thread-url")||c.getAttribute("data-thread-url")||window.location.href.split("#")[0],S=document.title||"Discussion",p=[],w=0,h=!0,y=null,z=null,m=!1,d=new Set;try{let e=sessionStorage.getItem("nyuzi_upvotes");e&&JSON.parse(e).forEach(t=>d.add(t))}catch{}function b(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function I(e){let t=e.trim().split(/\s+/);return t.length===1?t[0].slice(0,2).toUpperCase():(t[0][0]+t[t.length-1][0]).toUpperCase()}function M(e){try{let t=new Date(e),n=Math.floor((new Date().getTime()-t.getTime())/1e3);return n<60?"just now":n<3600?`${Math.floor(n/60)}m ago`:n<86400?`${Math.floor(n/3600)}h ago`:n<604800?`${Math.floor(n/86400)}d ago`:t.toLocaleDateString(void 0,{month:"short",day:"numeric"})}catch{return"recently"}}function N(e){return $==="upvote"?'<span style="font-size:0.75rem;">\u25B2</span>':`<svg class="nyuzi-heart-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="${e?"currentColor":"none"}" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>`}function H(){return'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>'}function j(){return'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'}let R=`
+"use strict";(()=>{(function(){let b=document.currentScript,c=document.getElementById("nyuzi-comments");if(c||(c=document.querySelector("nyuzi-comments")),!c){console.warn("[Nyuzi] No container found (#nyuzi-comments or <nyuzi-comments>).");return}let C=b?.getAttribute("data-site-id")||c.getAttribute("data-site-id")||document.querySelector("[data-nyuzi-site-id]")?.getAttribute("data-nyuzi-site-id")||"",k=b?.getAttribute("data-api")||c.getAttribute("data-api")||"https://nyuzi-api.fredjuma8.workers.dev",j=b?.getAttribute("data-accent-color")||c.getAttribute("data-accent-color")||"#6366f1",M=b?.getAttribute("data-reaction")||c.getAttribute("data-reaction")||"heart",s=c.shadowRoot||c.attachShadow({mode:"open"});s.innerHTML="";let L=b?.getAttribute("data-thread-url")||c.getAttribute("data-thread-url")||window.location.href.split("#")[0],R=document.title||"Discussion",m=[],h=0,v=0,I=1,A=15,$=!1,f=!1,E=!0,p=null,x=null,g=!1,y=new Set;try{let e=sessionStorage.getItem("nyuzi_upvotes");e&&JSON.parse(e).forEach(n=>y.add(n))}catch{}function w(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function U(e){let n=e.trim().split(/\s+/);return n.length===1?n[0].slice(0,2).toUpperCase():(n[0][0]+n[n.length-1][0]).toUpperCase()}function B(e){try{let n=new Date(e),t=Math.floor((new Date().getTime()-n.getTime())/1e3);return t<60?"just now":t<3600?`${Math.floor(t/60)}m ago`:t<86400?`${Math.floor(t/3600)}h ago`:t<604800?`${Math.floor(t/86400)}d ago`:n.toLocaleDateString(void 0,{month:"short",day:"numeric"})}catch{return"recently"}}function P(e){return M==="upvote"?'<span style="font-size:0.75rem;">\u25B2</span>':`<svg class="nyuzi-heart-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="${e?"currentColor":"none"}" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>`}function q(){return'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>'}function F(){return'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'}let D=`
     :host {
-      --nyuzi-accent: ${A};
+      --nyuzi-accent: ${j};
       --nyuzi-accent-hover: #4f46e5;
       --nyuzi-bg: transparent;
       --nyuzi-card-bg: #ffffff;
@@ -383,6 +383,51 @@
       color: var(--nyuzi-text-muted);
     }
 
+    /* Pagination */
+    .nyuzi-pagination {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+    .nyuzi-load-more-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: var(--nyuzi-card-bg);
+      border: 1px solid var(--nyuzi-border);
+      color: var(--nyuzi-text-primary);
+      padding: 0.65rem 1.35rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: all 0.15s ease;
+    }
+    .nyuzi-load-more-btn:hover:not(:disabled) {
+      border-color: #f56220;
+      color: #f56220;
+      background: var(--nyuzi-input-bg);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(245, 98, 32, 0.15);
+    }
+    .nyuzi-load-more-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .nyuzi-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--nyuzi-border);
+      border-top-color: #f56220;
+      border-radius: 50%;
+      animation: nyuzi-spin 0.6s linear infinite;
+    }
+    @keyframes nyuzi-spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* Footer */
     .nyuzi-footer {
       margin-top: 2rem;
@@ -426,69 +471,69 @@
       transform: scale(1.3) rotate(-8deg);
       filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.9));
     }
-  `;function T(){let e=window.location.hash;e&&e.startsWith("#comment-")&&setTimeout(()=>{let t=o.querySelector(e);t&&(t.scrollIntoView({behavior:"smooth",block:"center"}),t.classList.add("nyuzi-highlight"),setTimeout(()=>t.classList.remove("nyuzi-highlight"),3e3))},200)}async function B(){try{h=!0,a();let e=`${x}/api/v1/comments?siteId=${encodeURIComponent(k)}&threadUrl=${encodeURIComponent(E)}`,t=await fetch(e);if(!t.ok)throw new Error(`HTTP ${t.status}`);let s=await t.json();p=s.comments||[],w=s.total||p.length,h=!1,a(),T()}catch(e){console.error("[Nyuzi] Failed to load comments:",e),h=!1,y="Unable to connect to comments server.",a()}}async function U(e){let t=d.has(e),s=t?"unvote":"upvote",n=p.find(l=>l.id===e);t?(d.delete(e),n&&(n.upvotes=Math.max(0,(n.upvotes||1)-1))):(d.add(e),n&&(n.upvotes=(n.upvotes||0)+1));try{sessionStorage.setItem("nyuzi_upvotes",JSON.stringify(Array.from(d)))}catch{}a();try{let l=await fetch(`${x}/api/v1/comments/${encodeURIComponent(e)}/upvote`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:s})});if(!l.ok)throw new Error("Vote action failed");let i=await l.json();n&&typeof i.upvotes=="number"&&(n.upvotes=i.upvotes,a())}catch{t?(d.add(e),n&&(n.upvotes=(n.upvotes||0)+1)):(d.delete(e),n&&(n.upvotes=Math.max(0,(n.upvotes||1)-1)));try{sessionStorage.setItem("nyuzi_upvotes",JSON.stringify(Array.from(d)))}catch{}a()}}async function C(e,t,s,n,l=null){if(!(!e.trim()||!s.trim()))try{m=!0,y=null,a();let i=await fetch(`${x}/api/v1/comments`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({siteId:k,threadUrl:E,threadTitle:S,parentId:l,authorName:e,authorEmail:t,content:s,notifyOnReply:n})});if(!i.ok){let r=await i.json().catch(()=>({}));throw new Error(r.error||`HTTP ${i.status}`)}let u=await i.json();u.comment&&(p.push(u.comment),w+=1,z=null),m=!1,a()}catch(i){y=i.message||"Failed to post comment. Please try again.",m=!1,a()}}function L(e){let t=p.filter(l=>l.parentId===e.id),s=z===e.id,n=d.has(e.id);return`
+  `;function S(){let e=window.location.hash;e&&e.startsWith("#comment-")&&setTimeout(()=>{let n=s.querySelector(e);n&&(n.scrollIntoView({behavior:"smooth",block:"center"}),n.classList.add("nyuzi-highlight"),setTimeout(()=>n.classList.remove("nyuzi-highlight"),3e3))},200)}async function O(){try{E=!0,I=1,l();let e=window.location.hash,n=e&&e.startsWith("#comment-")?e.replace("#comment-",""):"",u=n?`&highlight=${encodeURIComponent(n)}`:"",t=`${k}/api/v1/comments?siteId=${encodeURIComponent(C)}&threadUrl=${encodeURIComponent(L)}&page=1&limit=${A}${u}`,r=await fetch(t);if(!r.ok)throw new Error(`HTTP ${r.status}`);let o=await r.json();m=o.comments||[],h=o.total||(o.pagination?.totalComments??m.length),v=o.pagination?.totalTopLevel??m.filter(i=>!i.parentId).length,$=o.pagination?.hasMore??!1,E=!1,l(),S()}catch(e){console.error("[Nyuzi] Failed to load comments:",e),E=!1,p="Unable to connect to comments server.",l()}}async function J(){if(!(f||!$))try{f=!0,l();let e=I+1,n=`${k}/api/v1/comments?siteId=${encodeURIComponent(C)}&threadUrl=${encodeURIComponent(L)}&page=${e}&limit=${A}`,u=await fetch(n);if(!u.ok)throw new Error("Failed to load more comments");let t=await u.json(),r=t.comments||[],o=new Set(m.map(i=>i.id));for(let i of r)o.has(i.id)||m.push(i);I=e,$=t.pagination?.hasMore??!1,v=t.pagination?.totalTopLevel??v,h=t.pagination?.totalComments??h,f=!1,l()}catch(e){console.error("[Nyuzi] Error loading more comments:",e),f=!1,l()}}async function Y(e){let n=y.has(e),u=n?"unvote":"upvote",t=m.find(r=>r.id===e);n?(y.delete(e),t&&(t.upvotes=Math.max(0,(t.upvotes||1)-1))):(y.add(e),t&&(t.upvotes=(t.upvotes||0)+1));try{sessionStorage.setItem("nyuzi_upvotes",JSON.stringify(Array.from(y)))}catch{}l();try{let r=await fetch(`${k}/api/v1/comments/${encodeURIComponent(e)}/upvote`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:u})});if(!r.ok)throw new Error("Vote action failed");let o=await r.json();t&&typeof o.upvotes=="number"&&(t.upvotes=o.upvotes,l())}catch{n?(y.add(e),t&&(t.upvotes=(t.upvotes||0)+1)):(y.delete(e),t&&(t.upvotes=Math.max(0,(t.upvotes||1)-1)));try{sessionStorage.setItem("nyuzi_upvotes",JSON.stringify(Array.from(y)))}catch{}l()}}async function N(e,n,u,t,r=null){if(!(!e.trim()||!u.trim()))try{g=!0,p=null,l();let o=await fetch(`${k}/api/v1/comments`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({siteId:C,threadUrl:L,threadTitle:R,parentId:r,authorName:e,authorEmail:n,content:u,notifyOnReply:t})});if(!o.ok){let d=await o.json().catch(()=>({}));throw new Error(d.error||`HTTP ${o.status}`)}let i=await o.json();i.comment&&(r?m.push(i.comment):(m.unshift(i.comment),v+=1),h+=1,x=null),g=!1,l()}catch(o){p=o.message||"Failed to post comment. Please try again.",g=!1,l()}}function H(e){let n=m.filter(r=>r.parentId===e.id);n.sort((r,o)=>new Date(r.createdAt).getTime()-new Date(o.createdAt).getTime());let u=x===e.id,t=y.has(e.id);return`
       <div class="nyuzi-comment" id="comment-${e.id}">
-        <div class="nyuzi-avatar">${b(I(e.authorName))}</div>
+        <div class="nyuzi-avatar">${w(U(e.authorName))}</div>
         <div class="nyuzi-body">
           <div class="nyuzi-meta">
-            <span class="nyuzi-author">${b(e.authorName)}</span>
-            <span class="nyuzi-time">${M(e.createdAt)}</span>
+            <span class="nyuzi-author">${w(e.authorName)}</span>
+            <span class="nyuzi-time">${B(e.createdAt)}</span>
           </div>
-          <div class="nyuzi-content">${b(e.content)}</div>
+          <div class="nyuzi-content">${w(e.content)}</div>
           <div class="nyuzi-actions">
-            <button class="nyuzi-action-btn upvote-btn ${n?"upvoted":""}" data-id="${e.id}" title="${n?"Unlike":"Like"}">
-              ${N(n)}
-              <span>${e.upvotes>0?e.upvotes:$==="heart"?"Like":"Upvote"}</span>
+            <button class="nyuzi-action-btn upvote-btn ${t?"upvoted":""}" data-id="${e.id}" title="${t?"Unlike":"Like"}">
+              ${P(t)}
+              <span>${e.upvotes>0?e.upvotes:M==="heart"?"Like":"Upvote"}</span>
             </button>
             <button class="nyuzi-action-btn reply-trigger" data-id="${e.id}">
-              ${H()}
+              ${q()}
               <span>Reply</span>
             </button>
             <button class="nyuzi-action-btn copy-link-btn" data-id="${e.id}" title="Copy direct link to this comment">
-              ${j()}
+              ${F()}
               <span>Copy Link</span>
             </button>
           </div>
 
-          ${s?`
+          ${u?`
               <div class="nyuzi-reply-box">
-                <textarea class="nyuzi-textarea" id="reply-content-${e.id}" placeholder="Reply to ${b(e.authorName)}..." required></textarea>
+                <textarea class="nyuzi-textarea" id="reply-content-${e.id}" placeholder="Reply to ${w(e.authorName)}..." required></textarea>
                 <div class="nyuzi-form-row">
                   <div class="nyuzi-inputs">
                     <input type="text" class="nyuzi-input" id="reply-name-${e.id}" placeholder="Your Name *" required />
                   </div>
                   <div style="display:flex; gap:0.5rem;">
                     <button class="nyuzi-action-btn cancel-reply" style="padding: 0.5rem 0.75rem;">Cancel</button>
-                    <button class="nyuzi-submit-btn submit-reply" data-parent-id="${e.id}" ${m?"disabled":""}>
-                      ${m?"Posting...":"Reply"}
+                    <button class="nyuzi-submit-btn submit-reply" data-parent-id="${e.id}" ${g?"disabled":""}>
+                      ${g?"Posting...":"Reply"}
                     </button>
                   </div>
                 </div>
               </div>
             `:""}
 
-          ${t.length>0?`
+          ${n.length>0?`
             <div class="nyuzi-replies">
-              ${t.map(l=>L(l)).join("")}
+              ${n.map(r=>H(r)).join("")}
             </div>
           `:""}
         </div>
       </div>
-    `}function a(){let e=p.filter(i=>!i.parentId);o.innerHTML=`
-      <style>${R}</style>
+    `}function l(){let e=m.filter(i=>!i.parentId);s.innerHTML=`
+      <style>${D}</style>
       <div class="nyuzi-container">
         <!-- Header -->
         <div class="nyuzi-header">
           <h3 class="nyuzi-title">
             Discussion
-            <span class="nyuzi-badge">${w}</span>
+            <span class="nyuzi-badge">${h}</span>
           </h3>
         </div>
 
         <!-- Main Comment Form -->
         <div class="nyuzi-form">
-          ${y?`<div class="nyuzi-alert">
-                   <span>\xE2\u0161\xA0\xEF\xB8\x8F ${b(y)}</span>
+          ${p?`<div class="nyuzi-alert">
+                   <span>\xE2\u0161\xA0\xEF\xB8\x8F ${w(p)}</span>
                    <button class="nyuzi-action-btn" id="dismiss-error" style="color:#b91c1c;">\xE2\u0153\u2022</button>
                  </div>`:""}
           <textarea class="nyuzi-textarea" id="nyuzi-main-content" maxlength="2000" placeholder="Share your thoughts or leave a question..." required></textarea>
@@ -501,8 +546,8 @@
               <input type="text" class="nyuzi-input" id="nyuzi-main-name" placeholder="Name *" required />
               <input type="email" class="nyuzi-input" id="nyuzi-main-email" placeholder="Email (for reply alerts)" />
             </div>
-            <button class="nyuzi-submit-btn" id="nyuzi-main-submit" ${m?"disabled":""}>
-              ${m?"Posting...":"Post Comment"}
+            <button class="nyuzi-submit-btn" id="nyuzi-main-submit" ${g?"disabled":""}>
+              ${g?"Posting...":"Post Comment"}
             </button>
           </div>
 
@@ -513,7 +558,7 @@
         </div>
 
         <!-- Comments List -->
-        ${h?`<div class="nyuzi-skeleton">
+        ${E?`<div class="nyuzi-skeleton">
                  <div class="nyuzi-skeleton-item">
                    <div class="nyuzi-skeleton-avatar"></div>
                    <div class="nyuzi-skeleton-lines">
@@ -532,8 +577,13 @@
                  <p style="font-size:1.1rem; margin:0 0 0.25rem 0; font-weight:600; color:var(--nyuzi-text-primary);">No comments yet</p>
                  <p style="margin:0; font-size:0.875rem;">Be the first to share your thoughts!</p>
                </div>`:`<div class="nyuzi-list">
-                 ${e.map(i=>L(i)).join("")}
-               </div>`}
+                 ${e.map(i=>H(i)).join("")}
+               </div>
+               ${$?`<div class="nyuzi-pagination">
+                        <button class="nyuzi-load-more-btn" id="nyuzi-load-more" ${f?"disabled":""}>
+                          ${f?'<span class="nyuzi-spinner"></span> Loading comments...':`Load more comments (${Math.max(0,v-e.length)} remaining) \u2193`}
+                        </button>
+                      </div>`:""}`}
 
         <!-- Footer -->
         <div class="nyuzi-footer">
@@ -552,5 +602,5 @@
           </a>
         </div>
       </div>
-    `;let t=o.getElementById("nyuzi-main-content"),s=o.getElementById("nyuzi-char-count");t&&s&&t.addEventListener("input",()=>{s.textContent=`${t.value.length} / 2,000`});let n=o.getElementById("dismiss-error");n&&n.addEventListener("click",()=>{y=null,a()});let l=o.getElementById("nyuzi-main-submit");l&&l.addEventListener("click",()=>{let i=o.getElementById("nyuzi-main-name"),u=o.getElementById("nyuzi-main-email"),r=o.getElementById("nyuzi-main-notify");if(!i.value.trim()){y="Please enter your name.",a();return}if(!t||!t.value.trim()){y="Comment content cannot be empty.",a();return}C(i.value.trim(),u.value.trim()||null,t.value.trim(),r?r.checked:!0,null)}),o.querySelectorAll(".upvote-btn").forEach(i=>{i.addEventListener("click",u=>{let r=u.currentTarget.getAttribute("data-id");r&&U(r)})}),o.querySelectorAll(".reply-trigger").forEach(i=>{i.addEventListener("click",u=>{let r=u.currentTarget.getAttribute("data-id");z=z===r?null:r,a()})}),o.querySelectorAll(".cancel-reply").forEach(i=>{i.addEventListener("click",()=>{z=null,a()})}),o.querySelectorAll(".submit-reply").forEach(i=>{i.addEventListener("click",u=>{let r=u.currentTarget.getAttribute("data-parent-id");if(!r)return;let f=o.getElementById(`reply-name-${r}`),v=o.getElementById(`reply-content-${r}`);if(!f.value.trim()){alert("Please enter your name.");return}if(!v||!v.value.trim()){alert("Reply content cannot be empty.");return}C(f.value.trim(),null,v.value.trim(),!0,r)})}),o.querySelectorAll(".copy-link-btn").forEach(i=>{i.addEventListener("click",async u=>{let r=u.currentTarget,f=r.getAttribute("data-id");if(!f)return;let q=`${window.location.href.split("#")[0]}#comment-${f}`;try{await navigator.clipboard.writeText(q);let P=r.innerHTML;r.innerHTML="\u2713 Copied!",r.style.color="var(--nyuzi-accent)",setTimeout(()=>{r.innerHTML=P,r.style.color=""},2e3)}catch{window.location.hash=`comment-${f}`}})})}window.addEventListener("hashchange",T),B()})();})();
+    `;let n=s.getElementById("nyuzi-main-content"),u=s.getElementById("nyuzi-char-count");n&&u&&n.addEventListener("input",()=>{u.textContent=`${n.value.length} / 2,000`});let t=s.getElementById("dismiss-error");t&&t.addEventListener("click",()=>{p=null,l()});let r=s.getElementById("nyuzi-main-submit");r&&r.addEventListener("click",()=>{let i=s.getElementById("nyuzi-main-name"),d=s.getElementById("nyuzi-main-email"),a=s.getElementById("nyuzi-main-notify");if(!i.value.trim()){p="Please enter your name.",l();return}if(!n||!n.value.trim()){p="Comment content cannot be empty.",l();return}N(i.value.trim(),d.value.trim()||null,n.value.trim(),a?a.checked:!0,null)});let o=s.getElementById("nyuzi-load-more");o&&o.addEventListener("click",()=>{J()}),s.querySelectorAll(".upvote-btn").forEach(i=>{i.addEventListener("click",d=>{let a=d.currentTarget.getAttribute("data-id");a&&Y(a)})}),s.querySelectorAll(".reply-trigger").forEach(i=>{i.addEventListener("click",d=>{let a=d.currentTarget.getAttribute("data-id");x=x===a?null:a,l()})}),s.querySelectorAll(".cancel-reply").forEach(i=>{i.addEventListener("click",()=>{x=null,l()})}),s.querySelectorAll(".submit-reply").forEach(i=>{i.addEventListener("click",d=>{let a=d.currentTarget.getAttribute("data-parent-id");if(!a)return;let z=s.getElementById(`reply-name-${a}`),T=s.getElementById(`reply-content-${a}`);if(!z.value.trim()){alert("Please enter your name.");return}if(!T||!T.value.trim()){alert("Reply content cannot be empty.");return}N(z.value.trim(),null,T.value.trim(),!0,a)})}),s.querySelectorAll(".copy-link-btn").forEach(i=>{i.addEventListener("click",async d=>{let a=d.currentTarget,z=a.getAttribute("data-id");if(!z)return;let _=`${window.location.href.split("#")[0]}#comment-${z}`;try{await navigator.clipboard.writeText(_);let G=a.innerHTML;a.innerHTML="\u2713 Copied!",a.style.color="var(--nyuzi-accent)",setTimeout(()=>{a.innerHTML=G,a.style.color=""},2e3)}catch{window.location.hash=`comment-${z}`}})})}window.addEventListener("hashchange",S),O()})();})();
 //# sourceMappingURL=embed.js.map

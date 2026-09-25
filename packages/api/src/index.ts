@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { drizzle } from "drizzle-orm/d1";
-import { eq, and, asc, sql } from "drizzle-orm";
+import { eq, and, asc, desc, isNull, isNotNull, sql } from "drizzle-orm";
 import { sites, threads, comments } from "@nyuzi/db";
 import { sendReplyNotificationEmail } from "./email";
 
@@ -58,10 +58,13 @@ app.get("/health", (c) => {
   });
 });
 
-// GET /api/v1/comments?siteId=...&threadUrl=...
+// GET /api/v1/comments?siteId=...&threadUrl=...&page=1&limit=15&highlight=cmt_xxx
 app.get("/api/v1/comments", async (c) => {
   const siteId = c.req.query("siteId");
   const threadUrl = c.req.query("threadUrl");
+  const pageParam = c.req.query("page");
+  const limitParam = c.req.query("limit");
+  const highlightId = c.req.query("highlight");
 
   if (!siteId || !threadUrl) {
     return c.json(
@@ -84,11 +87,48 @@ app.get("/api/v1/comments", async (c) => {
       thread: null,
       comments: [],
       total: 0,
+      pagination: {
+        page: 1,
+        limit: 15,
+        totalTopLevel: 0,
+        totalComments: 0,
+        hasMore: false,
+      },
     });
   }
 
-  // 2. Fetch approved comments for this thread
-  const threadComments = await db
+  // 2. Count total top-level comments and total approved comments
+  const [topLevelCountResult] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.threadId, thread.id),
+        eq(comments.status, "approved"),
+        isNull(comments.parentId)
+      )
+    );
+  const totalTopLevel = Number(topLevelCountResult?.count || 0);
+
+  const [totalCommentsResult] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.threadId, thread.id),
+        eq(comments.status, "approved")
+      )
+    );
+  const totalCommentsCount = Number(totalCommentsResult?.count || 0);
+
+  // Pagination parameters
+  const page = Math.max(1, parseInt(pageParam || "1", 10) || 1);
+  const isAll = limitParam === "all";
+  const limit = isAll ? 1000 : Math.min(100, Math.max(1, parseInt(limitParam || "15", 10) || 15));
+  const offset = (page - 1) * limit;
+
+  // 3. Fetch top-level comments (NEWEST FIRST)
+  const topLevelComments = await db
     .select({
       id: comments.id,
       parentId: comments.parentId,
@@ -102,20 +142,94 @@ app.get("/api/v1/comments", async (c) => {
     .where(
       and(
         eq(comments.threadId, thread.id),
-        eq(comments.status, "approved")
+        eq(comments.status, "approved"),
+        isNull(comments.parentId)
+      )
+    )
+    .orderBy(desc(comments.createdAt))
+    .limit(limit)
+    .offset(offset);
+
+  // 4. Fetch all approved replies for this thread (OLDEST FIRST for natural conversation flow)
+  const threadReplies = await db
+    .select({
+      id: comments.id,
+      parentId: comments.parentId,
+      authorName: comments.authorName,
+      content: comments.content,
+      status: comments.status,
+      upvotes: comments.upvotes,
+      createdAt: comments.createdAt,
+    })
+    .from(comments)
+    .where(
+      and(
+        eq(comments.threadId, thread.id),
+        eq(comments.status, "approved"),
+        isNotNull(comments.parentId)
       )
     )
     .orderBy(asc(comments.createdAt));
+
+  // 5. Ensure highlighted comment is present if deep-linking
+  if (highlightId && !topLevelComments.some((c) => c.id === highlightId) && !threadReplies.some((r) => r.id === highlightId)) {
+    const [highlightComment] = await db
+      .select({
+        id: comments.id,
+        parentId: comments.parentId,
+        authorName: comments.authorName,
+        content: comments.content,
+        status: comments.status,
+        upvotes: comments.upvotes,
+        createdAt: comments.createdAt,
+      })
+      .from(comments)
+      .where(and(eq(comments.id, highlightId), eq(comments.status, "approved")))
+      .limit(1);
+
+    if (highlightComment) {
+      if (highlightComment.parentId) {
+        threadReplies.push(highlightComment);
+        if (!topLevelComments.some((c) => c.id === highlightComment.parentId)) {
+          const [parent] = await db
+            .select({
+              id: comments.id,
+              parentId: comments.parentId,
+              authorName: comments.authorName,
+              content: comments.content,
+              status: comments.status,
+              upvotes: comments.upvotes,
+              createdAt: comments.createdAt,
+            })
+            .from(comments)
+            .where(eq(comments.id, highlightComment.parentId))
+            .limit(1);
+          if (parent) topLevelComments.push(parent);
+        }
+      } else {
+        topLevelComments.unshift(highlightComment);
+      }
+    }
+  }
+
+  const hasMore = offset + topLevelComments.length < totalTopLevel;
 
   return c.json({
     thread: {
       id: thread.id,
       url: thread.url,
       title: thread.title,
-      commentCount: threadComments.length,
+      commentCount: totalCommentsCount,
     },
-    comments: threadComments,
-    total: threadComments.length,
+    comments: [...topLevelComments, ...threadReplies],
+    pagination: {
+      page,
+      limit,
+      totalTopLevel,
+      totalComments: totalCommentsCount,
+      hasMore,
+    },
+    total: totalCommentsCount,
   });
 });
 

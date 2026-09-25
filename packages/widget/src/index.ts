@@ -20,9 +20,18 @@ interface NyuziThread {
   commentCount: number;
 }
 
+interface NyuziPagination {
+  page: number;
+  limit: number;
+  totalTopLevel: number;
+  totalComments: number;
+  hasMore: boolean;
+}
+
 interface NyuziResponse {
   thread: NyuziThread | null;
   comments: NyuziComment[];
+  pagination?: NyuziPagination;
   total: number;
 }
 
@@ -73,6 +82,11 @@ interface NyuziResponse {
   const threadTitle = document.title || "Discussion";
   let commentsList: NyuziComment[] = [];
   let totalComments = 0;
+  let totalTopLevel = 0;
+  let currentPage = 1;
+  const pageSize = 15;
+  let hasMoreComments = false;
+  let isLoadingMore = false;
   let isLoading = true;
   let formError: string | null = null;
   let activeReplyId: string | null = null;
@@ -519,6 +533,51 @@ interface NyuziResponse {
       color: var(--nyuzi-text-muted);
     }
 
+    /* Pagination */
+    .nyuzi-pagination {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+    }
+    .nyuzi-load-more-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: var(--nyuzi-card-bg);
+      border: 1px solid var(--nyuzi-border);
+      color: var(--nyuzi-text-primary);
+      padding: 0.65rem 1.35rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      transition: all 0.15s ease;
+    }
+    .nyuzi-load-more-btn:hover:not(:disabled) {
+      border-color: #f56220;
+      color: #f56220;
+      background: var(--nyuzi-input-bg);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(245, 98, 32, 0.15);
+    }
+    .nyuzi-load-more-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .nyuzi-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--nyuzi-border);
+      border-top-color: #f56220;
+      border-radius: 50%;
+      animation: nyuzi-spin 0.6s linear infinite;
+    }
+    @keyframes nyuzi-spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* Footer */
     .nyuzi-footer {
       margin-top: 2rem;
@@ -583,15 +642,22 @@ interface NyuziResponse {
   async function loadComments() {
     try {
       isLoading = true;
+      currentPage = 1;
       render();
 
-      const url = `${apiHost}/api/v1/comments?siteId=${encodeURIComponent(siteId)}&threadUrl=${encodeURIComponent(threadUrl)}`;
+      const hash = window.location.hash;
+      const highlight = hash && hash.startsWith("#comment-") ? hash.replace("#comment-", "") : "";
+      const highlightParam = highlight ? `&highlight=${encodeURIComponent(highlight)}` : "";
+
+      const url = `${apiHost}/api/v1/comments?siteId=${encodeURIComponent(siteId)}&threadUrl=${encodeURIComponent(threadUrl)}&page=1&limit=${pageSize}${highlightParam}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: NyuziResponse = await res.json();
 
       commentsList = data.comments || [];
-      totalComments = data.total || commentsList.length;
+      totalComments = data.total || (data.pagination?.totalComments ?? commentsList.length);
+      totalTopLevel = data.pagination?.totalTopLevel ?? commentsList.filter((c) => !c.parentId).length;
+      hasMoreComments = data.pagination?.hasMore ?? false;
       isLoading = false;
       render();
       scrollToHashComment();
@@ -599,6 +665,40 @@ interface NyuziResponse {
       console.error("[Nyuzi] Failed to load comments:", err);
       isLoading = false;
       formError = "Unable to connect to comments server.";
+      render();
+    }
+  }
+
+  // Fetch next page of comments
+  async function loadMoreComments() {
+    if (isLoadingMore || !hasMoreComments) return;
+    try {
+      isLoadingMore = true;
+      render();
+
+      const nextPage = currentPage + 1;
+      const url = `${apiHost}/api/v1/comments?siteId=${encodeURIComponent(siteId)}&threadUrl=${encodeURIComponent(threadUrl)}&page=${nextPage}&limit=${pageSize}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to load more comments");
+      const data: NyuziResponse = await res.json();
+
+      const newComments = data.comments || [];
+      const existingIds = new Set(commentsList.map((c) => c.id));
+      for (const c of newComments) {
+        if (!existingIds.has(c.id)) {
+          commentsList.push(c);
+        }
+      }
+
+      currentPage = nextPage;
+      hasMoreComments = data.pagination?.hasMore ?? false;
+      totalTopLevel = data.pagination?.totalTopLevel ?? totalTopLevel;
+      totalComments = data.pagination?.totalComments ?? totalComments;
+      isLoadingMore = false;
+      render();
+    } catch (err) {
+      console.error("[Nyuzi] Error loading more comments:", err);
+      isLoadingMore = false;
       render();
     }
   }
@@ -689,7 +789,12 @@ interface NyuziResponse {
 
       const data = await res.json();
       if (data.comment) {
-        commentsList.push(data.comment);
+        if (!parentId) {
+          commentsList.unshift(data.comment);
+          totalTopLevel += 1;
+        } else {
+          commentsList.push(data.comment);
+        }
         totalComments += 1;
         activeReplyId = null;
       }
@@ -705,6 +810,7 @@ interface NyuziResponse {
   // Render a comment node
   function renderComment(c: NyuziComment): string {
     const replies = commentsList.filter((r) => r.parentId === c.id);
+    replies.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     const isReplying = activeReplyId === c.id;
     const isUpvoted = upvotedComments.has(c.id);
 
@@ -838,7 +944,20 @@ interface NyuziResponse {
                </div>`
             : `<div class="nyuzi-list">
                  ${topLevelComments.map((c) => renderComment(c)).join("")}
-               </div>`
+               </div>
+               ${
+                 hasMoreComments
+                   ? `<div class="nyuzi-pagination">
+                        <button class="nyuzi-load-more-btn" id="nyuzi-load-more" ${isLoadingMore ? "disabled" : ""}>
+                          ${
+                            isLoadingMore
+                              ? `<span class="nyuzi-spinner"></span> Loading comments...`
+                              : `Load more comments (${Math.max(0, totalTopLevel - topLevelComments.length)} remaining) ↓`
+                          }
+                        </button>
+                      </div>`
+                   : ""
+               }`
         }
 
         <!-- Footer -->
@@ -902,6 +1021,13 @@ interface NyuziResponse {
           notifyCheck ? notifyCheck.checked : true,
           null
         );
+      });
+    }
+
+    const loadMoreBtn = shadow.getElementById("nyuzi-load-more");
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener("click", () => {
+        loadMoreComments();
       });
     }
 
