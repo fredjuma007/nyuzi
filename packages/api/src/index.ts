@@ -3,10 +3,12 @@ import { cors } from "hono/cors";
 import { drizzle } from "drizzle-orm/d1";
 import { eq, and, asc, sql } from "drizzle-orm";
 import { sites, threads, comments } from "@nyuzi/db";
+import { sendReplyNotificationEmail } from "./email";
 
 type Bindings = {
   DB: D1Database;
   TURNSTILE_SECRET_KEY?: string;
+  RESEND_API_KEY?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -243,6 +245,48 @@ app.post("/api/v1/comments", async (c) => {
     upvotes: 0,
     createdAt: now,
   });
+
+  // 5. Trigger reply email notification asynchronously
+  if (parentId && c.env.RESEND_API_KEY) {
+    c.executionCtx.waitUntil(
+      (async () => {
+        try {
+          const [parentComment] = await db
+            .select({
+              id: comments.id,
+              authorName: comments.authorName,
+              authorEmail: comments.authorEmail,
+              notifyOnReply: comments.notifyOnReply,
+            })
+            .from(comments)
+            .where(eq(comments.id, parentId))
+            .limit(1);
+
+          if (
+            parentComment &&
+            parentComment.authorEmail &&
+            parentComment.notifyOnReply &&
+            (!cleanEmail || cleanEmail.toLowerCase() !== parentComment.authorEmail.toLowerCase())
+          ) {
+            await sendReplyNotificationEmail({
+              apiKey: c.env.RESEND_API_KEY!,
+              toEmail: parentComment.authorEmail,
+              parentAuthorName: parentComment.authorName,
+              replierName: cleanAuthor,
+              replyContent: cleanContent,
+              threadTitle: thread.title || threadTitle || "The Reading Circle",
+              threadUrl,
+              replyCommentId: commentId,
+              siteName: site.name || "The Reading Circle",
+              siteId,
+            });
+          }
+        } catch (emailErr) {
+          console.error("[Nyuzi Email] Trigger error:", emailErr);
+        }
+      })()
+    );
+  }
 
   return c.json(
     {
