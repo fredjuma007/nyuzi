@@ -3,6 +3,37 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import {
+  MessageSquare,
+  BookOpen,
+  Heart,
+  Zap,
+  LayoutDashboard,
+  ShieldAlert,
+  Users,
+  FileText,
+  Code2,
+  Settings,
+  Search,
+  CheckCircle2,
+  AlertTriangle,
+  Trash2,
+  ExternalLink,
+  Sun,
+  Moon,
+  Plus,
+  X,
+  Copy,
+  Check,
+  Bell,
+  BellOff,
+  UserPlus,
+  ArrowRight,
+  Sparkles,
+  Globe,
+  Radio,
+  SlidersHorizontal,
+} from "lucide-react";
 
 interface CommentItem {
   id: string;
@@ -224,8 +255,8 @@ export default function DashboardPage() {
     <div className="min-h-screen flex flex-col bg-[var(--bg-page)] text-[var(--text-main)] transition-colors duration-200">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-[var(--brand-orange)] text-white font-medium text-xs sm:text-sm shadow-xl flex items-center gap-2 animate-bounce">
-          <span>✓</span>
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-[var(--brand-orange)] text-white font-medium text-xs sm:text-sm shadow-xl flex items-center gap-2">
+          <Check className="w-4 h-4" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -239,7 +270,7 @@ export default function DashboardPage() {
 
             {/* Site Switcher */}
             <div className="flex items-center gap-2 bg-[var(--bg-card)] px-3 py-1.5 rounded-xl border border-[var(--border-card)] text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <Globe className="w-3.5 h-3.5 text-[var(--brand-orange)] shrink-0" />
               <select
                 value={selectedSite}
                 onChange={(e) => setSelectedSite(e.target.value as "trc254" | "demo")}
@@ -265,7 +296,7 @@ export default function DashboardPage() {
               className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-card)] text-xs text-[var(--text-secondary)] hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)] transition-colors"
             >
               <span>Visit Publication</span>
-              <span className="text-[10px]">↗</span>
+              <ExternalLink className="w-3 h-3 text-[var(--text-muted)]" />
             </a>
 
             {mounted && (
@@ -273,8 +304,9 @@ export default function DashboardPage() {
                 onClick={toggleTheme}
                 className="h-8 px-2.5 rounded-lg border border-[var(--border-card)] text-xs hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)] transition-all bg-[var(--bg-card)] cursor-pointer flex items-center gap-1.5"
                 title="Toggle Theme"
+                aria-label="Toggle Theme"
               >
-                <span>{isDark ? "☀️" : "🌙"}</span>
+                {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-indigo-500" />}
                 <span className="hidden sm:inline">{isDark ? "Light" : "Dark"}</span>
               </button>
             )}
@@ -294,12 +326,13 @@ export default function DashboardPage() {
         {/* Publication Title & Quick Summary Banner */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-[var(--border-card)]">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <h1 className="font-serif-title text-2xl sm:text-3xl font-bold tracking-tight">
                 {selectedSite === "trc254" ? "The Reading Circle 254" : "Demo Sandbox"}
               </h1>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#f56220]/10 text-[#f56220] border border-[#f56220]/20">
-                Customer #0 Production
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#f56220]/10 text-[#f56220] border border-[#f56220]/20">
+                <Sparkles className="w-2.5 h-2.5" />
+                Live Production
               </span>
             </div>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
@@ -311,7 +344,7 @@ export default function DashboardPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <Radio className="w-3.5 h-3.5 animate-pulse" />
               Cloudflare Edge D1 Live
             </span>
           </div>
@@ -320,9 +353,11 @@ export default function DashboardPage() {
         {/* Primary Metric KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="p-4 sm:p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm">
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Total Comments</span>
-              <span className="text-base text-[var(--brand-orange)]">💬</span>
+              <div className="w-7 h-7 rounded-lg bg-[var(--brand-orange)]/10 flex items-center justify-center text-[var(--brand-orange)]">
+                <MessageSquare className="w-4 h-4" />
+              </div>
             </div>
             <div className="text-2xl sm:text-3xl font-black text-[var(--brand-orange)]">
               {selectedSite === "trc254" ? "79" : "3"}
@@ -333,9 +368,11 @@ export default function DashboardPage() {
           </div>
 
           <div className="p-4 sm:p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm">
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Active Threads</span>
-              <span className="text-base text-[#facc15]">📖</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                <BookOpen className="w-4 h-4" />
+              </div>
             </div>
             <div className="text-2xl sm:text-3xl font-black text-[#facc15]">
               {selectedSite === "trc254" ? "33" : "1"}
@@ -344,9 +381,11 @@ export default function DashboardPage() {
           </div>
 
           <div className="p-4 sm:p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm">
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Reactions Given</span>
-              <span className="text-base text-rose-500">❤️</span>
+              <div className="w-7 h-7 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500">
+                <Heart className="w-4 h-4 fill-rose-500/20" />
+              </div>
             </div>
             <div className="text-2xl sm:text-3xl font-black text-rose-500">
               {selectedSite === "trc254" ? "148" : "11"}
@@ -355,9 +394,11 @@ export default function DashboardPage() {
           </div>
 
           <div className="p-4 sm:p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm">
-            <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Email Retention</span>
-              <span className="text-base text-emerald-500">⚡</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <Zap className="w-4 h-4" />
+              </div>
             </div>
             <div className="text-2xl sm:text-3xl font-black text-emerald-500">100%</div>
             <div className="text-[11px] text-[var(--text-muted)] mt-1">Resend domain verified</div>
@@ -368,77 +409,77 @@ export default function DashboardPage() {
         <div className="flex items-center gap-1.5 sm:gap-2 border-b border-[var(--border-card)] overflow-x-auto pb-1 text-xs sm:text-sm font-semibold">
           <button
             onClick={() => setActiveTab("overview")}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
               activeTab === "overview"
                 ? "bg-[var(--brand-orange)] text-white shadow-sm"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]"
             }`}
           >
-            <span>📊</span>
+            <LayoutDashboard className="w-3.5 h-3.5" />
             <span>Overview</span>
           </button>
 
           <button
             onClick={() => setActiveTab("moderation")}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
               activeTab === "moderation"
                 ? "bg-[var(--brand-orange)] text-white shadow-sm"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]"
             }`}
           >
-            <span>💬</span>
+            <ShieldAlert className="w-3.5 h-3.5" />
             <span>Moderation</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+            <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
               {commentsList.filter((c) => c.status === "pending").length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab("authors")}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
               activeTab === "authors"
                 ? "bg-[var(--brand-orange)] text-white shadow-sm"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]"
             }`}
           >
-            <span>✍️</span>
+            <Users className="w-3.5 h-3.5" />
             <span>Author Roster</span>
-            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">{authors.length}</span>
+            <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">{authors.length}</span>
           </button>
 
           <button
             onClick={() => setActiveTab("threads")}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
               activeTab === "threads"
                 ? "bg-[var(--brand-orange)] text-white shadow-sm"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]"
             }`}
           >
-            <span>📚</span>
+            <FileText className="w-3.5 h-3.5" />
             <span>Threads</span>
           </button>
 
           <button
             onClick={() => setActiveTab("embed")}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
               activeTab === "embed"
                 ? "bg-[var(--brand-orange)] text-white shadow-sm"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]"
             }`}
           >
-            <span>🎨</span>
+            <Code2 className="w-3.5 h-3.5" />
             <span>Widget Embed</span>
           </button>
 
           <button
             onClick={() => setActiveTab("settings")}
-            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-2 ${
               activeTab === "settings"
                 ? "bg-[var(--brand-orange)] text-white shadow-sm"
                 : "text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)]"
             }`}
           >
-            <span>⚙️</span>
+            <Settings className="w-3.5 h-3.5" />
             <span>Settings</span>
           </button>
         </div>
@@ -453,9 +494,10 @@ export default function DashboardPage() {
                   <h3 className="font-serif-title text-base sm:text-lg font-bold">Recent Activity Stream</h3>
                   <button
                     onClick={() => setActiveTab("moderation")}
-                    className="text-xs font-bold text-[var(--brand-orange)] hover:underline"
+                    className="text-xs font-bold text-[var(--brand-orange)] hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    View All &rarr;
+                    <span>View All</span>
+                    <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>
 
@@ -469,7 +511,7 @@ export default function DashboardPage() {
                           <span className="text-[var(--text-muted)]">{comment.createdAt}</span>
                         </div>
                         <span className="text-[11px] font-semibold text-rose-500 flex items-center gap-1">
-                          <span>❤️</span>
+                          <Heart className="w-3 h-3 fill-rose-500/20" />
                           <span>{comment.upvotes}</span>
                         </span>
                       </div>
@@ -477,7 +519,7 @@ export default function DashboardPage() {
                         {comment.content}
                       </p>
                       <div className="text-[11px] text-[var(--brand-orange)] flex items-center gap-1">
-                        <span>on</span>
+                        <span className="text-[var(--text-muted)]">on</span>
                         <span className="font-medium underline truncate">{comment.threadTitle}</span>
                       </div>
                     </div>
@@ -501,7 +543,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex items-center justify-between py-1 border-b border-[var(--border-card)]">
                       <span className="text-[var(--text-muted)]">Email Dispatcher:</span>
-                      <span className="font-semibold text-emerald-500">Resend (notifications)</span>
+                      <span className="font-semibold text-emerald-500">Resend (verified)</span>
                     </div>
                     <div className="flex items-center justify-between py-1 border-b border-[var(--border-card)]">
                       <span className="text-[var(--text-muted)]">Target Site ID:</span>
@@ -512,9 +554,10 @@ export default function DashboardPage() {
                   <div className="pt-2">
                     <button
                       onClick={() => setActiveTab("embed")}
-                      className="w-full py-2.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer text-center"
+                      className="w-full py-2.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer flex items-center justify-center gap-1.5"
                     >
-                      Get Embed Script &rarr;
+                      <span>Get Embed Script</span>
+                      <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
@@ -522,7 +565,7 @@ export default function DashboardPage() {
                 {/* Author alert callout */}
                 <div className="p-4 rounded-xl bg-[var(--bg-card-subtle)] border border-[var(--border-card)] text-xs space-y-2">
                   <div className="flex items-center gap-2 font-bold text-[var(--text-main)]">
-                    <span>⚡</span>
+                    <Zap className="w-4 h-4 text-[var(--brand-orange)]" />
                     <span>Multi-Author Notifications Active</span>
                   </div>
                   <p className="text-[var(--text-secondary)] text-[11px] leading-relaxed">
@@ -547,7 +590,7 @@ export default function DashboardPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-orange)]"
                 />
-                <span className="absolute left-2.5 top-2 text-xs text-[var(--text-muted)]">🔍</span>
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[var(--text-muted)]" />
               </div>
 
               <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto text-xs">
@@ -623,9 +666,10 @@ export default function DashboardPage() {
                           href={comment.threadUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="font-medium text-[var(--brand-orange)] hover:underline truncate max-w-xs"
+                          className="font-medium text-[var(--brand-orange)] hover:underline truncate max-w-xs flex items-center gap-1"
                         >
-                          {comment.threadTitle} ↗
+                          <span>{comment.threadTitle}</span>
+                          <ExternalLink className="w-3 h-3 shrink-0" />
                         </a>
                       </div>
 
@@ -633,26 +677,29 @@ export default function DashboardPage() {
                         {comment.status !== "approved" && (
                           <button
                             onClick={() => handleApprove(comment.id)}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white font-semibold text-xs transition-colors cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1"
                           >
-                            Approve
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Approve</span>
                           </button>
                         )}
 
                         {comment.status !== "spam" && (
                           <button
                             onClick={() => handleFlagSpam(comment.id)}
-                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white font-semibold text-xs transition-colors cursor-pointer"
+                            className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1"
                           >
-                            Flag Spam
+                            <AlertTriangle className="w-3 h-3" />
+                            <span>Flag Spam</span>
                           </button>
                         )}
 
                         <button
                           onClick={() => handleDelete(comment.id)}
-                          className="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white font-semibold text-xs transition-colors cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1"
                         >
-                          Delete
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </div>
@@ -676,9 +723,19 @@ export default function DashboardPage() {
 
               <button
                 onClick={() => setShowAddAuthor(!showAddAuthor)}
-                className="px-4 py-2 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer shrink-0"
+                className="px-4 py-2 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer shrink-0 flex items-center gap-1.5"
               >
-                {showAddAuthor ? "✕ Close Form" : "+ Add Author"}
+                {showAddAuthor ? (
+                  <>
+                    <X className="w-3.5 h-3.5" />
+                    <span>Close Form</span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Add Author</span>
+                  </>
+                )}
               </button>
             </div>
 
@@ -688,7 +745,10 @@ export default function DashboardPage() {
                 onSubmit={handleAddAuthor}
                 className="p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-md space-y-4"
               >
-                <h4 className="text-sm font-bold">Register New Publication Author</h4>
+                <h4 className="text-sm font-bold flex items-center gap-1.5">
+                  <UserPlus className="w-4 h-4 text-[var(--brand-orange)]" />
+                  <span>Register New Publication Author</span>
+                </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
@@ -729,9 +789,10 @@ export default function DashboardPage() {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 rounded-lg bg-[var(--brand-orange)] text-white text-xs font-bold shadow cursor-pointer"
+                    className="px-4 py-1.5 rounded-lg bg-[var(--brand-orange)] text-white text-xs font-bold shadow cursor-pointer flex items-center gap-1.5"
                   >
-                    Save to Roster
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Save to Roster</span>
                   </button>
                 </div>
               </form>
@@ -761,18 +822,18 @@ export default function DashboardPage() {
                       </td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                             author.status === "active"
                               ? "bg-emerald-500/10 text-emerald-500"
                               : "bg-zinc-500/10 text-zinc-400"
                           }`}
                         >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              author.status === "active" ? "bg-emerald-500" : "bg-zinc-400"
-                            }`}
-                          />
-                          {author.status === "active" ? "Active (Resend)" : "Muted"}
+                          {author.status === "active" ? (
+                            <Bell className="w-3 h-3 text-emerald-500" />
+                          ) : (
+                            <BellOff className="w-3 h-3 text-zinc-400" />
+                          )}
+                          <span>{author.status === "active" ? "Active (Resend)" : "Muted"}</span>
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right">
@@ -844,21 +905,27 @@ export default function DashboardPage() {
 
                   <div className="flex items-center gap-4 text-xs shrink-0">
                     <div className="text-center">
-                      <div className="font-bold text-[var(--brand-orange)] text-sm">{thread.commentsCount}</div>
+                      <div className="font-bold text-[var(--brand-orange)] text-sm flex items-center justify-center gap-1">
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>{thread.commentsCount}</span>
+                      </div>
                       <div className="text-[10px] text-[var(--text-muted)]">Comments</div>
                     </div>
                     <div className="text-center">
-                      <div className="font-bold text-rose-500 text-sm">❤️ {thread.reactionsCount}</div>
+                      <div className="font-bold text-rose-500 text-sm flex items-center justify-center gap-1">
+                        <Heart className="w-3.5 h-3.5 fill-rose-500/20" />
+                        <span>{thread.reactionsCount}</span>
+                      </div>
                       <div className="text-[10px] text-[var(--text-muted)]">Reactions</div>
                     </div>
                     <a
                       href={thread.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-3 py-1.5 rounded-lg border border-[var(--border-card)] hover:border-[var(--brand-orange)] hover:text-[var(--brand-orange)] font-semibold transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 rounded-lg border border-[var(--border-card)] hover:border-[var(--brand-orange)] hover:text-[var(--brand-orange)] font-semibold transition-colors flex items-center gap-1.5"
                     >
                       <span>Open Thread</span>
-                      <span>↗</span>
+                      <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>
                 </div>
@@ -913,7 +980,7 @@ export default function DashboardPage() {
                           : "border-[var(--border-card)]"
                       }`}
                     >
-                      <span>❤️</span>
+                      <Heart className="w-3.5 h-3.5 fill-current" />
                       <span>Heart Pop</span>
                     </button>
                     <button
@@ -924,7 +991,7 @@ export default function DashboardPage() {
                           : "border-[var(--border-card)]"
                       }`}
                     >
-                      <span>▲</span>
+                      <span className="text-xs">▲</span>
                       <span>Upvote</span>
                     </button>
                   </div>
@@ -941,9 +1008,19 @@ export default function DashboardPage() {
                     </pre>
                     <button
                       onClick={copyEmbedCode}
-                      className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-[11px] font-bold shadow transition-all cursor-pointer"
+                      className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-[11px] font-bold shadow transition-all cursor-pointer flex items-center gap-1"
                     >
-                      {copiedSnippet ? "✓ Copied!" : "Copy Snippet"}
+                      {copiedSnippet ? (
+                        <>
+                          <Check className="w-3 h-3" />
+                          <span>Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          <span>Copy Snippet</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1006,7 +1083,7 @@ export default function DashboardPage() {
                 <label className="font-bold">Verified Notification Subdomain (Resend)</label>
                 <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400">
                   <div className="flex items-center gap-2 text-xs">
-                    <span>✓</span>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     <span className="font-mono font-bold">notifications.readingcircle254.com</span>
                   </div>
                   <span className="text-[11px] font-bold uppercase tracking-wider">DNS Active</span>
