@@ -315,6 +315,28 @@ interface NyuziResponse {
       cursor: not-allowed;
     }
 
+    /* Mobile Responsive Form (Stack Email below Name on phones) */
+    @media (max-width: 580px) {
+      .nyuzi-form-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.65rem;
+      }
+      .nyuzi-inputs {
+        flex-direction: column;
+        width: 100%;
+        min-width: 0;
+        gap: 0.5rem;
+      }
+      .nyuzi-input {
+        width: 100%;
+      }
+      .nyuzi-submit-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
     /* Error Alert */
     .nyuzi-alert {
       background: #fef2f2;
