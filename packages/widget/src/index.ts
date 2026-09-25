@@ -99,6 +99,23 @@ interface NyuziResponse {
     if (saved) JSON.parse(saved).forEach((id: string) => upvotedComments.add(id));
   } catch {}
 
+  // Load saved author info from local storage
+  let savedAuthorName = "";
+  let savedAuthorEmail = "";
+  try {
+    savedAuthorName = localStorage.getItem("nyuzi_author_name") || "";
+    savedAuthorEmail = localStorage.getItem("nyuzi_author_email") || "";
+  } catch {}
+
+  function saveAuthorInfo(name: string, email: string | null) {
+    if (name) savedAuthorName = name;
+    if (email) savedAuthorEmail = email;
+    try {
+      if (name) localStorage.setItem("nyuzi_author_name", name);
+      if (email) localStorage.setItem("nyuzi_author_email", email);
+    } catch {}
+  }
+
   // Helpers
   function escapeHtml(str: string): string {
     return str
@@ -845,9 +862,10 @@ interface NyuziResponse {
                 <textarea class="nyuzi-textarea" id="reply-content-${c.id}" placeholder="Reply to ${escapeHtml(c.authorName)}..." required></textarea>
                 <div class="nyuzi-form-row">
                   <div class="nyuzi-inputs">
-                    <input type="text" class="nyuzi-input" id="reply-name-${c.id}" placeholder="Your Name *" required />
+                    <input type="text" class="nyuzi-input" id="reply-name-${c.id}" placeholder="Your Name *" value="${escapeHtml(savedAuthorName)}" required />
+                    <input type="email" class="nyuzi-input" id="reply-email-${c.id}" placeholder="Email (for reply alerts)" value="${escapeHtml(savedAuthorEmail)}" />
                   </div>
-                  <div style="display:flex; gap:0.5rem;">
+                  <div style="display:flex; gap:0.5rem; align-items:flex-end;">
                     <button class="nyuzi-action-btn cancel-reply" style="padding: 0.5rem 0.75rem;">Cancel</button>
                     <button class="nyuzi-submit-btn submit-reply" data-parent-id="${c.id}" ${isSubmitting ? "disabled" : ""}>
                       ${isSubmitting ? "Posting..." : "Reply"}
@@ -904,8 +922,8 @@ interface NyuziResponse {
 
           <div class="nyuzi-form-row">
             <div class="nyuzi-inputs">
-              <input type="text" class="nyuzi-input" id="nyuzi-main-name" placeholder="Name *" required />
-              <input type="email" class="nyuzi-input" id="nyuzi-main-email" placeholder="Email (for reply alerts)" />
+              <input type="text" class="nyuzi-input" id="nyuzi-main-name" placeholder="Name *" value="${escapeHtml(savedAuthorName)}" required />
+              <input type="email" class="nyuzi-input" id="nyuzi-main-email" placeholder="Email (for reply alerts)" value="${escapeHtml(savedAuthorEmail)}" />
             </div>
             <button class="nyuzi-submit-btn" id="nyuzi-main-submit" ${isSubmitting ? "disabled" : ""}>
               ${isSubmitting ? "Posting..." : "Post Comment"}
@@ -1014,9 +1032,13 @@ interface NyuziResponse {
           return;
         }
 
+        const cleanName = nameInput.value.trim();
+        const cleanEmail = emailInput.value.trim() || null;
+        saveAuthorInfo(cleanName, cleanEmail);
+
         submitComment(
-          nameInput.value.trim(),
-          emailInput.value.trim() || null,
+          cleanName,
+          cleanEmail,
           contentInput.value.trim(),
           notifyCheck ? notifyCheck.checked : true,
           null
@@ -1063,6 +1085,7 @@ interface NyuziResponse {
         if (!parentId) return;
 
         const nameInput = shadow.getElementById(`reply-name-${parentId}`) as HTMLInputElement;
+        const emailInput = shadow.getElementById(`reply-email-${parentId}`) as HTMLInputElement | null;
         const replyContent = shadow.getElementById(`reply-content-${parentId}`) as HTMLTextAreaElement;
 
         if (!nameInput.value.trim()) {
@@ -1074,9 +1097,13 @@ interface NyuziResponse {
           return;
         }
 
+        const cleanName = nameInput.value.trim();
+        const cleanEmail = emailInput?.value.trim() || null;
+        saveAuthorInfo(cleanName, cleanEmail);
+
         submitComment(
-          nameInput.value.trim(),
-          null,
+          cleanName,
+          cleanEmail,
           replyContent.value.trim(),
           true,
           parentId
