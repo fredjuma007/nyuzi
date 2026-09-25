@@ -56,21 +56,13 @@ export default function LandingPage() {
       {/* Background Radial Glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[450px] sm:h-[600px] bg-radial-glow pointer-events-none opacity-80 z-0 overflow-hidden" />
 
-      {/* Top Reusable Navbar */}
+      {/* Top Reusable Fixed Navbar */}
       <Navbar />
 
-      {/* Main Content */}
-      <main className="flex-1 z-10 w-full max-w-full">
+      {/* Main Content with top padding to offset the fixed navbar */}
+      <main className="flex-1 z-10 w-full max-w-full pt-16 sm:pt-20">
         {/* Hero Section */}
         <section className="pt-8 sm:pt-16 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-12 text-center max-w-5xl mx-auto w-full">
-          {/* Eyebrow Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border ember-border bg-[var(--bg-card-subtle)] text-[11px] sm:text-xs font-semibold mb-4 sm:mb-6 shadow-sm max-w-full">
-            <span className="w-2 h-2 rounded-full bg-[#f56220] animate-pulse shrink-0" />
-            <span className="text-[var(--text-secondary)] truncate">
-              Ultra-lightweight (&lt;15KB) &bull; Zero cookies &bull; Instant load
-            </span>
-          </div>
-
           {/* Main Headline */}
           <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.15] mb-4 sm:mb-6 break-words px-1">
             Turn reader attention into{" "}
@@ -105,7 +97,7 @@ export default function LandingPage() {
             <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
               <div className="text-2xl sm:text-3xl font-extrabold text-[var(--brand-orange)] mb-0.5 sm:mb-1">&lt; 15 KB</div>
               <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Featherweight</div>
-              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">90% lighter than Disqus or bloated plugins</div>
+              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">Minimal footprint on your site</div>
             </div>
 
             <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
@@ -222,19 +214,26 @@ export default function LandingPage() {
 
               {/* Right Preview Column */}
               <div className="lg:col-span-8 p-3.5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] shadow-lg w-full overflow-hidden">
-                <div className="flex items-center justify-between border-b ember-border pb-3 sm:pb-4 mb-4 sm:mb-6 gap-2">
+                {/* Clean Demo Article Heading */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 sm:pb-4 mb-4 sm:mb-6 border-b border-[var(--border-card)] gap-2 sm:gap-4">
                   <div className="min-w-0">
-                    <span className="text-[10px] sm:text-xs uppercase tracking-widest font-bold text-[var(--text-muted)] block truncate">
-                      Live Embed Preview
-                    </span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--brand-orange)]">
+                        Sample Article
+                      </span>
+                      <span className="text-[var(--text-muted)] text-xs">&bull;</span>
+                      <span className="text-[10px] sm:text-xs text-[var(--text-muted)]">4 min read</span>
+                    </div>
                     <h4 className="text-sm sm:text-base font-bold text-[var(--text-main)] truncate">
                       The Art of Thoughtful Reading
                     </h4>
-                    <span className="text-[10px] sm:text-xs text-[var(--text-muted)]">Sample Article &bull; 4 min read</span>
                   </div>
-                  <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
-                    Live Demo
-                  </span>
+                  <div className="self-start sm:self-center shrink-0">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Live Demo
+                    </span>
+                  </div>
                 </div>
 
                 {/* Target widget mount point */}
@@ -364,7 +363,7 @@ export default function LandingPage() {
             <div className="space-y-1.5 sm:space-y-2 text-center md:text-left">
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Production Showcase</span>
               <h3 className="text-xl sm:text-2xl font-bold font-serif-title text-[var(--text-main)]">
-                Powering The Reading Circle
+                Powering The Reading Circle 254
               </h3>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-xl">
                 Active discussion threads, author notifications, and instant load speeds powering Kenya&apos;s premier literary community.

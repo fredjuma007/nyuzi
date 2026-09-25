@@ -39,7 +39,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md border-b ember-border px-4 sm:px-6 lg:px-12 py-3 transition-colors duration-200 w-full max-w-full bg-[var(--bg-page)]/85">
+    <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-[var(--border-card)] px-4 sm:px-6 lg:px-12 py-3 sm:py-3.5 transition-colors duration-200 bg-[var(--bg-page)]/80">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         {/* Brand Logo */}
         <Logo />
@@ -102,7 +102,7 @@ export function Navbar() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden pt-3 pb-3 border-t ember-border mt-3 space-y-1.5 flex flex-col text-sm font-medium text-[var(--text-secondary)]">
+        <div className="md:hidden pt-3 pb-3 border-t border-[var(--border-card)] mt-3 space-y-1.5 flex flex-col text-sm font-medium text-[var(--text-secondary)]">
           <Link
             href="/dashboard"
             onClick={() => setMobileMenuOpen(false)}
