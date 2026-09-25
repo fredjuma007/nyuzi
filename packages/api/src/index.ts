@@ -405,7 +405,7 @@ app.post("/api/v1/comments", async (c) => {
   }
 
   // 6. Trigger publication author notification asynchronously
-  if (c.env.RESEND_API_KEY && postAuthor) {
+  if (c.env.RESEND_API_KEY) {
     c.executionCtx.waitUntil(
       (async () => {
         try {
