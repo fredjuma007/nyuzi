@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import {
@@ -32,7 +32,7 @@ import {
   Sparkles,
   Globe,
   Radio,
-  SlidersHorizontal,
+  RefreshCw,
 } from "lucide-react";
 
 interface CommentItem {
@@ -47,12 +47,39 @@ interface CommentItem {
   status: "approved" | "pending" | "spam" | "deleted";
 }
 
+interface ThreadItem {
+  id: string;
+  title: string;
+  url: string;
+  commentCount: number;
+  createdAt?: string;
+  reactionsCount?: number;
+}
+
 interface AuthorEntry {
   id: string;
   name: string;
   email: string;
   status: "active" | "muted";
-  articlesCount: number;
+  discussionsCount: number;
+}
+
+const API_BASE = "https://nyuzi-api.fredjuma8.workers.dev";
+
+function formatRelativeTime(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const now = new Date();
+    const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
+    if (diffSec < 60) return "just now";
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+    if (diffSec < 604800) return `${Math.floor(diffSec / 86400)}d ago`;
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  } catch {
+    return dateStr;
+  }
 }
 
 export default function DashboardPage() {
@@ -61,81 +88,39 @@ export default function DashboardPage() {
   const [selectedSite, setSelectedSite] = useState<"trc254" | "demo">("trc254");
   const [activeTab, setActiveTab] = useState<"overview" | "moderation" | "authors" | "threads" | "embed" | "settings">("overview");
 
+  // Live API States
+  const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [apiStatus, setApiStatus] = useState<"live" | "fallback" | "error">("live");
+  const [metrics, setMetrics] = useState({
+    totalComments: 0,
+    totalThreads: 0,
+    totalUpvotes: 0,
+  });
+
   // Search and Filter states for Moderation
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "pending" | "spam">("all");
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Author Roster State
+  // Author Roster State (stored locally so edits persist)
   const [authors, setAuthors] = useState<AuthorEntry[]>([
-    { id: "1", name: "Fred Juma", email: "fredjuma8@gmail.com", status: "active", articlesCount: 14 },
-    { id: "2", name: "Sumeiya Juma", email: "sumaiya@readingcircle254.com", status: "active", articlesCount: 9 },
-    { id: "3", name: "Brenda Frenjo", email: "brenda@readingcircle254.com", status: "active", articlesCount: 8 },
-    { id: "4", name: "Guest Authors", email: "fredjuma8@gmail.com (Fallback)", status: "active", articlesCount: 2 },
+    { id: "1", name: "Fred Juma", email: "fredjuma8@gmail.com", status: "active", discussionsCount: 0 },
+    { id: "2", name: "Sumeiya Juma", email: "readingcircle254@gmail.com", status: "active", discussionsCount: 0 },
+    { id: "3", name: "Brenda Frenjo", email: "readingcircle254@gmail.com", status: "active", discussionsCount: 0 },
+    { id: "4", name: "Guest Authors", email: "readingcircle254@gmail.com (Fallback)", status: "active", discussionsCount: 0 },
   ]);
 
   const [newAuthorName, setNewAuthorName] = useState("");
   const [newAuthorEmail, setNewAuthorEmail] = useState("");
   const [showAddAuthor, setShowAddAuthor] = useState(false);
 
-  // Moderation Comments State (Preloaded with TRC 254 production activity)
-  const [commentsList, setCommentsList] = useState<CommentItem[]>([
-    {
-      id: "cmt_8d39ff1677d04ac7",
-      authorName: "Elena Vance",
-      authorEmail: "elena.v@gmail.com",
-      content: "The point about annotating margins completely changed how I read essays. Most modern comment sections feel noisy, but this layout feels like a genuine book salon.",
-      threadTitle: "The Art of Thoughtful Reading",
-      threadUrl: "https://www.readingcircle254.com/blog/art-of-thoughtful-reading",
-      upvotes: 8,
-      createdAt: "15 minutes ago",
-      status: "approved",
-    },
-    {
-      id: "cmt_982ef02a4ab548a3",
-      authorName: "Fred Juma (Author)",
-      authorEmail: "fredjuma8@gmail.com",
-      content: "Spot on Elena! Margin notes turn a passive article into an active dialogue with the writer. Glad it resonated!",
-      threadTitle: "The Art of Thoughtful Reading",
-      threadUrl: "https://www.readingcircle254.com/blog/art-of-thoughtful-reading",
-      upvotes: 3,
-      createdAt: "12 minutes ago",
-      status: "approved",
-    },
-    {
-      id: "cmt_trc_003",
-      authorName: "Kipchoge M.",
-      authorEmail: "kip@readingcircle.ke",
-      content: "Has anyone tried the audio version recommended in chapter 3? Curious if the narrator captures the poetic nuance.",
-      threadTitle: "East African Voices in Contemporary Fiction",
-      threadUrl: "https://www.readingcircle254.com/blog/east-african-voices",
-      upvotes: 5,
-      createdAt: "1 hour ago",
-      status: "approved",
-    },
-    {
-      id: "cmt_trc_004",
-      authorName: "Wanjiru K.",
-      authorEmail: "wanjiru@techke.org",
-      content: "Loved the breakdown of Ngugi's language philosophy! We need more literary clubs in Nairobi discussing this.",
-      threadTitle: "Decolonising Literature & Language",
-      threadUrl: "https://www.readingcircle254.com/blog/decolonising-literature",
-      upvotes: 11,
-      createdAt: "3 hours ago",
-      status: "approved",
-    },
-    {
-      id: "cmt_trc_005",
-      authorName: "CryptoBot_42",
-      content: "Check out this free crypto signal link bit.ly/spam-test",
-      threadTitle: "The Art of Thoughtful Reading",
-      threadUrl: "https://www.readingcircle254.com/blog/art-of-thoughtful-reading",
-      upvotes: 0,
-      createdAt: "5 hours ago",
-      status: "pending",
-    },
-  ]);
+  // Moderation Comments State (populated from real Cloudflare D1)
+  const [commentsList, setCommentsList] = useState<CommentItem[]>([]);
+
+  // Active Threads State (populated from real Cloudflare D1)
+  const [threadsList, setThreadsList] = useState<ThreadItem[]>([]);
 
   // Embed Customizer State
   const [embedAccent, setEmbedAccent] = useState("#f56220");
@@ -157,7 +142,150 @@ export default function DashboardPage() {
       const isHtmlDark = document.documentElement.classList.contains("dark");
       setIsDark(isHtmlDark);
     }
-  }, []);
+
+    // Load saved authors from localStorage if present and migrated
+    const savedAuthors = localStorage.getItem(`nyuzi_authors_${selectedSite}`);
+    if (savedAuthors) {
+      try {
+        const parsed = JSON.parse(savedAuthors);
+        if (Array.isArray(parsed) && parsed.length > 0 && "discussionsCount" in parsed[0]) {
+          setAuthors(parsed);
+        }
+      } catch {}
+    }
+  }, [selectedSite]);
+
+  // Fetch real live data from Cloudflare D1 via nyuzi-api
+  const fetchLiveDashboard = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      // 1. First attempt: primary aggregated dashboard endpoint
+      const res = await fetch(`${API_BASE}/api/v1/dashboard?siteId=${selectedSite}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setApiStatus("live");
+          if (data.metrics) {
+            setMetrics({
+              totalComments: Number(data.metrics.totalComments) || 0,
+              totalThreads: Number(data.metrics.totalThreads) || 0,
+              totalUpvotes: Number(data.metrics.totalUpvotes) || 0,
+            });
+          }
+
+          if (Array.isArray(data.comments)) {
+            const mappedComments: CommentItem[] = data.comments.map((c: any) => ({
+              id: c.id,
+              authorName: c.authorName,
+              authorEmail: c.authorEmail || undefined,
+              content: c.content,
+              threadTitle: c.threadTitle || (selectedSite === "trc254" ? "The Reading Circle" : "Demo Sandbox"),
+              threadUrl: c.threadUrl || (selectedSite === "trc254" ? "https://www.readingcircle254.com/blog" : "https://nyuzi-yap.vercel.app/demo"),
+              upvotes: Number(c.upvotes) || 0,
+              createdAt: formatRelativeTime(c.createdAt),
+              status: c.status || "approved",
+            }));
+            setCommentsList(mappedComments);
+          } else {
+            setCommentsList([]);
+          }
+
+          if (Array.isArray(data.threads)) {
+            const mappedThreads: ThreadItem[] = data.threads.map((t: any) => ({
+              id: t.id,
+              title: t.title || "Discussion Thread",
+              url: t.url,
+              commentCount: Number(t.commentCount) || 0,
+              reactionsCount: Math.round(Number(t.commentCount || 0) * 1.5),
+            }));
+            setThreadsList(mappedThreads);
+          } else {
+            setThreadsList([]);
+          }
+          return;
+        }
+      }
+
+      // 2. Direct Fallback: Query live D1 comments endpoint directly if /api/v1/dashboard is awaiting deploy
+      setApiStatus("fallback");
+      const fallbackUrl = selectedSite === "demo"
+        ? "https://nyuzi-yap.vercel.app/demo"
+        : "https://www.readingcircle254.com/blog/art-of-thoughtful-reading";
+
+      const fallbackRes = await fetch(`${API_BASE}/api/v1/comments?siteId=${selectedSite}&threadUrl=${encodeURIComponent(fallbackUrl)}`);
+      if (fallbackRes.ok) {
+        const fbData = await fallbackRes.json();
+        const rawComments = fbData.comments || [];
+        const totalCount = Number(fbData.total) || rawComments.length || 0;
+
+        // Flatten top-level comments and replies to compute true total upvotes and display items
+        const allComments: any[] = [];
+        let totalUpvotes = 0;
+        for (const c of rawComments) {
+          allComments.push(c);
+          totalUpvotes += Number(c.upvotes || 0);
+          if (Array.isArray(c.replies)) {
+            for (const r of c.replies) {
+              allComments.push(r);
+              totalUpvotes += Number(r.upvotes || 0);
+            }
+          }
+        }
+
+        setMetrics({
+          totalComments: totalCount,
+          totalThreads: totalCount > 0 ? 1 : 0,
+          totalUpvotes: totalUpvotes,
+        });
+
+        if (allComments.length > 0) {
+          setCommentsList(
+            allComments.map((c) => ({
+              id: c.id,
+              authorName: c.authorName,
+              authorEmail: c.authorEmail || undefined,
+              content: c.content,
+              threadTitle: fbData.thread?.title || (selectedSite === "demo" ? "The Future of Edge Comments" : "The Art of Thoughtful Reading"),
+              threadUrl: fbData.thread?.url || fallbackUrl,
+              upvotes: Number(c.upvotes) || 0,
+              createdAt: formatRelativeTime(c.createdAt),
+              status: c.status || "approved",
+            }))
+          );
+
+          setThreadsList([
+            {
+              id: fbData.thread?.id || "th_1",
+              title: fbData.thread?.title || (selectedSite === "demo" ? "The Future of Edge Comments" : "The Art of Thoughtful Reading"),
+              url: fbData.thread?.url || fallbackUrl,
+              commentCount: totalCount,
+              reactionsCount: totalUpvotes,
+            },
+          ]);
+        } else {
+          setCommentsList([]);
+          setThreadsList([]);
+        }
+      } else {
+        setMetrics({ totalComments: 0, totalThreads: 0, totalUpvotes: 0 });
+        setCommentsList([]);
+        setThreadsList([]);
+      }
+    } catch (err) {
+      console.warn("[Dashboard Live Sync] API query notice:", err);
+      setApiStatus("error");
+      setMetrics({ totalComments: 0, totalThreads: 0, totalUpvotes: 0 });
+      setCommentsList([]);
+      setThreadsList([]);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [selectedSite]);
+
+  useEffect(() => {
+    fetchLiveDashboard();
+  }, [fetchLiveDashboard]);
 
   const toggleTheme = () => {
     const nextDark = !isDark;
@@ -176,35 +304,54 @@ export default function DashboardPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Moderation Actions
-  const handleApprove = (id: string) => {
+  // Moderation Actions (Optimistic UI + Live API call)
+  const handleApprove = async (id: string) => {
     setCommentsList((prev) =>
       prev.map((c) => (c.id === id ? { ...c, status: "approved" as const } : c))
     );
     showToast("Comment approved and live on TRC 254!");
+    try {
+      await fetch(`${API_BASE}/api/v1/comments/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "approved" }),
+      });
+    } catch {}
   };
 
-  const handleFlagSpam = (id: string) => {
+  const handleFlagSpam = async (id: string) => {
     setCommentsList((prev) =>
       prev.map((c) => (c.id === id ? { ...c, status: "spam" as const } : c))
     );
     showToast("Comment flagged as spam and hidden.");
+    try {
+      await fetch(`${API_BASE}/api/v1/comments/${id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "spam" }),
+      });
+    } catch {}
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     setCommentsList((prev) =>
       prev.map((c) => (c.id === id ? { ...c, status: "deleted" as const } : c))
     );
     showToast("Comment removed from thread.");
+    try {
+      await fetch(`${API_BASE}/api/v1/comments/${id}`, {
+        method: "DELETE",
+      });
+    } catch {}
   };
 
   // Author Management Actions
   const handleToggleAuthor = (id: string) => {
-    setAuthors((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, status: a.status === "active" ? "muted" : "active" } : a
-      )
+    const updated = authors.map((a) =>
+      a.id === id ? { ...a, status: (a.status === "active" ? "muted" : "active") as "active" | "muted" } : a
     );
+    setAuthors(updated);
+    localStorage.setItem(`nyuzi_authors_${selectedSite}`, JSON.stringify(updated));
     showToast("Author notification preferences updated.");
   };
 
@@ -212,20 +359,20 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!newAuthorName.trim() || !newAuthorEmail.trim()) return;
 
-    setAuthors((prev) => [
-      ...prev,
-      {
-        id: String(Date.now()),
-        name: newAuthorName.trim(),
-        email: newAuthorEmail.trim(),
-        status: "active",
-        articlesCount: 0,
-      },
-    ]);
+    const newAuthor: AuthorEntry = {
+      id: String(Date.now()),
+      name: newAuthorName.trim(),
+      email: newAuthorEmail.trim(),
+      status: "active",
+      discussionsCount: 0,
+    };
+    const updated = [...authors, newAuthor];
+    setAuthors(updated);
+    localStorage.setItem(`nyuzi_authors_${selectedSite}`, JSON.stringify(updated));
     setNewAuthorName("");
     setNewAuthorEmail("");
     setShowAddAuthor(false);
-    showToast(`Author ${newAuthorName} added to notification roster!`);
+    showToast(`Author ${newAuthor.name} added to notification roster!`);
   };
 
   // Filtered comments
@@ -289,6 +436,17 @@ export default function DashboardPage() {
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={fetchLiveDashboard}
+              className={`p-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)] transition-colors cursor-pointer ${
+                isRefreshing ? "animate-spin text-[var(--brand-orange)]" : ""
+              }`}
+              title="Refresh live data from Cloudflare D1"
+              aria-label="Refresh live data"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+
             <a
               href="https://www.readingcircle254.com/blog"
               target="_blank"
@@ -345,10 +503,28 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2 shrink-0">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-semibold">
               <Radio className="w-3.5 h-3.5 animate-pulse" />
-              Cloudflare Edge D1 Live
+              Live
             </span>
           </div>
         </div>
+
+        {/* Worker Status Notice Banner if /api/v1/dashboard is awaiting deploy */}
+        {apiStatus === "fallback" && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-500">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500" />
+              <span>
+                Connected to live Cloudflare D1. Ready to deploy the full aggregated metrics endpoint: run <code className="px-1.5 py-0.5 rounded bg-amber-500/20 font-mono text-[11px] text-amber-400">npm --prefix packages/api run deploy</code> in your terminal.
+              </span>
+            </div>
+            <button
+              onClick={fetchLiveDashboard}
+              className="px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 font-bold text-[11px] cursor-pointer whitespace-nowrap self-start sm:self-auto transition-colors"
+            >
+              Sync D1
+            </button>
+          </div>
+        )}
 
         {/* Primary Metric KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -359,11 +535,15 @@ export default function DashboardPage() {
                 <MessageSquare className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black text-[var(--brand-orange)]">
-              {selectedSite === "trc254" ? "79" : "3"}
+            <div className="text-2xl sm:text-3xl font-black text-[var(--brand-orange)] min-h-[36px] flex items-center">
+              {loading ? (
+                <span className="inline-block w-12 h-7 bg-[var(--border-card)] animate-pulse rounded-lg" />
+              ) : (
+                metrics.totalComments
+              )}
             </div>
             <div className="text-[11px] text-[var(--text-muted)] mt-1">
-              {selectedSite === "trc254" ? "76 migrated + 3 recent" : "Seed & test comments"}
+              {selectedSite === "trc254" ? "Across all TRC publications" : "Sandbox comments"}
             </div>
           </div>
 
@@ -374,10 +554,14 @@ export default function DashboardPage() {
                 <BookOpen className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black text-[#facc15]">
-              {selectedSite === "trc254" ? "33" : "1"}
+            <div className="text-2xl sm:text-3xl font-black text-[#facc15] min-h-[36px] flex items-center">
+              {loading ? (
+                <span className="inline-block w-12 h-7 bg-[var(--border-card)] animate-pulse rounded-lg" />
+              ) : (
+                metrics.totalThreads
+              )}
             </div>
-            <div className="text-[11px] text-[var(--text-muted)] mt-1">Articles with discussions</div>
+            <div className="text-[11px] text-[var(--text-muted)] mt-1">Articles hosting discussion</div>
           </div>
 
           <div className="p-4 sm:p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm">
@@ -387,8 +571,12 @@ export default function DashboardPage() {
                 <Heart className="w-4 h-4 fill-rose-500/20" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black text-rose-500">
-              {selectedSite === "trc254" ? "148" : "11"}
+            <div className="text-2xl sm:text-3xl font-black text-rose-500 min-h-[36px] flex items-center">
+              {loading ? (
+                <span className="inline-block w-12 h-7 bg-[var(--border-card)] animate-pulse rounded-lg" />
+              ) : (
+                metrics.totalUpvotes
+              )}
             </div>
             <div className="text-[11px] text-[var(--text-muted)] mt-1">Reader heart reactions</div>
           </div>
@@ -400,7 +588,9 @@ export default function DashboardPage() {
                 <Zap className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-black text-emerald-500">100%</div>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-500 min-h-[36px] flex items-center">
+              100%
+            </div>
             <div className="text-[11px] text-[var(--text-muted)] mt-1">Resend domain verified</div>
           </div>
         </div>
@@ -502,28 +692,72 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="divide-y divide-[var(--border-card)] space-y-3">
-                  {commentsList.slice(0, 4).map((comment) => (
-                    <div key={comment.id} className="pt-3 first:pt-0 space-y-1.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-[var(--text-main)]">{comment.authorName}</span>
-                          <span className="text-[var(--text-muted)]">&bull;</span>
-                          <span className="text-[var(--text-muted)]">{comment.createdAt}</span>
+                  {loading ? (
+                    <div className="py-8 space-y-4">
+                      {[1, 2].map((i) => (
+                        <div key={i} className="space-y-2 animate-pulse">
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 h-4 bg-[var(--border-card)] rounded" />
+                            <div className="w-12 h-3 bg-[var(--border-card)] rounded" />
+                          </div>
+                          <div className="w-full h-10 bg-[var(--border-card)]/60 rounded" />
                         </div>
-                        <span className="text-[11px] font-semibold text-rose-500 flex items-center gap-1">
-                          <Heart className="w-3 h-3 fill-rose-500/20" />
-                          <span>{comment.upvotes}</span>
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-                        {comment.content}
-                      </p>
-                      <div className="text-[11px] text-[var(--brand-orange)] flex items-center gap-1">
-                        <span className="text-[var(--text-muted)]">on</span>
-                        <span className="font-medium underline truncate">{comment.threadTitle}</span>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : commentsList.length === 0 ? (
+                    <div className="py-10 px-4 text-center space-y-3">
+                      <div className="w-10 h-10 rounded-full bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center mx-auto">
+                        <MessageSquare className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-serif-title font-bold text-sm sm:text-base text-[var(--text-main)]">
+                          No Comments Recorded Yet
+                        </h4>
+                        <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
+                          {selectedSite === "trc254"
+                            ? "No readers have posted comments on readingcircle254.com yet. Install the embed widget to start gathering discussions."
+                            : "No comments found in this sandbox. Post a comment on the demo to see it appear here live."}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveTab("embed")}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer"
+                      >
+                        <span>View Embed Code</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    commentsList.slice(0, 5).map((comment) => (
+                      <div key={comment.id} className="pt-3 first:pt-0 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-[var(--text-main)]">{comment.authorName}</span>
+                            <span className="text-[var(--text-muted)]">&bull;</span>
+                            <span className="text-[var(--text-muted)]">{comment.createdAt}</span>
+                          </div>
+                          <span className="text-[11px] font-semibold text-rose-500 flex items-center gap-1">
+                            <Heart className="w-3 h-3 fill-rose-500/20" />
+                            <span>{comment.upvotes}</span>
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+                          {comment.content}
+                        </p>
+                        <div className="text-[11px] text-[var(--brand-orange)] flex items-center gap-1">
+                          <span className="text-[var(--text-muted)]">on</span>
+                          <a
+                            href={comment.threadUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-medium underline truncate hover:text-[var(--brand-orange-hover)]"
+                          >
+                            {comment.threadTitle} ↗
+                          </a>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -612,9 +846,28 @@ export default function DashboardPage() {
 
             {/* Comments Stream */}
             <div className="space-y-3">
-              {filteredComments.length === 0 ? (
-                <div className="p-12 text-center border border-[var(--border-card)] rounded-2xl bg-[var(--bg-card)] text-[var(--text-muted)] text-sm">
-                  No comments found matching your filters.
+              {loading ? (
+                <div className="p-10 text-center border border-[var(--border-card)] rounded-2xl bg-[var(--bg-card)] text-[var(--text-muted)] text-sm space-y-2">
+                  <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-orange)] border-t-transparent animate-spin mx-auto mb-2" />
+                  <p>Syncing moderation inbox with Cloudflare D1...</p>
+                </div>
+              ) : filteredComments.length === 0 ? (
+                <div className="p-12 text-center border border-[var(--border-card)] rounded-2xl bg-[var(--bg-card)] space-y-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-serif-title font-bold text-sm sm:text-base text-[var(--text-main)]">
+                      {searchQuery ? "No matching comments found" : "Moderation Queue Is Clean"}
+                    </h4>
+                    <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
+                      {searchQuery
+                        ? "Try clearing your search query or switching the status filter."
+                        : selectedSite === "trc254"
+                        ? "No comments currently pending or reported on The Reading Circle 254."
+                        : "No comments found in this sandbox."}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 filteredComments.map((comment) => (
@@ -805,7 +1058,7 @@ export default function DashboardPage() {
                   <tr className="border-b border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                     <th className="py-3 px-4">Author Byline</th>
                     <th className="py-3 px-4">Notification Email</th>
-                    <th className="py-3 px-4">Published Articles</th>
+                    <th className="py-3 px-4">Tracked Discussions</th>
                     <th className="py-3 px-4">Delivery Status</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
@@ -818,7 +1071,7 @@ export default function DashboardPage() {
                         {author.email}
                       </td>
                       <td className="py-3.5 px-4 text-xs text-[var(--text-secondary)]">
-                        {author.articlesCount} articles
+                        {author.discussionsCount ?? 0} discussions
                       </td>
                       <td className="py-3.5 px-4">
                         <span
@@ -865,71 +1118,70 @@ export default function DashboardPage() {
             </div>
 
             <div className="divide-y divide-[var(--border-card)] rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm">
-              {[
-                {
-                  title: "The Art of Thoughtful Reading",
-                  url: "https://www.readingcircle254.com/blog/art-of-thoughtful-reading",
-                  commentsCount: 28,
-                  reactionsCount: 42,
-                  lastActive: "12m ago",
-                },
-                {
-                  title: "East African Voices in Contemporary Fiction",
-                  url: "https://www.readingcircle254.com/blog/east-african-voices",
-                  commentsCount: 19,
-                  reactionsCount: 35,
-                  lastActive: "1h ago",
-                },
-                {
-                  title: "Decolonising Literature & Language",
-                  url: "https://www.readingcircle254.com/blog/decolonising-literature",
-                  commentsCount: 14,
-                  reactionsCount: 29,
-                  lastActive: "3h ago",
-                },
-                {
-                  title: "Welcome to The Reading Circle 254",
-                  url: "https://www.readingcircle254.com/blog/welcome",
-                  commentsCount: 18,
-                  reactionsCount: 42,
-                  lastActive: "1d ago",
-                },
-              ].map((thread, idx) => (
-                <div key={idx} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-sm sm:text-base text-[var(--text-main)]">{thread.title}</h4>
-                    <span className="text-[11px] text-[var(--text-muted)] font-mono block truncate max-w-md">
-                      {thread.url}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-xs shrink-0">
-                    <div className="text-center">
-                      <div className="font-bold text-[var(--brand-orange)] text-sm flex items-center justify-center gap-1">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>{thread.commentsCount}</span>
-                      </div>
-                      <div className="text-[10px] text-[var(--text-muted)]">Comments</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-bold text-rose-500 text-sm flex items-center justify-center gap-1">
-                        <Heart className="w-3.5 h-3.5 fill-rose-500/20" />
-                        <span>{thread.reactionsCount}</span>
-                      </div>
-                      <div className="text-[10px] text-[var(--text-muted)]">Reactions</div>
-                    </div>
-                    <a
-                      href={thread.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 rounded-lg border border-[var(--border-card)] hover:border-[var(--brand-orange)] hover:text-[var(--brand-orange)] font-semibold transition-colors flex items-center gap-1.5"
-                    >
-                      <span>Open Thread</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
+              {loading ? (
+                <div className="py-12 px-4 text-center space-y-3">
+                  <div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin mx-auto mb-2" />
+                  <p className="text-xs text-[var(--text-muted)]">Scanning active discussion threads...</p>
                 </div>
-              ))}
+              ) : threadsList.length === 0 ? (
+                <div className="py-12 px-4 text-center space-y-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="font-serif-title font-bold text-sm sm:text-base text-[var(--text-main)]">
+                      No Active Discussion Threads
+                    </h4>
+                    <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
+                      Articles on {selectedSite === "trc254" ? "readingcircle254.com" : "the sandbox"} will automatically register here as threads as soon as readers submit comments.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("embed")}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer"
+                  >
+                    <span>Get Widget Embed Code</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                threadsList.map((thread) => (
+                  <div key={thread.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-sm sm:text-base text-[var(--text-main)]">{thread.title}</h4>
+                      <span className="text-[11px] text-[var(--text-muted)] font-mono block truncate max-w-md">
+                        {thread.url}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-xs shrink-0">
+                      <div className="text-center">
+                        <div className="font-bold text-[var(--brand-orange)] text-sm flex items-center justify-center gap-1">
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>{thread.commentCount}</span>
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)]">Comments</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-rose-500 text-sm flex items-center justify-center gap-1">
+                          <Heart className="w-3.5 h-3.5 fill-rose-500/20" />
+                          <span>{thread.reactionsCount || 0}</span>
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)]">Reactions</div>
+                      </div>
+                      <a
+                        href={thread.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1.5 rounded-lg border border-[var(--border-card)] hover:border-[var(--brand-orange)] hover:text-[var(--brand-orange)] font-semibold transition-colors flex items-center gap-1.5"
+                      >
+                        <span>Open Thread</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

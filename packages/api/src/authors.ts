@@ -8,12 +8,12 @@ export interface AuthorEntry {
   email: string | null;
 }
 
-// Initial Roster for Customer #0 (TRC 254)
-// Authors without emails will later be editable via Nyuzi Dashboard
 export const TRC_AUTHOR_ROSTER: Record<string, string> = {
   "fred juma": "fredjuma8@gmail.com",
-  // "sumaiya juma": "...",
-  // "brenda frenjo": "...",
+  "sumeiya juma": "readingcircle254@gmail.com",
+  "sumaiya juma": "readingcircle254@gmail.com",
+  "brenda frenjo": "readingcircle254@gmail.com",
+  "the reading circle": "readingcircle254@gmail.com",
 };
 
 /**
@@ -44,9 +44,9 @@ export function resolveAuthorEmails(
     }
   }
 
-  // Fallback to TRC admin if no author email mapped yet or postAuthor not passed
+  // Fallback to TRC general publication email if no author email mapped yet or postAuthor not passed
   if (results.length === 0 && siteId === "trc254") {
-    results.push({ name: "Fred Juma", email: "fredjuma8@gmail.com" });
+    results.push({ name: "The Reading Circle 254", email: "readingcircle254@gmail.com" });
   }
 
   return results;

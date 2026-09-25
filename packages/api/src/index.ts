@@ -19,7 +19,7 @@ app.use(
   "*",
   cors({
     origin: "*",
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -502,6 +502,121 @@ app.post("/api/v1/comments/:id/upvote", async (c) => {
     upvotes: newCount,
     action: isUnvote ? "unvote" : "upvote",
   });
+});
+
+// GET /api/v1/dashboard?siteId=...
+app.get("/api/v1/dashboard", async (c) => {
+  const siteId = c.req.query("siteId");
+  if (!siteId) {
+    return c.json({ error: "siteId query parameter is required" }, 400);
+  }
+
+  const db = drizzle(c.env.DB);
+
+  // 1. Check site
+  const [site] = await db.select().from(sites).where(eq(sites.id, siteId)).limit(1);
+
+  // 2. Metrics: Total Comments & Upvotes
+  const [commentStats] = await db
+    .select({
+      totalComments: sql<number>`count(${comments.id})`,
+      totalUpvotes: sql<number>`coalesce(sum(${comments.upvotes}), 0)`,
+    })
+    .from(comments)
+    .where(and(eq(comments.siteId, siteId), sql`${comments.status} != 'deleted'`));
+
+  // 3. Metrics: Total Threads
+  const [threadStats] = await db
+    .select({
+      totalThreads: sql<number>`count(${threads.id})`,
+    })
+    .from(threads)
+    .where(eq(threads.siteId, siteId));
+
+  // 4. Recent comments stream (joined with threads to get thread title & url)
+  const recentComments = await db
+    .select({
+      id: comments.id,
+      parentId: comments.parentId,
+      authorName: comments.authorName,
+      authorEmail: comments.authorEmail,
+      content: comments.content,
+      status: comments.status,
+      upvotes: comments.upvotes,
+      createdAt: comments.createdAt,
+      threadTitle: threads.title,
+      threadUrl: threads.url,
+    })
+    .from(comments)
+    .leftJoin(threads, eq(comments.threadId, threads.id))
+    .where(eq(comments.siteId, siteId))
+    .orderBy(desc(comments.createdAt))
+    .limit(50);
+
+  // 5. Active threads
+  const activeThreads = await db
+    .select({
+      id: threads.id,
+      title: threads.title,
+      url: threads.url,
+      commentCount: threads.commentCount,
+      createdAt: threads.createdAt,
+    })
+    .from(threads)
+    .where(eq(threads.siteId, siteId))
+    .orderBy(desc(threads.commentCount), desc(threads.createdAt))
+    .limit(25);
+
+  return c.json({
+    success: true,
+    site: site || {
+      id: siteId,
+      name: siteId === "trc254" ? "The Reading Circle 254" : "Demo Sandbox",
+      domain: siteId === "trc254" ? "readingcircle254.com" : "*",
+    },
+    metrics: {
+      totalComments: commentStats?.totalComments || 0,
+      totalThreads: threadStats?.totalThreads || 0,
+      totalUpvotes: commentStats?.totalUpvotes || 0,
+    },
+    comments: recentComments,
+    threads: activeThreads,
+  });
+});
+
+// PATCH /api/v1/comments/:id/status
+app.patch("/api/v1/comments/:id/status", async (c) => {
+  const commentId = c.req.param("id");
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch {}
+
+  const { status } = body;
+  if (!["approved", "pending", "spam", "deleted"].includes(status)) {
+    return c.json({ error: "Invalid status" }, 400);
+  }
+
+  const db = drizzle(c.env.DB);
+  await db
+    .update(comments)
+    .set({ status })
+    .where(eq(comments.id, commentId));
+
+  return c.json({ success: true, commentId, status });
+});
+
+// DELETE /api/v1/comments/:id
+app.delete("/api/v1/comments/:id", async (c) => {
+  const commentId = c.req.param("id");
+  const db = drizzle(c.env.DB);
+
+  await db
+    .update(comments)
+    .set({ status: "deleted" })
+    .where(eq(comments.id, commentId));
+
+  return c.json({ success: true, commentId, status: "deleted" });
 });
 
 export default app;
