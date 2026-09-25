@@ -48,14 +48,13 @@ export function NyuziComments({ blogId, className }: NyuziCommentsProps) {
   }, [canonicalUrl])
 
   return (
-    <div className={className || "w-full mt-4"}>
+    <div className={className || "w-full"}>
       <div
         id="nyuzi-comments"
         key={blogId}
         data-site-id="trc254"
         data-thread-url={canonicalUrl}
         data-reaction="heart"
-        className="min-h-[220px]"
       />
     </div>
   )
@@ -191,6 +190,22 @@ if (fs.existsSync(rendererPath)) {
 
   fs.writeFileSync(rendererPath, rendererContent, "utf-8");
   console.log("✅ Fixed BULLETED_LIST handling in src/components/blog/wix-rich-text-renderer.tsx");
+}
+
+// 4. Tighten gap between blog post and comments section
+const blogPagePath = path.join(trcRoot, "src", "app", "blog", "[id]", "page.tsx");
+if (fs.existsSync(blogPagePath)) {
+  let blogPageContent = fs.readFileSync(blogPagePath, "utf-8");
+  blogPageContent = blogPageContent.replace(
+    'className="mt-16 border-t border-green-700/20 dark:border-green-600/20 pt-12 max-w-3xl mx-auto"',
+    'className="mt-6 border-t border-green-700/20 dark:border-green-600/20 pt-6 max-w-3xl mx-auto"'
+  );
+  blogPageContent = blogPageContent.replace(
+    'className="mt-16 border-t border-green-700/20 dark:border-green-600/20 pt-12"',
+    'className="mt-6 border-t border-green-700/20 dark:border-green-600/20 pt-6"'
+  );
+  fs.writeFileSync(blogPagePath, blogPageContent, "utf-8");
+  console.log("✅ Tightened spacing between blog post and comments in src/app/blog/[id]/page.tsx");
 }
 
 console.log("🎉 Integration complete! Ready to view on localhost:3000");
