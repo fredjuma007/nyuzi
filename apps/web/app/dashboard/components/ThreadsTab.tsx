@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { BookOpen, MessageSquare, Heart, ExternalLink, ArrowRight } from "lucide-react";
 import { ThreadItem } from "./types";
 
@@ -8,7 +9,7 @@ interface ThreadsTabProps {
   loading: boolean;
   threadsList: ThreadItem[];
   selectedSite: string;
-  setActiveTab: (tab: any) => void;
+  setActiveTab?: (tab: any) => void;
 }
 
 export function ThreadsTab({
@@ -47,13 +48,13 @@ export function ThreadsTab({
                 Articles on {selectedSite === "trc254" ? "readingcircle254.com" : "the sandbox"} will automatically register here as threads as soon as readers submit comments.
               </p>
             </div>
-            <button
-              onClick={() => setActiveTab("embed")}
+            <Link
+              href="/dashboard/studio"
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer"
             >
               <span>Get Widget Embed Code</span>
               <ArrowRight className="w-3 h-3" />
-            </button>
+            </Link>
           </div>
         ) : (
           threadsList.map((thread) => (

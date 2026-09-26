@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { MessageSquare, Heart, ArrowRight, Zap } from "lucide-react";
 import { CommentItem } from "./types";
 
@@ -8,14 +9,12 @@ interface OverviewTabProps {
   loading: boolean;
   commentsList: CommentItem[];
   selectedSite: string;
-  setActiveTab: (tab: any) => void;
 }
 
 export function OverviewTab({
   loading,
   commentsList,
   selectedSite,
-  setActiveTab,
 }: OverviewTabProps) {
   const visibleComments = commentsList.filter((c) => c.status !== "deleted").slice(0, 5);
 
@@ -26,13 +25,13 @@ export function OverviewTab({
         <div className="lg:col-span-8 p-5 sm:p-6 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-[var(--border-card)] pb-3">
             <h3 className="font-serif-title text-base sm:text-lg font-bold">Recent Activity Stream</h3>
-            <button
-              onClick={() => setActiveTab("moderation")}
+            <Link
+              href="/dashboard/moderation"
               className="text-xs font-bold text-[var(--brand-orange)] hover:underline flex items-center gap-1 cursor-pointer"
             >
               <span>View All</span>
               <ArrowRight className="w-3 h-3" />
-            </button>
+            </Link>
           </div>
 
           <div className="divide-y divide-[var(--border-card)] space-y-3">
@@ -63,13 +62,13 @@ export function OverviewTab({
                       : "No comments found in this sandbox. Post a comment on the demo to see it appear here live."}
                   </p>
                 </div>
-                <button
-                  onClick={() => setActiveTab("embed")}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer"
+                <Link
+                  href="/dashboard/studio"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer mx-auto"
                 >
                   <span>Open Widget Studio</span>
                   <ArrowRight className="w-3 h-3" />
-                </button>
+                </Link>
               </div>
             ) : (
               visibleComments.map((comment) => (
@@ -130,13 +129,13 @@ export function OverviewTab({
             </div>
 
             <div className="pt-2">
-              <button
-                onClick={() => setActiveTab("embed")}
+              <Link
+                href="/dashboard/studio"
                 className="w-full py-2.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <span>Customize Widget Studio</span>
                 <ArrowRight className="w-3 h-3" />
-              </button>
+              </Link>
             </div>
           </div>
 
