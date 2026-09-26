@@ -17,6 +17,8 @@ import {
   Type,
   Smile,
   ShieldCheck,
+  UploadCloud,
+  Globe,
 } from "lucide-react";
 
 interface EmbedStudioTabProps {
@@ -50,6 +52,88 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
   );
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [snippetMode, setSnippetMode] = useState<"auto" | "static">("auto");
+
+  // Load saved site settings from edge API on mount or site switch
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchSiteSettings() {
+      try {
+        const res = await fetch(`https://nyuzi-api.fredjuma8.workers.dev/api/v1/sites/${selectedSite}/settings`);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data.settings && Object.keys(data.settings).length > 0) {
+            const s = data.settings;
+            if (s.accentColor) setAccentColor(s.accentColor);
+            if (s.themeMode) setThemeMode(s.themeMode);
+            if (s.bgMode) setBgMode(s.bgMode);
+            if (s.canvasBg !== undefined) setCanvasBg(s.canvasBg);
+            if (s.cardBg !== undefined) setCardBg(s.cardBg);
+            if (s.textColor !== undefined) setTextColor(s.textColor);
+            if (s.borderColor !== undefined) setBorderColor(s.borderColor);
+            if (s.radiusValue) setRadiusValue(s.radiusValue);
+            if (s.reactionType) setReactionType(s.reactionType);
+            if (s.showReactionsBar !== undefined) setShowReactionsBar(Boolean(s.showReactionsBar));
+            if (s.reactionsPrompt) setReactionsPrompt(s.reactionsPrompt);
+            if (s.reactionsPreset) setReactionsPreset(s.reactionsPreset);
+            if (Array.isArray(s.formattingTools)) setFormattingTools(s.formattingTools);
+          }
+        }
+      } catch {}
+    }
+    fetchSiteSettings();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedSite]);
+
+  // Save / Publish settings to Edge DB
+  const handlePublishSettings = async () => {
+    setIsSavingSettings(true);
+    try {
+      const payload = {
+        settings: {
+          accentColor,
+          themeMode,
+          bgMode,
+          canvasBg,
+          cardBg,
+          textColor,
+          borderColor,
+          radiusValue,
+          reactionType,
+          showReactionsBar,
+          reactionsPrompt,
+          reactionsPreset,
+          formattingTools,
+        },
+      };
+
+      const res = await fetch(
+        `https://nyuzi-api.fredjuma8.workers.dev/api/v1/sites/${selectedSite}/settings`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (res.ok) {
+        showToast(
+          `Published live settings to ${
+            selectedSite === "trc254" ? "readingcircle254.com" : selectedSite
+          }!`
+        );
+      } else {
+        showToast("Failed to save settings to server.");
+      }
+    } catch {
+      showToast("Could not reach edge server.");
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
 
   const toggleFormattingTool = (tool: string) => {
     setFormattingTools((prev) =>
@@ -227,7 +311,13 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     formattingTools.includes("code") &&
     formattingTools.includes("link");
 
-  // Generated Embed Snippet
+  // Generated Embed Snippets
+  const autoSyncSnippetCode = `<div id="nyuzi-comments"
+  data-site-id="${selectedSite}"
+  data-author-name="{post.author.name}">
+</div>
+<script src="https://nyuzi-yap.vercel.app/embed.js" async></script>`;
+
   const embedScriptCode = `<div id="nyuzi-comments"
   data-site-id="${selectedSite}"
   data-accent-color="${accentColor}"
@@ -235,9 +325,11 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
 </div>
 <script src="https://nyuzi-yap.vercel.app/embed.js" async></script>`;
 
+  const activeSnippetCode = snippetMode === "auto" ? autoSyncSnippetCode : embedScriptCode;
+
   const copyEmbedCode = async () => {
     try {
-      await navigator.clipboard.writeText(embedScriptCode);
+      await navigator.clipboard.writeText(activeSnippetCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       showToast("Embed code copied to clipboard!");
@@ -328,6 +420,23 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handlePublishSettings}
+            disabled={isSavingSettings}
+            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            title="Save and publish these styles & rules to the live site database"
+          >
+            {isSavingSettings ? (
+              <span>Saving...</span>
+            ) : (
+              <>
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Publish to Live Site</span>
+              </>
+            )}
+          </button>
+
           <button
             onClick={handleReset}
             className="px-3 py-1.5 rounded-xl border border-[var(--border-card)] hover:border-[var(--brand-orange)] hover:text-[var(--brand-orange)] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -933,16 +1042,49 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
 
             {/* Generated Ready-to-Paste Snippet */}
             <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-2.5">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                  Ready-to-Paste Snippet
+                  Embed Snippet
                 </label>
-                <span className="text-[10px] text-emerald-500 font-mono font-bold">&lt; 15KB bundle</span>
+                <div className="flex items-center gap-1 bg-[var(--bg-page)] p-0.5 rounded-lg border border-[var(--border-card)]">
+                  <button
+                    type="button"
+                    onClick={() => setSnippetMode("auto")}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      snippetMode === "auto"
+                        ? "bg-[var(--brand-orange)] text-white shadow-xs"
+                        : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                    }`}
+                  >
+                    Auto-Sync (Clean)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSnippetMode("static")}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                      snippetMode === "static"
+                        ? "bg-[var(--brand-orange)] text-white shadow-xs"
+                        : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                    }`}
+                  >
+                    Manual Override
+                  </button>
+                </div>
               </div>
+
+              {snippetMode === "auto" ? (
+                <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                  ✨ <strong>Auto-Sync:</strong> Remote-controlled by this dashboard. Any changes you publish in Studio apply to your blog automatically without editing code!
+                </p>
+              ) : (
+                <p className="text-[10px] text-[var(--text-muted)]">
+                  Static inline HTML overrides for specific pages that need unique colors or rules.
+                </p>
+              )}
 
               <div className="relative">
                 <pre className="p-3 rounded-xl bg-[#090605] text-[#f8fafc] text-xs font-mono overflow-x-auto border border-[#f56220]/25 leading-relaxed">
-                  <code>{embedScriptCode}</code>
+                  <code>{activeSnippetCode}</code>
                 </pre>
                 <button
                   type="button"

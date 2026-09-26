@@ -33,6 +33,7 @@ export interface NyuziPagination {
 }
 
 export interface NyuziResponse {
+  siteSettings?: Record<string, any>;
   thread: NyuziThread | null;
   comments: NyuziComment[];
   pagination?: NyuziPagination;

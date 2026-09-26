@@ -77,6 +77,20 @@ import {
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 
+  const hasExplicitAccent = Boolean(currentScript?.getAttribute("data-accent-color") || container.getAttribute("data-accent-color"));
+  const hasExplicitTheme = Boolean(currentScript?.getAttribute("data-theme") || container.getAttribute("data-theme"));
+  const hasExplicitBgMode = Boolean(currentScript?.getAttribute("data-bg") || container.getAttribute("data-bg"));
+  const hasExplicitBgColor = Boolean(currentScript?.getAttribute("data-bg-color") || container.getAttribute("data-bg-color"));
+  const hasExplicitCardBg = Boolean(currentScript?.getAttribute("data-card-bg") || container.getAttribute("data-card-bg"));
+  const hasExplicitTextColor = Boolean(currentScript?.getAttribute("data-text-color") || container.getAttribute("data-text-color"));
+  const hasExplicitBorderColor = Boolean(currentScript?.getAttribute("data-border-color") || container.getAttribute("data-border-color"));
+  const hasExplicitRadius = Boolean(currentScript?.getAttribute("data-radius") || container.getAttribute("data-radius"));
+  const hasExplicitReactionType = Boolean(currentScript?.getAttribute("data-reaction") || container.getAttribute("data-reaction"));
+  const hasExplicitReactionsBar = rawReactionsAttr !== null && rawReactionsAttr !== undefined;
+  const hasExplicitPrompt = Boolean(currentScript?.getAttribute("data-reactions-prompt") || container.getAttribute("data-reactions-prompt"));
+  const hasExplicitPreset = Boolean(currentScript?.getAttribute("data-reactions-preset") || container.getAttribute("data-reactions-preset"));
+  const hasExplicitFormatting = Boolean(currentScript?.getAttribute("data-formatting") || container.getAttribute("data-formatting"));
+
   const themeConfig: ThemeConfig = {
     accent:
       currentScript?.getAttribute("data-accent-color") ||
@@ -349,6 +363,22 @@ import {
       hasMoreComments = data.pagination?.hasMore ?? false;
       if (data.thread?.reactions && Object.keys(data.thread.reactions).length > 0) {
         threadReactionCounts = { ...threadReactionCounts, ...data.thread.reactions };
+      }
+      if (data.siteSettings && typeof data.siteSettings === "object") {
+        const s = data.siteSettings;
+        if (!hasExplicitAccent && s.accentColor) themeConfig.accent = s.accentColor;
+        if (!hasExplicitTheme && s.themeMode) themeConfig.themeMode = s.themeMode;
+        if (!hasExplicitBgMode && s.bgMode) themeConfig.bgMode = s.bgMode;
+        if (!hasExplicitBgColor && s.canvasBg !== undefined) themeConfig.bg = s.canvasBg;
+        if (!hasExplicitCardBg && s.cardBg !== undefined) themeConfig.cardBg = s.cardBg;
+        if (!hasExplicitTextColor && s.textColor !== undefined) themeConfig.textColor = s.textColor;
+        if (!hasExplicitBorderColor && s.borderColor !== undefined) themeConfig.borderColor = s.borderColor;
+        if (!hasExplicitRadius && s.radiusValue) themeConfig.radius = s.radiusValue;
+        if (!hasExplicitReactionType && s.reactionType) themeConfig.reactionType = s.reactionType;
+        if (!hasExplicitReactionsBar && s.showReactionsBar !== undefined) themeConfig.showReactionsBar = Boolean(s.showReactionsBar);
+        if (!hasExplicitPrompt && s.reactionsPrompt) themeConfig.reactionsPrompt = s.reactionsPrompt;
+        if (!hasExplicitPreset && s.reactionsPreset) themeConfig.reactionsPreset = s.reactionsPreset;
+        if (!hasExplicitFormatting && Array.isArray(s.formattingTools)) themeConfig.allowedFormatting = s.formattingTools;
       }
       isLoading = false;
       render();

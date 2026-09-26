@@ -7,6 +7,7 @@ export const sites = sqliteTable("sites", {
   ownerEmail: text("owner_email"),
   turnstileEnabled: integer("turnstile_enabled", { mode: "boolean" }).notNull().default(false),
   moderationRequired: integer("moderation_required", { mode: "boolean" }).notNull().default(false),
+  settings: text("settings").default("{}"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 

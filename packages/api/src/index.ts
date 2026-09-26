@@ -76,6 +76,18 @@ app.get("/api/v1/comments", async (c) => {
 
   const db = drizzle(c.env.DB);
 
+  // Fetch site settings for remote widget configuration
+  const [site] = await db
+    .select({ settings: sites.settings })
+    .from(sites)
+    .where(eq(sites.id, siteId))
+    .limit(1);
+
+  let siteSettings: Record<string, any> = {};
+  try {
+    siteSettings = site?.settings ? JSON.parse(site.settings) : {};
+  } catch {}
+
   // 1. Find thread
   const [thread] = await db
     .select()
@@ -85,6 +97,7 @@ app.get("/api/v1/comments", async (c) => {
 
   if (!thread) {
     return c.json({
+      siteSettings,
       thread: null,
       comments: [],
       total: 0,
@@ -216,6 +229,7 @@ app.get("/api/v1/comments", async (c) => {
   const hasMore = offset + topLevelComments.length < totalTopLevel;
 
   return c.json({
+    siteSettings,
     thread: {
       id: thread.id,
       url: thread.url,
@@ -920,6 +934,73 @@ app.delete("/api/v1/authors/:id", async (c) => {
   const db = drizzle(c.env.DB);
   await db.delete(authors).where(eq(authors.id, authorId));
   return c.json({ success: true, authorId, deleted: true });
+});
+
+// GET /api/v1/sites/:id/settings
+app.get("/api/v1/sites/:id/settings", async (c) => {
+  const siteId = c.req.param("id");
+  const db = drizzle(c.env.DB);
+
+  const [site] = await db
+    .select({ id: sites.id, name: sites.name, domain: sites.domain, settings: sites.settings })
+    .from(sites)
+    .where(eq(sites.id, siteId))
+    .limit(1);
+
+  if (!site) {
+    return c.json({ siteId, settings: {} });
+  }
+
+  let settingsObj: Record<string, any> = {};
+  try {
+    settingsObj = site.settings ? JSON.parse(site.settings) : {};
+  } catch {}
+
+  return c.json({ siteId, name: site.name, domain: site.domain, settings: settingsObj });
+});
+
+// POST /api/v1/sites/:id/settings (Save/Publish Remote Dashboard Settings)
+app.post("/api/v1/sites/:id/settings", async (c) => {
+  const siteId = c.req.param("id");
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const incomingSettings = body.settings ?? body;
+  const db = drizzle(c.env.DB);
+
+  const [existingSite] = await db
+    .select()
+    .from(sites)
+    .where(eq(sites.id, siteId))
+    .limit(1);
+
+  let mergedSettings: Record<string, any> = {};
+
+  if (!existingSite) {
+    mergedSettings = incomingSettings;
+    await db.insert(sites).values({
+      id: siteId,
+      name: siteId === "trc254" ? "The Reading Circle" : "My Publication",
+      domain: "*",
+      settings: JSON.stringify(mergedSettings),
+      createdAt: new Date(),
+    });
+  } else {
+    try {
+      mergedSettings = existingSite.settings ? JSON.parse(existingSite.settings) : {};
+    } catch {}
+    mergedSettings = { ...mergedSettings, ...incomingSettings };
+    await db
+      .update(sites)
+      .set({ settings: JSON.stringify(mergedSettings) })
+      .where(eq(sites.id, siteId));
+  }
+
+  return c.json({ success: true, siteId, settings: mergedSettings });
 });
 
 export default app;
