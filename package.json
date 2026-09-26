@@ -12,7 +12,9 @@
     "dev:widget": "npm run dev -w @nyuzi/widget",
     "build:widget": "npm run build -w @nyuzi/widget",
     "build:web": "npm run build -w @nyuzi/web",
-    "build": "npm run build:widget && npm run build:web"
+    "build": "npm run build:widget && npm run build:web",
+    "migrate:remote": "npm run migrate:remote -w @nyuzi/api",
+    "deploy:api": "npm run deploy -w @nyuzi/api"
   },
   "optionalDependencies": {
     "@tailwindcss/oxide-linux-x64-gnu": "4.3.3",
