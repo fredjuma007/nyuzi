@@ -39,20 +39,20 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");
 
-  // Hyvor-style Quick Color Presets
+  // Hyvor-style Quick Color Presets (Intelligently adapts to active Studio theme mode)
   const curatedPalettes = [
     {
       name: "TRC Literary Emerald",
-      accent: "#15803d",
+      accent: studioColorMode === "dark" ? "#10b981" : "#15803d",
       bg: "transparent",
-      theme: "light",
+      theme: "auto",
       desc: "Designed for The Reading Circle blog",
     },
     {
       name: "Nyuzi Amber Glow",
       accent: "#f56220",
       bg: "transparent",
-      theme: "light",
+      theme: "auto",
       desc: "Signature energetic publication tone",
     },
     {
@@ -77,30 +77,61 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     },
     {
       name: "Minimalist Mono",
-      accent: "#0f172a",
-      bg: "#ffffff",
-      cardBg: "#f8fafc",
-      textColor: "#0f172a",
-      borderColor: "#e2e8f0",
-      theme: "light",
+      accent: studioColorMode === "dark" ? "#f8fafc" : "#0f172a",
+      bg: studioColorMode === "dark" ? "#090605" : "#ffffff",
+      cardBg: studioColorMode === "dark" ? "#14100e" : "#f8fafc",
+      textColor: studioColorMode === "dark" ? "#f8fafc" : "#0f172a",
+      borderColor: studioColorMode === "dark" ? "#26201c" : "#e2e8f0",
+      theme: studioColorMode === "dark" ? "dark" : "light",
       desc: "Editorial Substack black & white simplicity",
     },
   ];
 
   // Apply a curated palette
-  const applyPalette = (p: typeof curatedPalettes[0]) => {
+  const applyPalette = (p: (typeof curatedPalettes)[0]) => {
     setAccentColor(p.accent);
     setCanvasBg(p.bg || "");
     setCardBg(p.cardBg || "");
     setTextColor(p.textColor || "");
     setBorderColor(p.borderColor || "");
-    setThemeMode(p.theme as any);
+    if (p.theme === "auto" || !p.theme) {
+      setThemeMode(studioColorMode);
+    } else {
+      setThemeMode(p.theme as any);
+      if (p.theme === "dark" || p.theme === "light") {
+        setStudioColorMode(p.theme);
+      }
+    }
     showToast(`Applied ${p.name} palette`);
+  };
+
+  // Toggle Light / Dark Studio Preview & Widget Mode
+  const handleToggleColorMode = (mode: "light" | "dark") => {
+    setStudioColorMode(mode);
+    setThemeMode(mode);
+    // If using TRC Emerald, adjust accent vibrancy for dark/light contrast
+    if (accentColor === "#15803d" && mode === "dark") {
+      setAccentColor("#10b981");
+    } else if (accentColor === "#10b981" && mode === "light") {
+      setAccentColor("#15803d");
+    }
+    // Clear conflicting overrides if switching modes
+    if (mode === "dark" && (textColor === "#0f172a" || cardBg === "#ffffff" || cardBg === "#f8fafc" || canvasBg === "#ffffff")) {
+      setTextColor("");
+      setCardBg("");
+      setCanvasBg("");
+      setBorderColor("");
+    } else if (mode === "light" && (textColor === "#f8fafc" || cardBg === "#14100e" || canvasBg === "#090605")) {
+      setTextColor("");
+      setCardBg("");
+      setCanvasBg("");
+      setBorderColor("");
+    }
   };
 
   // Reset to default
   const handleReset = () => {
-    setAccentColor(selectedSite === "trc254" ? "#15803d" : "#f56220");
+    setAccentColor(selectedSite === "trc254" ? (studioColorMode === "dark" ? "#10b981" : "#15803d") : "#f56220");
     setCanvasBg("");
     setCardBg("");
     setTextColor("");
@@ -136,6 +167,8 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       const containerMount = document.getElementById("nyuzi-studio-preview-mount");
       if (!containerMount) return;
 
+      const activeTheme = themeMode === "auto" ? studioColorMode : themeMode;
+
       containerMount.innerHTML = `
         <div id="nyuzi-comments"
           data-site-id="${selectedSite}"
@@ -144,12 +177,12 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
           data-author-name="Fred Juma"
           data-accent-color="${accentColor}"
           data-reaction="${reactionType}"
-          data-theme="${themeMode}"
+          data-theme="${activeTheme}"
           data-bg="${bgMode}"
-          data-bg-color="${canvasBg}"
-          data-card-bg="${cardBg}"
-          data-text-color="${textColor}"
-          data-border-color="${borderColor}"
+          ${canvasBg ? `data-bg-color="${canvasBg}"` : ""}
+          ${cardBg ? `data-card-bg="${cardBg}"` : ""}
+          ${textColor ? `data-text-color="${textColor}"` : ""}
+          ${borderColor ? `data-border-color="${borderColor}"` : ""}
           data-radius="${radiusValue}"
           data-reactions-bar="${showReactionsBar ? "true" : "false"}"
           data-mock="true">
@@ -181,6 +214,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     radiusValue,
     reactionType,
     themeMode,
+    studioColorMode,
     bgMode,
     showReactionsBar,
   ]);
@@ -280,32 +314,30 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
             {/* Light / Dark Mode Switcher */}
             <div className="flex items-center gap-1 bg-[var(--bg-page)] p-0.5 rounded-lg border border-[var(--border-card)]">
               <button
-                onClick={() => {
-                  setStudioColorMode("light");
-                  setThemeMode("light");
-                }}
-                className={`p-1 rounded-md transition-all cursor-pointer ${
+                type="button"
+                onClick={() => handleToggleColorMode("light")}
+                className={`px-2 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold ${
                   studioColorMode === "light"
                     ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                     : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 }`}
-                title="Light mode styles"
+                title="Light mode styles & preview"
               >
                 <Sun className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Light</span>
               </button>
               <button
-                onClick={() => {
-                  setStudioColorMode("dark");
-                  setThemeMode("dark");
-                }}
-                className={`p-1 rounded-md transition-all cursor-pointer ${
+                type="button"
+                onClick={() => handleToggleColorMode("dark")}
+                className={`px-2 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold ${
                   studioColorMode === "dark"
                     ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                     : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 }`}
-                title="Dark mode styles"
+                title="Dark mode styles & preview"
               >
                 <Moon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Dark</span>
               </button>
             </div>
           </div>
@@ -675,26 +707,62 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-              <span>Synchronized</span>
+            <div className="flex items-center gap-2">
+              {/* Quick Canvas Mode Switcher in Preview Header */}
+              <div className="flex items-center gap-0.5 bg-[var(--bg-page)] p-0.5 rounded-lg border border-[var(--border-card)]">
+                <button
+                  type="button"
+                  onClick={() => handleToggleColorMode("light")}
+                  className={`p-1 rounded-md transition-all cursor-pointer ${
+                    studioColorMode === "light"
+                      ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                  }`}
+                  title="Switch sandbox to Light Canvas"
+                >
+                  <Sun className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleToggleColorMode("dark")}
+                  className={`p-1 rounded-md transition-all cursor-pointer ${
+                    studioColorMode === "dark"
+                      ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                  }`}
+                  title="Switch sandbox to Dark Canvas"
+                >
+                  <Moon className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                <span>Synchronized</span>
+              </div>
             </div>
           </div>
 
           {/* Independently Scrollable Preview Body */}
-          <div className="flex-1 min-h-0 overflow-y-auto studio-scrollbar p-4 sm:p-6 space-y-5">
+          <div
+            className={`flex-1 min-h-0 overflow-y-auto studio-scrollbar p-4 sm:p-6 space-y-5 transition-colors duration-200 ${
+              studioColorMode === "dark"
+                ? "bg-[#090605] text-[#f8fafc]"
+                : "bg-[#ffffff] text-[#0f172a]"
+            }`}
+          >
             {/* Mock Article Top Header */}
-            <div className="border-b border-[var(--border-card)] pb-4">
+            <div className={`pb-4 border-b ${studioColorMode === "dark" ? "border-white/10" : "border-slate-200"}`}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand-orange)]">
                   The Reading Circle Blog
                 </span>
-                <span className="text-[var(--text-muted)] text-xs">&bull;</span>
-                <span className="text-[10px] text-[var(--text-muted)]">Live Article Simulation</span>
+                <span className={`${studioColorMode === "dark" ? "text-stone-500" : "text-slate-400"} text-xs`}>&bull;</span>
+                <span className={`text-[10px] ${studioColorMode === "dark" ? "text-stone-400" : "text-slate-500"}`}>Live Article Simulation</span>
               </div>
-              <h4 className="text-lg font-bold text-[var(--text-main)] font-serif-title">
+              <h4 className={`text-lg font-bold font-serif-title ${studioColorMode === "dark" ? "text-white" : "text-slate-900"}`}>
                 {selectedSite === "trc254" ? "The Art of Thoughtful Reading" : "Sample Publication Article"}
               </h4>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
+              <p className={`text-xs mt-1 ${studioColorMode === "dark" ? "text-stone-400" : "text-slate-600"}`}>
                 A community-centered space for literary reflections and dialogue. Readers leave thoughts below.
               </p>
             </div>
@@ -707,12 +775,22 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
             </div>
 
             {/* Quick Integration Directions */}
-            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-2">
-              <h5 className="font-bold text-xs uppercase tracking-wider flex items-center gap-2 text-[var(--text-main)]">
+            <div
+              className={`p-4 rounded-xl border space-y-2 ${
+                studioColorMode === "dark"
+                  ? "bg-[#140d0b] border-white/10 text-stone-300"
+                  : "bg-slate-50 border-slate-200 text-slate-700"
+              }`}
+            >
+              <h5
+                className={`font-bold text-xs uppercase tracking-wider flex items-center gap-2 ${
+                  studioColorMode === "dark" ? "text-white" : "text-slate-900"
+                }`}
+              >
                 <Sparkles className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
                 <span>How this integrates into your website</span>
               </h5>
-              <ol className="list-decimal list-inside space-y-1 text-xs text-[var(--text-secondary)] leading-relaxed">
+              <ol className="list-decimal list-inside space-y-1 text-xs leading-relaxed">
                 <li>Copy the generated 2-line embed snippet from the left pane.</li>
                 <li>Place the <code>&lt;div id=&quot;nyuzi-comments&quot;&gt;</code> container on your blog template.</li>
                 <li>Include the lightweight <code>&lt;script&gt;</code> before <code>&lt;/body&gt;</code>.</li>

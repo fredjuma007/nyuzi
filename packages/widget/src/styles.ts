@@ -28,11 +28,15 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       --nyuzi-bg: ${bg || (bgMode === "card" ? "#f8fafc" : "transparent")};
       --nyuzi-card-bg: ${cardBg || "#ffffff"};
       --nyuzi-text-primary: ${textColor || "#0f172a"};
-      --nyuzi-text-secondary: ${textSecondary || "#64748b"};
+      --nyuzi-text-secondary: ${textSecondary || "#475569"};
       --nyuzi-text-muted: #94a3b8;
       --nyuzi-border: ${borderColor || "#e2e8f0"};
       --nyuzi-input-bg: ${inputBg || "#f8fafc"};
-      --nyuzi-thread-line: var(--nyuzi-border);
+      --nyuzi-reaction-bg: #ffffff;
+      --nyuzi-reaction-border: #e2e8f0;
+      --nyuzi-badge-bg: #f1f5f9;
+      --nyuzi-badge-border: #e2e8f0;
+      --nyuzi-thread-line: #e2e8f0;
       --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
       --nyuzi-avatar-text: var(--nyuzi-accent);
       --nyuzi-radius: ${radius};
@@ -59,6 +63,10 @@ export function generateWidgetStyles(config: ThemeConfig): string {
         --nyuzi-text-muted: #968370;
         --nyuzi-border: ${borderColor || "#e2d4bc"};
         --nyuzi-input-bg: ${inputBg || "#fbf7ef"};
+        --nyuzi-reaction-bg: #fbf7ef;
+        --nyuzi-reaction-border: #e2d4bc;
+        --nyuzi-badge-bg: #ece0cd;
+        --nyuzi-badge-border: #e2d4bc;
         --nyuzi-thread-line: #e2d4bc;
         --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
         --nyuzi-avatar-text: var(--nyuzi-accent);
@@ -74,11 +82,15 @@ export function generateWidgetStyles(config: ThemeConfig): string {
         --nyuzi-bg: ${bg || (bgMode === "card" ? "#090605" : "transparent")};
         --nyuzi-card-bg: ${cardBg || "#14100e"};
         --nyuzi-text-primary: ${textColor || "#f8fafc"};
-        --nyuzi-text-secondary: ${textSecondary || "#94a3b8"};
-        --nyuzi-text-muted: #64748b;
-        --nyuzi-border: ${borderColor || "#26201c"};
-        --nyuzi-input-bg: ${inputBg || "#1b1513"};
-        --nyuzi-thread-line: #2e2621;
+        --nyuzi-text-secondary: ${textSecondary || "#cbd5e1"};
+        --nyuzi-text-muted: #94a3b8;
+        --nyuzi-border: ${borderColor || "rgba(255, 255, 255, 0.12)"};
+        --nyuzi-input-bg: ${inputBg || "#181412"};
+        --nyuzi-reaction-bg: rgba(255, 255, 255, 0.05);
+        --nyuzi-reaction-border: rgba(255, 255, 255, 0.1);
+        --nyuzi-badge-bg: rgba(255, 255, 255, 0.08);
+        --nyuzi-badge-border: rgba(255, 255, 255, 0.12);
+        --nyuzi-thread-line: rgba(255, 255, 255, 0.12);
         --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
         --nyuzi-avatar-text: var(--nyuzi-accent);
       }
@@ -94,14 +106,34 @@ export function generateWidgetStyles(config: ThemeConfig): string {
           --nyuzi-bg: ${bg || (bgMode === "card" ? "#090605" : "transparent")};
           --nyuzi-card-bg: ${cardBg || "#14100e"};
           --nyuzi-text-primary: ${textColor || "#f8fafc"};
-          --nyuzi-text-secondary: ${textSecondary || "#94a3b8"};
-          --nyuzi-text-muted: #64748b;
-          --nyuzi-border: ${borderColor || "#26201c"};
-          --nyuzi-input-bg: ${inputBg || "#1b1513"};
-          --nyuzi-thread-line: #2e2621;
+          --nyuzi-text-secondary: ${textSecondary || "#cbd5e1"};
+          --nyuzi-text-muted: #94a3b8;
+          --nyuzi-border: ${borderColor || "rgba(255, 255, 255, 0.12)"};
+          --nyuzi-input-bg: ${inputBg || "#181412"};
+          --nyuzi-reaction-bg: rgba(255, 255, 255, 0.05);
+          --nyuzi-reaction-border: rgba(255, 255, 255, 0.1);
+          --nyuzi-badge-bg: rgba(255, 255, 255, 0.08);
+          --nyuzi-badge-border: rgba(255, 255, 255, 0.12);
+          --nyuzi-thread-line: rgba(255, 255, 255, 0.12);
           --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
           --nyuzi-avatar-text: var(--nyuzi-accent);
         }
+      }
+      :host-context(.dark), :host([data-theme="dark"]) {
+        --nyuzi-bg: ${bg || (bgMode === "card" ? "#090605" : "transparent")};
+        --nyuzi-card-bg: ${cardBg || "#14100e"};
+        --nyuzi-text-primary: ${textColor || "#f8fafc"};
+        --nyuzi-text-secondary: ${textSecondary || "#cbd5e1"};
+        --nyuzi-text-muted: #94a3b8;
+        --nyuzi-border: ${borderColor || "rgba(255, 255, 255, 0.12)"};
+        --nyuzi-input-bg: ${inputBg || "#181412"};
+        --nyuzi-reaction-bg: rgba(255, 255, 255, 0.05);
+        --nyuzi-reaction-border: rgba(255, 255, 255, 0.1);
+        --nyuzi-badge-bg: rgba(255, 255, 255, 0.08);
+        --nyuzi-badge-border: rgba(255, 255, 255, 0.12);
+        --nyuzi-thread-line: rgba(255, 255, 255, 0.12);
+        --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
+        --nyuzi-avatar-text: var(--nyuzi-accent);
       }
     `
         : ""
@@ -126,52 +158,57 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       background: var(--nyuzi-card-bg);
       border: 1px solid var(--nyuzi-border);
       border-radius: var(--nyuzi-radius);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     .nyuzi-reactions-prompt {
-      font-size: 0.875rem;
+      font-size: 0.9375rem;
       font-weight: 700;
       color: var(--nyuzi-text-primary);
       margin-bottom: 0.85rem;
+      letter-spacing: -0.01em;
     }
     .nyuzi-reactions-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.65rem;
+      gap: 0.75rem;
       justify-content: center;
     }
     .nyuzi-reaction-pill {
       display: inline-flex;
       flex-direction: column;
       align-items: center;
-      background: var(--nyuzi-input-bg);
-      border: 1px solid var(--nyuzi-border);
-      border-radius: 0.65rem;
-      padding: 0.45rem 0.75rem;
+      background: var(--nyuzi-reaction-bg);
+      border: 1px solid var(--nyuzi-reaction-border);
+      border-radius: 0.75rem;
+      padding: 0.5rem 0.85rem;
       cursor: pointer;
-      transition: all 0.15s ease;
-      min-width: 62px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      min-width: 66px;
       user-select: none;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
     .nyuzi-reaction-pill:hover {
       transform: translateY(-2px);
       border-color: var(--nyuzi-accent);
       background: var(--nyuzi-accent-soft);
-      box-shadow: 0 3px 8px var(--nyuzi-accent-soft);
+      box-shadow: 0 4px 14px var(--nyuzi-accent-soft);
     }
     .nyuzi-reaction-pill.active {
       border-color: var(--nyuzi-accent);
       background: var(--nyuzi-accent-soft);
-      box-shadow: 0 2px 6px var(--nyuzi-accent-soft);
+      box-shadow: 0 0 12px var(--nyuzi-accent-soft);
+      transform: translateY(-1px);
     }
     .nyuzi-reaction-pill .emoji-row {
       display: flex;
       align-items: center;
-      gap: 0.3rem;
-      font-size: 1rem;
+      gap: 0.35rem;
+      font-size: 1.15rem;
+      line-height: 1;
     }
     .nyuzi-reaction-pill .reaction-count {
-      font-size: 0.75rem;
+      font-size: 0.8125rem;
       font-weight: 700;
       color: var(--nyuzi-text-primary);
     }
@@ -180,7 +217,12 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       font-weight: 600;
       text-transform: capitalize;
       color: var(--nyuzi-text-secondary);
-      margin-top: 0.15rem;
+      margin-top: 0.25rem;
+      letter-spacing: 0.01em;
+    }
+    .nyuzi-reaction-pill.active .reaction-label {
+      color: var(--nyuzi-accent);
+      font-weight: 700;
     }
 
     /* Discussion Header */
@@ -200,15 +242,16 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      letter-spacing: -0.01em;
     }
     .nyuzi-badge {
       font-size: 0.8125rem;
-      font-weight: 600;
-      background: var(--nyuzi-input-bg);
+      font-weight: 700;
+      background: var(--nyuzi-badge-bg);
       color: var(--nyuzi-text-secondary);
-      padding: 0.15rem 0.55rem;
+      padding: 0.15rem 0.6rem;
       border-radius: 9999px;
-      border: 1px solid var(--nyuzi-border);
+      border: 1px solid var(--nyuzi-badge-border);
     }
 
     /* Main Comment Form */
@@ -216,7 +259,7 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       background: var(--nyuzi-card-bg);
       border: 1px solid var(--nyuzi-border);
       border-radius: var(--nyuzi-radius);
-      padding: 1rem;
+      padding: 1.15rem;
       margin-bottom: 2rem;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
       transition: border-color 0.2s, box-shadow 0.2s;
@@ -227,8 +270,8 @@ export function generateWidgetStyles(config: ThemeConfig): string {
     }
     .nyuzi-textarea {
       width: 100%;
-      min-height: 85px;
-      padding: 0.75rem;
+      min-height: 90px;
+      padding: 0.75rem 0.85rem;
       border: 1px solid var(--nyuzi-border);
       border-radius: 0.5rem;
       background: var(--nyuzi-input-bg);
@@ -237,11 +280,16 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       font-size: 0.9375rem;
       resize: vertical;
       outline: none;
-      transition: border-color 0.15s, background 0.15s;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+      box-sizing: border-box;
+    }
+    .nyuzi-textarea::placeholder {
+      color: var(--nyuzi-text-muted);
     }
     .nyuzi-textarea:focus {
       border-color: var(--nyuzi-accent);
       background: var(--nyuzi-card-bg);
+      box-shadow: 0 0 0 2px var(--nyuzi-accent-soft);
     }
     .nyuzi-counter-row {
       display: flex;
@@ -266,18 +314,23 @@ export function generateWidgetStyles(config: ThemeConfig): string {
     }
     .nyuzi-input {
       flex: 1;
-      padding: 0.5rem 0.75rem;
+      padding: 0.55rem 0.85rem;
       border: 1px solid var(--nyuzi-border);
       border-radius: 0.5rem;
       background: var(--nyuzi-input-bg);
       color: var(--nyuzi-text-primary);
       font-size: 0.875rem;
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+      box-sizing: border-box;
+    }
+    .nyuzi-input::placeholder {
+      color: var(--nyuzi-text-muted);
     }
     .nyuzi-input:focus {
       border-color: var(--nyuzi-accent);
       background: var(--nyuzi-card-bg);
+      box-shadow: 0 0 0 2px var(--nyuzi-accent-soft);
     }
     .nyuzi-optin {
       display: flex;
@@ -294,23 +347,26 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       cursor: pointer;
     }
     .nyuzi-submit-btn {
-      background: var(--nyuzi-accent);
-      color: #ffffff;
+      background: var(--nyuzi-accent) !important;
+      color: #ffffff !important;
       border: none;
-      padding: 0.55rem 1.35rem;
+      padding: 0.6rem 1.4rem;
       border-radius: 0.5rem;
       font-size: 0.875rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
-      transition: background 0.15s, opacity 0.15s, transform 0.1s;
+      gap: 0.4rem;
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--nyuzi-accent) 30%, transparent);
+      transition: background 0.15s, opacity 0.15s, transform 0.1s, box-shadow 0.15s;
     }
-    .nyuzi-submit-btn:hover {
-      background: var(--nyuzi-accent-hover);
+    .nyuzi-submit-btn:hover:not(:disabled) {
+      background: var(--nyuzi-accent-hover) !important;
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--nyuzi-accent) 50%, transparent);
+      transform: translateY(-1px);
     }
-    .nyuzi-submit-btn:active {
+    .nyuzi-submit-btn:active:not(:disabled) {
       transform: scale(0.98);
     }
     .nyuzi-submit-btn:disabled {
@@ -341,9 +397,9 @@ export function generateWidgetStyles(config: ThemeConfig): string {
 
     /* Error Alert */
     .nyuzi-alert {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #b91c1c;
+      background: color-mix(in srgb, #ef4444 14%, var(--nyuzi-card-bg));
+      border: 1px solid color-mix(in srgb, #ef4444 35%, transparent);
+      color: #f87171;
       padding: 0.6rem 0.85rem;
       border-radius: 0.5rem;
       font-size: 0.8125rem;
@@ -430,21 +486,22 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       color: var(--nyuzi-text-primary);
       font-size: 0.9375rem;
       word-break: break-word;
-      line-height: 1.55;
+      line-height: 1.6;
     }
     .nyuzi-content blockquote {
       border-left: 3px solid var(--nyuzi-accent);
-      padding: 0.25rem 0.75rem;
-      margin: 0.45rem 0;
-      color: var(--nyuzi-text-secondary);
+      padding: 0.35rem 0.85rem;
+      margin: 0.55rem 0;
+      color: var(--nyuzi-text-primary);
       background: var(--nyuzi-accent-soft);
-      border-radius: 0 4px 4px 0;
+      border-radius: 0 6px 6px 0;
       font-style: italic;
+      line-height: 1.6;
     }
     .nyuzi-content code {
-      background: var(--nyuzi-input-bg);
+      background: var(--nyuzi-badge-bg);
       border: 1px solid var(--nyuzi-border);
-      padding: 0.1rem 0.35rem;
+      padding: 0.15rem 0.4rem;
       border-radius: 4px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 0.85em;
@@ -506,10 +563,10 @@ export function generateWidgetStyles(config: ThemeConfig): string {
     /* Inline Edit Form */
     .nyuzi-edit-box {
       margin-top: 0.35rem;
-      background: var(--nyuzi-input-bg);
+      background: var(--nyuzi-card-bg);
       border: 1px solid var(--nyuzi-border);
       border-radius: 0.5rem;
-      padding: 0.65rem;
+      padding: 0.75rem;
     }
     .nyuzi-edit-textarea {
       min-height: 65px;
@@ -528,9 +585,9 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #991b1b;
+      background: color-mix(in srgb, #ef4444 14%, var(--nyuzi-card-bg));
+      border: 1px solid color-mix(in srgb, #ef4444 35%, transparent);
+      color: #fca5a5;
       padding: 0.35rem 0.75rem;
       border-radius: 9999px;
       font-size: 0.8125rem;
@@ -553,7 +610,7 @@ export function generateWidgetStyles(config: ThemeConfig): string {
     .nyuzi-cancel-delete-btn {
       background: none;
       border: none;
-      color: #4b5563;
+      color: var(--nyuzi-text-muted);
       font-size: 0.75rem;
       cursor: pointer;
       text-decoration: underline;
@@ -666,7 +723,7 @@ export function generateWidgetStyles(config: ThemeConfig): string {
     .nyuzi-reply-box {
       margin-top: 0.75rem;
       padding: 0.85rem;
-      background: var(--nyuzi-input-bg);
+      background: var(--nyuzi-card-bg);
       border: 1px solid var(--nyuzi-border);
       border-radius: 0.65rem;
     }

@@ -24,15 +24,14 @@ import {
   const currentScript = document.currentScript as HTMLScriptElement | null;
 
   // 1. Identify target container
-  let container = document.getElementById("nyuzi-comments");
-  if (!container) {
-    container = document.querySelector("nyuzi-comments");
-  }
+  const rawContainer =
+    document.getElementById("nyuzi-comments") || document.querySelector("nyuzi-comments");
 
-  if (!container) {
+  if (!rawContainer) {
     console.warn("[Nyuzi] No container found (#nyuzi-comments or <nyuzi-comments>).");
     return;
   }
+  const container = rawContainer as HTMLElement;
 
   // 2. Extract Configuration & Visual Tokens
   const siteId =
@@ -102,6 +101,9 @@ import {
   // 3. Attach Shadow DOM for CSS isolation
   const shadow = container.shadowRoot || container.attachShadow({ mode: "open" });
   shadow.innerHTML = "";
+  if (themeConfig.themeMode) {
+    container.setAttribute("data-theme", themeConfig.themeMode);
+  }
 
   // 4. Widget State
   const threadUrl =
@@ -578,6 +580,9 @@ import {
     const topLevelComments = commentsList.filter((c) => !c.parentId);
     const styles = generateWidgetStyles(themeConfig);
     const myComments = getMyActiveComments();
+    if (themeConfig.themeMode && container) {
+      container.setAttribute("data-theme", themeConfig.themeMode);
+    }
 
     shadow.innerHTML = `
       <style>${styles}</style>
