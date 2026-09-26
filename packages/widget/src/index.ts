@@ -33,6 +33,10 @@ import {
     return;
   }
   const container = rawContainer as HTMLElement;
+  if ((container as any).__nyuzi_initialized) {
+    return;
+  }
+  (container as any).__nyuzi_initialized = true;
 
   // 2. Extract Configuration & Visual Tokens
   const siteId =
@@ -179,6 +183,7 @@ import {
   let activeReactionKey: string | null = null;
   const upvotedComments = new Set<string>();
   const collapsedComments = new Set<string>();
+  let isTogglingReaction = false;
 
   // Persistent Thread Reactions
   const THREAD_REACTION_STORAGE_KEY = `nyuzi_react_${siteId}_${encodeURIComponent(threadUrl)}`;
@@ -807,8 +812,11 @@ import {
     // Reactions bar pills (Persistent voting & unvoting)
     shadow.querySelectorAll(".nyuzi-reaction-pill").forEach((pill) => {
       pill.addEventListener("click", async (e) => {
+        if (isTogglingReaction) return;
         const key = (e.currentTarget as HTMLElement).getAttribute("data-reaction-key");
         if (!key) return;
+
+        isTogglingReaction = true;
 
         const prevKey = activeReactionKey;
         let action: "react" | "unreact" | "switch";
@@ -863,7 +871,11 @@ import {
             }
           } catch (err) {
             console.warn("[Nyuzi] Failed to sync reaction to server:", err);
+          } finally {
+            isTogglingReaction = false;
           }
+        } else {
+          isTogglingReaction = false;
         }
       });
     });

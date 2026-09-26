@@ -557,9 +557,11 @@ app.post("/api/v1/threads/react", async (c) => {
 
   let reactionsObj: Record<string, number> = {};
 
+  const isUnreact = action === "unreact" || action === "unvote";
+
   if (!thread) {
     const newThreadId = "th_" + crypto.randomUUID().replace(/-/g, "").slice(0, 16);
-    if (action === "unvote") {
+    if (isUnreact) {
       reactionsObj = {};
     } else {
       reactionsObj[reactionKey] = 1;
@@ -583,7 +585,7 @@ app.post("/api/v1/threads/react", async (c) => {
       reactionsObj = {};
     }
 
-    if (action === "unvote") {
+    if (isUnreact) {
       reactionsObj[reactionKey] = Math.max(0, (reactionsObj[reactionKey] || 1) - 1);
       if (reactionsObj[reactionKey] === 0) delete reactionsObj[reactionKey];
     } else if (action === "switch" && previousKey) {
@@ -603,7 +605,7 @@ app.post("/api/v1/threads/react", async (c) => {
   return c.json({
     success: true,
     reactions: reactionsObj,
-    activeKey: action === "unvote" ? null : reactionKey,
+    activeKey: isUnreact ? null : reactionKey,
   });
 });
 
