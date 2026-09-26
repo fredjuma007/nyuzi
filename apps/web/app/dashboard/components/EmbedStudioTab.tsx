@@ -46,14 +46,12 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       accent: studioColorMode === "dark" ? "#10b981" : "#15803d",
       bg: "transparent",
       theme: "auto",
-      desc: "The Reading Circle Blog Theme",
     },
     {
       name: "Nyuzi Amber Glow",
       accent: "#f56220",
       bg: "transparent",
       theme: "auto",
-      desc: "Signature energetic publication tone",
     },
     {
       name: "Sepia Book Parchment",
@@ -63,7 +61,6 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       textColor: studioColorMode === "dark" ? "#f5ede4" : "#2b2118",
       borderColor: studioColorMode === "dark" ? "#3d3027" : "#e2d4bc",
       theme: studioColorMode === "dark" ? "dark" : "sepia",
-      desc: "Warm vintage paper tone for book lovers",
     },
     {
       name: "Obsidian Electric",
@@ -73,7 +70,6 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       textColor: "#f8fafc",
       borderColor: "#26201c",
       theme: "dark",
-      desc: "High-contrast dark mode for tech publications",
     },
     {
       name: "Minimalist Mono",
@@ -83,14 +79,12 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       textColor: studioColorMode === "dark" ? "#f8fafc" : "#0f172a",
       borderColor: studioColorMode === "dark" ? "#26201c" : "#e2e8f0",
       theme: studioColorMode === "dark" ? "dark" : "light",
-      desc: "Editorial Substack black & white simplicity",
     },
     {
       name: "Gorgeous 12",
       accent: studioColorMode === "dark" ? "#fb7185" : "#be123c",
       bg: "transparent",
       theme: "auto",
-      desc: "Literary review & arts publication",
     },
   ];
 
@@ -401,29 +395,24 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                       key={p.name}
                       type="button"
                       onClick={() => applyPalette(p)}
-                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 relative group ${
+                      className={`px-3 py-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-2 relative group ${
                         isSelected
                           ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] shadow-xs"
                           : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 bg-[var(--bg-page)]"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span
-                            className="w-3 h-3 rounded-full shrink-0 border border-white/20 shadow-xs"
-                            style={{ backgroundColor: p.accent }}
-                          />
-                          <span className="font-bold text-xs text-[var(--text-main)] truncate">
-                            {p.name}
-                          </span>
-                        </div>
-                        {isSelected && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-orange)] shrink-0" />
-                        )}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0 border border-white/20 shadow-xs"
+                          style={{ backgroundColor: p.accent }}
+                        />
+                        <span className="font-bold text-xs text-[var(--text-main)] truncate">
+                          {p.name}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-[var(--text-muted)] line-clamp-1 leading-tight">
-                        {p.desc}
-                      </span>
+                      {isSelected && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-orange)] shrink-0" />
+                      )}
                     </button>
                   );
                 })}
