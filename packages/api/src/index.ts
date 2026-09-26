@@ -577,6 +577,15 @@ app.get("/api/v1/dashboard", async (c) => {
     .where(and(eq(comments.siteId, siteId), sql`${comments.status} != 'deleted'`))
     .groupBy(comments.authorName);
 
+  const authorCountMap: Record<string, number> = {};
+  if (Array.isArray(authorCounts)) {
+    for (const item of authorCounts) {
+      if (item.authorName) {
+        authorCountMap[item.authorName] = Number(item.count || 0);
+      }
+    }
+  }
+
   return c.json({
     success: true,
     site: site || {
@@ -590,12 +599,52 @@ app.get("/api/v1/dashboard", async (c) => {
       totalUpvotes: commentStats?.totalUpvotes || 0,
     },
     comments: recentComments,
+    recentComments: recentComments,
     threads: activeThreads,
     authorCounts: authorCounts,
+    authorCountMap: authorCountMap,
   });
 });
 
-// PATCH /api/v1/comments/:id/status
+// PATCH /api/v1/comments/:id (supports both content editing & moderation status updates)
+app.patch("/api/v1/comments/:id", async (c) => {
+  const commentId = c.req.param("id");
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch {}
+
+  const db = drizzle(c.env.DB);
+  const updates: Record<string, any> = {};
+
+  if (body.status !== undefined) {
+    if (!["approved", "pending", "spam", "deleted"].includes(body.status)) {
+      return c.json({ error: "Invalid status" }, 400);
+    }
+    updates.status = body.status;
+  }
+
+  if (typeof body.content === "string") {
+    const clean = sanitizeContent(body.content).slice(0, 3000);
+    if (!clean) {
+      return c.json({ error: "Comment content cannot be empty" }, 400);
+    }
+    updates.content = clean;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return c.json({ error: "No valid fields to update" }, 400);
+  }
+
+  await db
+    .update(comments)
+    .set(updates)
+    .where(eq(comments.id, commentId));
+
+  return c.json({ success: true, commentId, ...updates });
+});
+
+// PATCH /api/v1/comments/:id/status (legacy alias)
 app.patch("/api/v1/comments/:id/status", async (c) => {
   const commentId = c.req.param("id");
   let body: any = {};

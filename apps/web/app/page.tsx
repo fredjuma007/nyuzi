@@ -6,7 +6,7 @@ import { Footer } from "@/components/Footer";
 
 export default function LandingPage() {
   const [playgroundAccent, setPlaygroundAccent] = useState("#f56220");
-  const [playgroundReaction, setPlaygroundReaction] = useState<"heart" | "upvote">("heart");
+  const [playgroundReaction, setPlaygroundReaction] = useState<"like" | "heart" | "upvote">("like");
   const [snippetSiteId, setSnippetSiteId] = useState("my-publication");
   const [copied, setCopied] = useState(false);
 
@@ -169,21 +169,32 @@ export default function LandingPage() {
                   <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2.5">
                     Reaction Style
                   </h3>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setPlaygroundReaction("like")}
+                      className={`px-2 py-2 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 cursor-pointer transition-all ${
+                        playgroundReaction === "like"
+                          ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold"
+                          : "ember-border bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]"
+                      }`}
+                    >
+                      <span>👍</span>
+                      <span>Like</span>
+                    </button>
                     <button
                       onClick={() => setPlaygroundReaction("heart")}
-                      className={`px-2.5 py-2 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      className={`px-2 py-2 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 cursor-pointer transition-all ${
                         playgroundReaction === "heart"
                           ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold"
                           : "ember-border bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]"
                       }`}
                     >
                       <span>❤️</span>
-                      <span>Heart Pop</span>
+                      <span>Heart</span>
                     </button>
                     <button
                       onClick={() => setPlaygroundReaction("upvote")}
-                      className={`px-2.5 py-2 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      className={`px-2 py-2 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 cursor-pointer transition-all ${
                         playgroundReaction === "upvote"
                           ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold"
                           : "ember-border bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]"

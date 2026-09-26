@@ -1,39 +1,24 @@
 /**
  * Nyuzi Embed Widget
  * Ultra-lightweight, edge-powered commenting client (<15KB)
+ * Built with modular Shadow DOM architecture, Micro-Markdown, 15-min edit grace window & collapsible threads
  */
 
-interface NyuziComment {
-  id: string;
-  parentId: string | null;
-  authorName: string;
-  content: string;
-  status: string;
-  upvotes: number;
-  createdAt: string;
-}
-
-interface NyuziThread {
-  id: string;
-  url: string;
-  title: string | null;
-  commentCount: number;
-}
-
-interface NyuziPagination {
-  page: number;
-  limit: number;
-  totalTopLevel: number;
-  totalComments: number;
-  hasMore: boolean;
-}
-
-interface NyuziResponse {
-  thread: NyuziThread | null;
-  comments: NyuziComment[];
-  pagination?: NyuziPagination;
-  total: number;
-}
+import { NyuziComment, NyuziResponse, ThemeConfig } from "./types";
+import { generateWidgetStyles } from "./styles";
+import {
+  escapeHtml,
+  renderComment,
+  renderTopReactionsBar,
+  renderFormatToolbar,
+} from "./templates";
+import {
+  fetchCommentsApi,
+  submitCommentApi,
+  toggleUpvoteApi,
+  editCommentApi,
+  deleteCommentApi,
+} from "./api";
 
 (function () {
   const currentScript = document.currentScript as HTMLScriptElement | null;
@@ -49,6 +34,7 @@ interface NyuziResponse {
     return;
   }
 
+  // 2. Extract Configuration & Visual Tokens
   const siteId =
     currentScript?.getAttribute("data-site-id") ||
     container.getAttribute("data-site-id") ||
@@ -60,34 +46,80 @@ interface NyuziResponse {
     container.getAttribute("data-api") ||
     "https://nyuzi-api.fredjuma8.workers.dev";
 
-  const customAccent =
-    currentScript?.getAttribute("data-accent-color") ||
-    container.getAttribute("data-accent-color") ||
-    "#6366f1";
+  const isMockMode =
+    currentScript?.getAttribute("data-mock") === "true" ||
+    container.getAttribute("data-mock") === "true";
 
-  const reactionType =
-    currentScript?.getAttribute("data-reaction") ||
-    container.getAttribute("data-reaction") ||
-    "heart";
+  const showReactionsBar =
+    currentScript?.getAttribute("data-reactions-bar") === "true" ||
+    container.getAttribute("data-reactions-bar") === "true";
 
-  // 3. Attach Shadow DOM for complete CSS isolation
+  const themeConfig: ThemeConfig = {
+    accent:
+      currentScript?.getAttribute("data-accent-color") ||
+      container.getAttribute("data-accent-color") ||
+      "#f56220",
+    bg:
+      currentScript?.getAttribute("data-bg-color") ||
+      container.getAttribute("data-bg-color") ||
+      "",
+    cardBg:
+      currentScript?.getAttribute("data-card-bg") ||
+      container.getAttribute("data-card-bg") ||
+      "",
+    textColor:
+      currentScript?.getAttribute("data-text-color") ||
+      container.getAttribute("data-text-color") ||
+      "",
+    textSecondary:
+      currentScript?.getAttribute("data-text-secondary") ||
+      container.getAttribute("data-text-secondary") ||
+      "",
+    borderColor:
+      currentScript?.getAttribute("data-border-color") ||
+      container.getAttribute("data-border-color") ||
+      "",
+    inputBg:
+      currentScript?.getAttribute("data-input-bg") ||
+      container.getAttribute("data-input-bg") ||
+      "",
+    radius:
+      currentScript?.getAttribute("data-radius") ||
+      container.getAttribute("data-radius") ||
+      "0.75rem",
+    reactionType: (currentScript?.getAttribute("data-reaction") ||
+      container.getAttribute("data-reaction") ||
+      "like") as any,
+    themeMode: (currentScript?.getAttribute("data-theme") ||
+      container.getAttribute("data-theme") ||
+      "auto") as any,
+    bgMode: (currentScript?.getAttribute("data-bg") ||
+      container.getAttribute("data-bg") ||
+      "transparent") as any,
+    showReactionsBar,
+  };
+
+  // 3. Attach Shadow DOM for CSS isolation
   const shadow = container.shadowRoot || container.attachShadow({ mode: "open" });
   shadow.innerHTML = "";
 
-  // Widget State
+  // 4. Widget State
   const threadUrl =
     currentScript?.getAttribute("data-thread-url") ||
     container.getAttribute("data-thread-url") ||
     window.location.href.split("#")[0];
+
   const threadTitle =
     currentScript?.getAttribute("data-thread-title") ||
     container.getAttribute("data-thread-title") ||
     document.title ||
     "Discussion";
+
   const postAuthor =
     currentScript?.getAttribute("data-author-name") ||
     container.getAttribute("data-author-name") ||
     "";
+
   let commentsList: NyuziComment[] = [];
   let totalComments = 0;
   let totalTopLevel = 0;
@@ -98,16 +130,65 @@ interface NyuziResponse {
   let isLoading = true;
   let formError: string | null = null;
   let activeReplyId: string | null = null;
+  let editingCommentId: string | null = null;
+  let confirmDeleteId: string | null = null;
   let isSubmitting = false;
+  let activeReactionKey: string | null = null;
   const upvotedComments = new Set<string>();
+  const collapsedComments = new Set<string>();
 
-  // Load upvoted state from session
+  // Reader Ownership for 15-Minute Grace Window
+  const OWNERSHIP_STORAGE_KEY = "nyuzi_reader_ownership";
+  const GRACE_PERIOD_MS = 15 * 60 * 1000; // 15 mins
+
+  function saveCommentOwnership(commentId: string) {
+    try {
+      const stored = localStorage.getItem(OWNERSHIP_STORAGE_KEY);
+      const data: Record<string, number> = stored ? JSON.parse(stored) : {};
+      data[commentId] = Date.now() + GRACE_PERIOD_MS;
+      localStorage.setItem(OWNERSHIP_STORAGE_KEY, JSON.stringify(data));
+    } catch {}
+  }
+
+  function removeCommentOwnership(commentId: string) {
+    try {
+      const stored = localStorage.getItem(OWNERSHIP_STORAGE_KEY);
+      if (stored) {
+        const data: Record<string, number> = JSON.parse(stored);
+        delete data[commentId];
+        localStorage.setItem(OWNERSHIP_STORAGE_KEY, JSON.stringify(data));
+      }
+    } catch {}
+  }
+
+  function getMyActiveComments(): Set<string> {
+    const mine = new Set<string>();
+    try {
+      const stored = localStorage.getItem(OWNERSHIP_STORAGE_KEY);
+      if (stored) {
+        const data: Record<string, number> = JSON.parse(stored);
+        const now = Date.now();
+        for (const [id, expiresAt] of Object.entries(data)) {
+          if (now < expiresAt) {
+            mine.add(id);
+          }
+        }
+      }
+    } catch {}
+    // In mock mode, pre-grant edit/delete on mock-3 so the user can test the UI in Embed Studio
+    if (isMockMode) {
+      mine.add("mock-3");
+    }
+    return mine;
+  }
+
+  // Restore upvoted comments from session
   try {
     const saved = sessionStorage.getItem("nyuzi_upvotes");
     if (saved) JSON.parse(saved).forEach((id: string) => upvotedComments.add(id));
   } catch {}
 
-  // Load saved author info from local storage
+  // Author Persistence in LocalStorage
   let savedAuthorName = "";
   let savedAuthorEmail = "";
   try {
@@ -124,531 +205,48 @@ interface NyuziResponse {
     } catch {}
   }
 
-  // Helpers
-  function escapeHtml(str: string): string {
-    return str
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+  // Pre-populated Discussion for Studio Sandbox
+  function seedMockComments(): NyuziComment[] {
+    return [
+      {
+        id: "mock-1",
+        parentId: null,
+        authorName: postAuthor || "Fred Juma",
+        authorEmail: "fredjuma8@gmail.com",
+        content:
+          "Welcome to our literary salon! **The Reading Circle** invites your reflections on this essay:\n\n> \"A reader lives a thousand lives before he dies. The man who never reads lives only one.\"\n\nFeel free to share your thoughts, quote your favorite passages, or reply to fellow readers below.",
+        status: "approved",
+        upvotes: 14,
+        createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+        isAuthor: true,
+      },
+      {
+        id: "mock-2",
+        parentId: "mock-1",
+        authorName: "Brenda Frenjo",
+        authorEmail: "readingcircle254@gmail.com",
+        content:
+          "The second chapter in particular felt so poignant. The pacing and character progression really resonated with what we discussed during Sunday's book circle session!",
+        status: "approved",
+        upvotes: 8,
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        isAuthor: true,
+      },
+      {
+        id: "mock-3",
+        parentId: null,
+        authorName: "Amina Odhiambo",
+        authorEmail: "amina@example.com",
+        content:
+          "Reading this made me pause and reflect on how we consume stories in the digital age. Check out this related discussion on [Bookish Perspectives](https://readingcircle254.com/blog)!",
+        status: "approved",
+        upvotes: 5,
+        createdAt: new Date(Date.now() - 1800000).toISOString(),
+      },
+    ];
   }
 
-  function getInitials(name: string): string {
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-
-  function formatTime(isoString: string): string {
-    try {
-      const date = new Date(isoString);
-      const now = new Date();
-      const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-      if (diffSec < 60) return "just now";
-      if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-      if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
-      if (diffSec < 604800) return `${Math.floor(diffSec / 86400)}d ago`;
-
-      return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    } catch {
-      return "recently";
-    }
-  }
-
-  function renderReactionIcon(filled: boolean): string {
-    if (reactionType === "upvote") {
-      return `<span style="font-size:0.75rem;">▲</span>`;
-    }
-    return `<svg class="nyuzi-heart-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="${filled ? "currentColor" : "none"}" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>`;
-  }
-
-  function renderReplyIcon(): string {
-    return `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>`;
-  }
-
-  function renderLinkIcon(): string {
-    return `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`;
-  }
-
-  // Scoped CSS
-  const styles = `
-    :host {
-      --nyuzi-accent: ${customAccent};
-      --nyuzi-accent-hover: #4f46e5;
-      --nyuzi-bg: transparent;
-      --nyuzi-card-bg: #ffffff;
-      --nyuzi-text-primary: #0f172a;
-      --nyuzi-text-secondary: #64748b;
-      --nyuzi-text-muted: #94a3b8;
-      --nyuzi-border: #e2e8f0;
-      --nyuzi-input-bg: #f8fafc;
-      --nyuzi-thread-line: #e2e8f0;
-      --nyuzi-avatar-bg: #e0e7ff;
-      --nyuzi-avatar-text: #4338ca;
-      --nyuzi-radius: 0.75rem;
-
-      display: block;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 15px;
-      line-height: 1.5;
-      color: var(--nyuzi-text-primary);
-      box-sizing: border-box;
-      max-width: 100%;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :host {
-        --nyuzi-card-bg: #0f172a;
-        --nyuzi-text-primary: #f8fafc;
-        --nyuzi-text-secondary: #94a3b8;
-        --nyuzi-text-muted: #64748b;
-        --nyuzi-border: #1e293b;
-        --nyuzi-input-bg: #1e293b;
-        --nyuzi-thread-line: #334155;
-        --nyuzi-avatar-bg: #312e81;
-        --nyuzi-avatar-text: #c7d2fe;
-      }
-    }
-
-    *, *::before, *::after {
-      box-sizing: inherit;
-    }
-
-    .nyuzi-container {
-      padding: 0.5rem 0;
-    }
-
-    /* Header */
-    .nyuzi-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--nyuzi-border);
-    }
-    .nyuzi-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--nyuzi-text-primary);
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .nyuzi-badge {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      background: var(--nyuzi-input-bg);
-      color: var(--nyuzi-text-secondary);
-      padding: 0.15rem 0.55rem;
-      border-radius: 9999px;
-      border: 1px solid var(--nyuzi-border);
-    }
-
-    /* Form */
-    .nyuzi-form {
-      background: var(--nyuzi-card-bg);
-      border: 1px solid var(--nyuzi-border);
-      border-radius: var(--nyuzi-radius);
-      padding: 1rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .nyuzi-form:focus-within {
-      border-color: var(--nyuzi-accent);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    }
-    .nyuzi-textarea {
-      width: 100%;
-      min-height: 85px;
-      padding: 0.75rem;
-      border: 1px solid var(--nyuzi-border);
-      border-radius: 0.5rem;
-      background: var(--nyuzi-input-bg);
-      color: var(--nyuzi-text-primary);
-      font-family: inherit;
-      font-size: 0.9375rem;
-      resize: vertical;
-      outline: none;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .nyuzi-textarea:focus {
-      border-color: var(--nyuzi-accent);
-      background: var(--nyuzi-card-bg);
-    }
-    .nyuzi-counter-row {
-      display: flex;
-      justify-content: flex-end;
-      font-size: 0.75rem;
-      color: var(--nyuzi-text-muted);
-      margin-top: 0.35rem;
-    }
-    .nyuzi-form-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-top: 0.75rem;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .nyuzi-inputs {
-      display: flex;
-      gap: 0.5rem;
-      flex: 1;
-      min-width: 260px;
-    }
-    .nyuzi-input {
-      flex: 1;
-      padding: 0.5rem 0.75rem;
-      border: 1px solid var(--nyuzi-border);
-      border-radius: 0.5rem;
-      background: var(--nyuzi-input-bg);
-      color: var(--nyuzi-text-primary);
-      font-size: 0.875rem;
-      outline: none;
-    }
-    .nyuzi-input:focus {
-      border-color: var(--nyuzi-accent);
-      background: var(--nyuzi-card-bg);
-    }
-    .nyuzi-optin {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.8125rem;
-      color: var(--nyuzi-text-secondary);
-      cursor: pointer;
-      user-select: none;
-      margin-top: 0.5rem;
-    }
-    .nyuzi-optin input {
-      accent-color: var(--nyuzi-accent);
-      cursor: pointer;
-    }
-    .nyuzi-submit-btn {
-      background: var(--nyuzi-accent);
-      color: #ffffff;
-      border: none;
-      padding: 0.55rem 1.35rem;
-      border-radius: 0.5rem;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-    .nyuzi-submit-btn:hover {
-      opacity: 0.92;
-    }
-    .nyuzi-submit-btn:active {
-      transform: scale(0.98);
-    }
-    .nyuzi-submit-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    /* Mobile Responsive Form (Stack Email below Name on phones) */
-    @media (max-width: 580px) {
-      .nyuzi-form-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.65rem;
-      }
-      .nyuzi-inputs {
-        flex-direction: column;
-        width: 100%;
-        min-width: 0;
-        gap: 0.5rem;
-      }
-      .nyuzi-input {
-        width: 100%;
-      }
-      .nyuzi-submit-btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-
-    /* Error Alert */
-    .nyuzi-alert {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #b91c1c;
-      padding: 0.6rem 0.85rem;
-      border-radius: 0.5rem;
-      font-size: 0.8125rem;
-      margin-bottom: 0.75rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    /* Comments Tree */
-    .nyuzi-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-    .nyuzi-comment {
-      display: flex;
-      gap: 0.875rem;
-      transition: background 0.2s;
-    }
-    .nyuzi-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--nyuzi-avatar-bg);
-      color: var(--nyuzi-avatar-text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.8125rem;
-      flex-shrink: 0;
-      user-select: none;
-    }
-    .nyuzi-body {
-      flex: 1;
-    }
-    .nyuzi-meta {
-      display: flex;
-      align-items: baseline;
-      gap: 0.5rem;
-      margin-bottom: 0.25rem;
-    }
-    .nyuzi-author {
-      font-weight: 600;
-      color: var(--nyuzi-text-primary);
-      font-size: 0.9375rem;
-    }
-    .nyuzi-time {
-      font-size: 0.75rem;
-      color: var(--nyuzi-text-muted);
-    }
-    .nyuzi-content {
-      color: var(--nyuzi-text-primary);
-      font-size: 0.9375rem;
-      white-space: pre-wrap;
-      word-break: break-word;
-      line-height: 1.55;
-    }
-    .nyuzi-actions {
-      display: flex;
-      gap: 1rem;
-      margin-top: 0.45rem;
-    }
-    .nyuzi-action-btn {
-      background: none;
-      border: none;
-      color: var(--nyuzi-text-secondary);
-      font-size: 0.8125rem;
-      font-weight: 500;
-      cursor: pointer;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      transition: color 0.15s, transform 0.1s;
-    }
-    .nyuzi-action-btn:hover {
-      color: var(--nyuzi-accent);
-    }
-    .nyuzi-action-btn svg {
-      flex-shrink: 0;
-      transition: transform 0.15s, stroke 0.15s, fill 0.15s;
-    }
-    .nyuzi-action-btn:hover svg.nyuzi-heart-icon {
-      stroke: #e11d48;
-      transform: scale(1.15);
-    }
-    .nyuzi-action-btn.upvoted {
-      color: #e11d48;
-      font-weight: 600;
-    }
-    .nyuzi-action-btn.upvoted svg.nyuzi-heart-icon {
-      fill: #e11d48;
-      stroke: #e11d48;
-      animation: nyuzi-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    @keyframes nyuzi-pop {
-      0% { transform: scale(1); }
-      40% { transform: scale(1.35); }
-      100% { transform: scale(1); }
-    }
-    .nyuzi-highlight {
-      animation: nyuzi-flash 2.5s ease-out;
-      border-radius: var(--nyuzi-radius);
-      padding: 0.25rem 0.5rem;
-    }
-    @keyframes nyuzi-flash {
-      0%, 25% { background: rgba(99, 102, 241, 0.16); }
-      100% { background: transparent; }
-    }
-
-    /* Nested Replies */
-    .nyuzi-replies {
-      margin-top: 1rem;
-      padding-left: 1.25rem;
-      border-left: 2px solid var(--nyuzi-thread-line);
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    /* Reply Form */
-    .nyuzi-reply-box {
-      margin-top: 0.75rem;
-      padding: 0.85rem;
-      background: var(--nyuzi-input-bg);
-      border: 1px solid var(--nyuzi-border);
-      border-radius: 0.65rem;
-    }
-
-    /* Skeletons */
-    .nyuzi-skeleton {
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-    .nyuzi-skeleton-item {
-      display: flex;
-      gap: 0.875rem;
-      align-items: flex-start;
-    }
-    .nyuzi-skeleton-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: var(--nyuzi-border);
-      animation: nyuzi-pulse 1.5s infinite ease-in-out;
-      flex-shrink: 0;
-    }
-    .nyuzi-skeleton-lines {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    .nyuzi-skeleton-line {
-      height: 14px;
-      border-radius: 4px;
-      background: var(--nyuzi-border);
-      animation: nyuzi-pulse 1.5s infinite ease-in-out;
-    }
-    .nyuzi-skeleton-line.short {
-      width: 30%;
-    }
-    @keyframes nyuzi-pulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 0.85; }
-    }
-
-    /* Empty state */
-    .nyuzi-empty {
-      text-align: center;
-      padding: 2.5rem 1rem;
-      color: var(--nyuzi-text-muted);
-    }
-
-    /* Pagination */
-    .nyuzi-pagination {
-      margin-top: 1.5rem;
-      display: flex;
-      justify-content: center;
-    }
-    .nyuzi-load-more-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      background: var(--nyuzi-card-bg);
-      border: 1px solid var(--nyuzi-border);
-      color: var(--nyuzi-text-primary);
-      padding: 0.65rem 1.35rem;
-      border-radius: 9999px;
-      font-size: 0.875rem;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      transition: all 0.15s ease;
-    }
-    .nyuzi-load-more-btn:hover:not(:disabled) {
-      border-color: #f56220;
-      color: #f56220;
-      background: var(--nyuzi-input-bg);
-      transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(245, 98, 32, 0.15);
-    }
-    .nyuzi-load-more-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    .nyuzi-spinner {
-      width: 14px;
-      height: 14px;
-      border: 2px solid var(--nyuzi-border);
-      border-top-color: #f56220;
-      border-radius: 50%;
-      animation: nyuzi-spin 0.6s linear infinite;
-    }
-    @keyframes nyuzi-spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Footer */
-    .nyuzi-footer {
-      margin-top: 2rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--nyuzi-border);
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-    }
-    .nyuzi-brand {
-      font-size: 0.75rem;
-      color: var(--nyuzi-text-muted);
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      transition: color 0.15s, opacity 0.15s, transform 0.15s;
-    }
-    .nyuzi-brand:hover {
-      opacity: 0.95;
-      transform: translateY(-0.5px);
-    }
-    .nyuzi-brand strong {
-      font-weight: 700;
-      color: #f56220;
-      letter-spacing: -0.01em;
-      transition: color 0.15s, text-shadow 0.15s;
-    }
-    .nyuzi-brand:hover strong {
-      color: #ea580c;
-      text-shadow: 0 0 12px rgba(245, 98, 32, 0.5);
-    }
-    .nyuzi-bolt-icon {
-      width: 13px;
-      height: 13px;
-      flex-shrink: 0;
-      filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.45));
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.2s;
-    }
-    .nyuzi-brand:hover .nyuzi-bolt-icon {
-      transform: scale(1.3) rotate(-8deg);
-      filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.9));
-    }
-  `;
-
-  // Scroll and highlight target comment if URL has #comment-xxx
+  // Scroll to anchor on load
   function scrollToHashComment() {
     const hash = window.location.hash;
     if (hash && hash.startsWith("#comment-")) {
@@ -657,14 +255,23 @@ interface NyuziResponse {
         if (target) {
           target.scrollIntoView({ behavior: "smooth", block: "center" });
           target.classList.add("nyuzi-highlight");
-          setTimeout(() => target.classList.remove("nyuzi-highlight"), 3000);
+          setTimeout(() => target.classList.remove("nyuzi-highlight"), 3500);
         }
       }, 200);
     }
   }
 
-  // Fetch comments from API
+  // Load comments
   async function loadComments() {
+    if (isMockMode) {
+      commentsList = seedMockComments();
+      totalComments = commentsList.length;
+      totalTopLevel = commentsList.filter((c) => !c.parentId).length;
+      isLoading = false;
+      render();
+      return;
+    }
+
     try {
       isLoading = true;
       currentPage = 1;
@@ -672,12 +279,15 @@ interface NyuziResponse {
 
       const hash = window.location.hash;
       const highlight = hash && hash.startsWith("#comment-") ? hash.replace("#comment-", "") : "";
-      const highlightParam = highlight ? `&highlight=${encodeURIComponent(highlight)}` : "";
 
-      const url = `${apiHost}/api/v1/comments?siteId=${encodeURIComponent(siteId)}&threadUrl=${encodeURIComponent(threadUrl)}&page=1&limit=${pageSize}${highlightParam}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: NyuziResponse = await res.json();
+      const data: NyuziResponse = await fetchCommentsApi(
+        apiHost,
+        siteId,
+        threadUrl,
+        1,
+        pageSize,
+        highlight
+      );
 
       commentsList = data.comments || [];
       totalComments = data.total || (data.pagination?.totalComments ?? commentsList.length);
@@ -694,18 +304,21 @@ interface NyuziResponse {
     }
   }
 
-  // Fetch next page of comments
+  // Load more pagination
   async function loadMoreComments() {
-    if (isLoadingMore || !hasMoreComments) return;
+    if (isLoadingMore || !hasMoreComments || isMockMode) return;
     try {
       isLoadingMore = true;
       render();
 
       const nextPage = currentPage + 1;
-      const url = `${apiHost}/api/v1/comments?siteId=${encodeURIComponent(siteId)}&threadUrl=${encodeURIComponent(threadUrl)}&page=${nextPage}&limit=${pageSize}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to load more comments");
-      const data: NyuziResponse = await res.json();
+      const data: NyuziResponse = await fetchCommentsApi(
+        apiHost,
+        siteId,
+        threadUrl,
+        nextPage,
+        pageSize
+      );
 
       const newComments = data.comments || [];
       const existingIds = new Set(commentsList.map((c) => c.id));
@@ -728,13 +341,12 @@ interface NyuziResponse {
     }
   }
 
-  // Toggle upvote/un-upvote comment
+  // Toggle upvote / like
   async function toggleUpvote(commentId: string) {
     const isCurrentlyUpvoted = upvotedComments.has(commentId);
     const action = isCurrentlyUpvoted ? "unvote" : "upvote";
     const c = commentsList.find((item) => item.id === commentId);
 
-    // Optimistic UI update
     if (isCurrentlyUpvoted) {
       upvotedComments.delete(commentId);
       if (c) c.upvotes = Math.max(0, (c.upvotes || 1) - 1);
@@ -749,14 +361,10 @@ interface NyuziResponse {
 
     render();
 
+    if (isMockMode) return;
+
     try {
-      const res = await fetch(`${apiHost}/api/v1/comments/${encodeURIComponent(commentId)}/upvote`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
-      });
-      if (!res.ok) throw new Error("Vote action failed");
-      const data = await res.json();
+      const data = await toggleUpvoteApi(apiHost, commentId, action);
       if (c && typeof data.upvotes === "number") {
         c.upvotes = data.upvotes;
         render();
@@ -770,9 +378,6 @@ interface NyuziResponse {
         upvotedComments.delete(commentId);
         if (c) c.upvotes = Math.max(0, (c.upvotes || 1) - 1);
       }
-      try {
-        sessionStorage.setItem("nyuzi_upvotes", JSON.stringify(Array.from(upvotedComments)));
-      } catch {}
       render();
     }
   }
@@ -792,29 +397,45 @@ interface NyuziResponse {
       formError = null;
       render();
 
-      const res = await fetch(`${apiHost}/api/v1/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          siteId,
-          threadUrl,
-          threadTitle,
-          postAuthor,
+      if (isMockMode) {
+        const mockNew: NyuziComment = {
+          id: `mock-${Date.now()}`,
           parentId,
-          authorName,
+          authorName: authorName.trim(),
           authorEmail,
-          content,
-          notifyOnReply,
-        }),
-      });
-
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || `HTTP ${res.status}`);
+          content: content.trim(),
+          status: "approved",
+          upvotes: 0,
+          createdAt: new Date().toISOString(),
+        };
+        saveCommentOwnership(mockNew.id);
+        if (!parentId) {
+          commentsList.unshift(mockNew);
+          totalTopLevel += 1;
+        } else {
+          commentsList.push(mockNew);
+        }
+        totalComments += 1;
+        activeReplyId = null;
+        isSubmitting = false;
+        render();
+        return;
       }
 
-      const data = await res.json();
+      const data = await submitCommentApi(apiHost, {
+        siteId,
+        threadUrl,
+        threadTitle,
+        postAuthor,
+        parentId,
+        authorName,
+        authorEmail,
+        content,
+        notifyOnReply,
+      });
+
       if (data.comment) {
+        saveCommentOwnership(data.comment.id);
         if (!parentId) {
           commentsList.unshift(data.comment);
           totalTopLevel += 1;
@@ -833,79 +454,136 @@ interface NyuziResponse {
     }
   }
 
-  // Render a comment node
-  function renderComment(c: NyuziComment): string {
-    const replies = commentsList.filter((r) => r.parentId === c.id);
-    replies.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    const isReplying = activeReplyId === c.id;
-    const isUpvoted = upvotedComments.has(c.id);
+  // Edit comment (15-min grace window)
+  async function editComment(commentId: string, newContent: string) {
+    if (!newContent.trim()) return;
+    try {
+      isSubmitting = true;
+      render();
 
-    return `
-      <div class="nyuzi-comment" id="comment-${c.id}">
-        <div class="nyuzi-avatar">${escapeHtml(getInitials(c.authorName))}</div>
-        <div class="nyuzi-body">
-          <div class="nyuzi-meta">
-            <span class="nyuzi-author">${escapeHtml(c.authorName)}</span>
-            <span class="nyuzi-time">${formatTime(c.createdAt)}</span>
-          </div>
-          <div class="nyuzi-content">${escapeHtml(c.content)}</div>
-          <div class="nyuzi-actions">
-            <button class="nyuzi-action-btn upvote-btn ${isUpvoted ? "upvoted" : ""}" data-id="${c.id}" title="${isUpvoted ? "Unlike" : "Like"}">
-              ${renderReactionIcon(isUpvoted)}
-              <span>${c.upvotes > 0 ? c.upvotes : (reactionType === "heart" ? "Like" : "Upvote")}</span>
-            </button>
-            <button class="nyuzi-action-btn reply-trigger" data-id="${c.id}">
-              ${renderReplyIcon()}
-              <span>Reply</span>
-            </button>
-            <button class="nyuzi-action-btn copy-link-btn" data-id="${c.id}" title="Copy direct link to this comment">
-              ${renderLinkIcon()}
-              <span>Copy Link</span>
-            </button>
-          </div>
+      if (isMockMode) {
+        const target = commentsList.find((c) => c.id === commentId);
+        if (target) {
+          target.content = newContent.trim();
+          target.isEdited = true;
+        }
+        editingCommentId = null;
+        isSubmitting = false;
+        render();
+        return;
+      }
 
-          ${
-            isReplying
-              ? `
-              <div class="nyuzi-reply-box">
-                <textarea class="nyuzi-textarea" id="reply-content-${c.id}" placeholder="Reply to ${escapeHtml(c.authorName)}..." required></textarea>
-                <div class="nyuzi-form-row">
-                  <div class="nyuzi-inputs">
-                    <input type="text" class="nyuzi-input" id="reply-name-${c.id}" placeholder="Your Name *" value="${escapeHtml(savedAuthorName)}" required />
-                    <input type="email" class="nyuzi-input" id="reply-email-${c.id}" placeholder="Email (for reply alerts)" value="${escapeHtml(savedAuthorEmail)}" />
-                  </div>
-                  <div style="display:flex; gap:0.5rem; align-items:flex-end;">
-                    <button class="nyuzi-action-btn cancel-reply" style="padding: 0.5rem 0.75rem;">Cancel</button>
-                    <button class="nyuzi-submit-btn submit-reply" data-parent-id="${c.id}" ${isSubmitting ? "disabled" : ""}>
-                      ${isSubmitting ? "Posting..." : "Reply"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            `
-              : ""
-          }
-
-          ${
-            replies.length > 0
-              ? `
-            <div class="nyuzi-replies">
-              ${replies.map((r) => renderComment(r)).join("")}
-            </div>
-          `
-              : ""
-          }
-        </div>
-      </div>
-    `;
+      await editCommentApi(apiHost, commentId, newContent.trim());
+      const target = commentsList.find((c) => c.id === commentId);
+      if (target) {
+        target.content = newContent.trim();
+        target.isEdited = true;
+      }
+      editingCommentId = null;
+      isSubmitting = false;
+      render();
+    } catch (err: any) {
+      alert(err.message || "Failed to edit comment.");
+      isSubmitting = false;
+      render();
+    }
   }
 
+  // Delete comment (15-min grace window)
+  async function deleteComment(commentId: string) {
+    try {
+      isSubmitting = true;
+      render();
+
+      if (isMockMode) {
+        commentsList = commentsList.filter((c) => c.id !== commentId && c.parentId !== commentId);
+        totalComments = commentsList.length;
+        totalTopLevel = commentsList.filter((c) => !c.parentId).length;
+        removeCommentOwnership(commentId);
+        confirmDeleteId = null;
+        isSubmitting = false;
+        render();
+        return;
+      }
+
+      await deleteCommentApi(apiHost, commentId);
+      commentsList = commentsList.filter((c) => c.id !== commentId && c.parentId !== commentId);
+      totalComments = commentsList.length;
+      totalTopLevel = commentsList.filter((c) => !c.parentId).length;
+      removeCommentOwnership(commentId);
+      confirmDeleteId = null;
+      isSubmitting = false;
+      render();
+    } catch (err: any) {
+      alert("Failed to delete comment. Please try again.");
+      confirmDeleteId = null;
+      isSubmitting = false;
+      render();
+    }
+  }
+
+  // Formatting Toolbar Helper
+  function applyFormatting(textarea: HTMLTextAreaElement, action: string) {
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const val = textarea.value;
+    const selection = val.substring(start, end);
+
+    let replacement = "";
+    let cursorOffset = 0;
+
+    switch (action) {
+      case "bold":
+        replacement = selection ? `**${selection}**` : "**bold text**";
+        cursorOffset = selection ? replacement.length : 2;
+        break;
+      case "italic":
+        replacement = selection ? `*${selection}*` : "*italic text*";
+        cursorOffset = selection ? replacement.length : 1;
+        break;
+      case "quote":
+        if (selection) {
+          replacement = selection
+            .split("\n")
+            .map((line) => `> ${line}`)
+            .join("\n");
+        } else {
+          replacement = "> quote text";
+        }
+        cursorOffset = replacement.length;
+        break;
+      case "code":
+        replacement = selection ? `\`${selection}\`` : "`code`";
+        cursorOffset = selection ? replacement.length : 1;
+        break;
+      case "link":
+        replacement = selection ? `[${selection}](https://)` : "[link title](https://example.com)";
+        cursorOffset = replacement.length - 1;
+        break;
+      default:
+        return;
+    }
+
+    textarea.value = val.substring(0, start) + replacement + val.substring(end);
+    textarea.focus();
+    const newPos = start + cursorOffset;
+    textarea.setSelectionRange(newPos, newPos);
+
+    // Trigger input event to update counters
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  // Main Render Routine
   function render() {
     const topLevelComments = commentsList.filter((c) => !c.parentId);
+    const styles = generateWidgetStyles(themeConfig);
+    const myComments = getMyActiveComments();
 
     shadow.innerHTML = `
       <style>${styles}</style>
       <div class="nyuzi-container">
+        ${themeConfig.showReactionsBar ? renderTopReactionsBar(activeReactionKey) : ""}
+
         <!-- Header -->
         <div class="nyuzi-header">
           <h3 class="nyuzi-title">
@@ -914,16 +592,18 @@ interface NyuziResponse {
           </h3>
         </div>
 
-        <!-- Main Comment Form -->
+        <!-- Main Form -->
         <div class="nyuzi-form">
           ${
             formError
               ? `<div class="nyuzi-alert">
-                   <span>âš ï¸ ${escapeHtml(formError)}</span>
-                   <button class="nyuzi-action-btn" id="dismiss-error" style="color:#b91c1c;">âœ•</button>
+                   <span>⚠️ ${escapeHtml(formError)}</span>
+                   <button class="nyuzi-action-btn" id="dismiss-error" style="color:#b91c1c;">✕</button>
                  </div>`
               : ""
           }
+
+          ${renderFormatToolbar("nyuzi-main-content")}
           <textarea class="nyuzi-textarea" id="nyuzi-main-content" maxlength="2000" placeholder="Share your thoughts or leave a question..." required></textarea>
           <div class="nyuzi-counter-row">
             <span id="nyuzi-char-count">0 / 2,000</span>
@@ -945,7 +625,7 @@ interface NyuziResponse {
           </label>
         </div>
 
-        <!-- Comments List -->
+        <!-- Comments Stream -->
         ${
           isLoading
             ? `<div class="nyuzi-skeleton">
@@ -970,7 +650,23 @@ interface NyuziResponse {
                  <p style="margin:0; font-size:0.875rem;">Be the first to share your thoughts!</p>
                </div>`
             : `<div class="nyuzi-list">
-                 ${topLevelComments.map((c) => renderComment(c)).join("")}
+                 ${topLevelComments
+                   .map((c) =>
+                     renderComment(c, commentsList, {
+                       postAuthor,
+                       reactionType: themeConfig.reactionType,
+                       upvotedComments,
+                       activeReplyId,
+                       editingCommentId,
+                       confirmDeleteId,
+                       collapsedComments,
+                       myComments,
+                       isSubmitting,
+                       savedAuthorName,
+                       savedAuthorEmail,
+                     })
+                   )
+                   .join("")}
                </div>
                ${
                  hasMoreComments
@@ -1006,7 +702,37 @@ interface NyuziResponse {
       </div>
     `;
 
-    // Event Listeners
+    // Bind Listeners
+    attachEventListeners();
+  }
+
+  function attachEventListeners() {
+    // Reactions bar pills
+    shadow.querySelectorAll(".nyuzi-reaction-pill").forEach((pill) => {
+      pill.addEventListener("click", (e) => {
+        const key = (e.currentTarget as HTMLElement).getAttribute("data-reaction-key");
+        activeReactionKey = activeReactionKey === key ? null : key;
+        render();
+      });
+    });
+
+    // Formatting Toolbar Buttons
+    shadow.querySelectorAll(".nyuzi-format-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const action = (e.currentTarget as HTMLElement).getAttribute("data-action");
+        const toolbar = (e.currentTarget as HTMLElement).closest(".nyuzi-format-toolbar");
+        const targetId = toolbar?.getAttribute("data-target");
+        if (!action || !targetId) return;
+
+        const targetTextarea = shadow.getElementById(targetId) as HTMLTextAreaElement | null;
+        if (targetTextarea) {
+          applyFormatting(targetTextarea, action);
+        }
+      });
+    });
+
+    // Character counter
     const contentInput = shadow.getElementById("nyuzi-main-content") as HTMLTextAreaElement | null;
     const charCount = shadow.getElementById("nyuzi-char-count");
     if (contentInput && charCount) {
@@ -1015,6 +741,7 @@ interface NyuziResponse {
       });
     }
 
+    // Dismiss error
     const dismissError = shadow.getElementById("dismiss-error");
     if (dismissError) {
       dismissError.addEventListener("click", () => {
@@ -1023,6 +750,7 @@ interface NyuziResponse {
       });
     }
 
+    // Submit main comment
     const mainSubmit = shadow.getElementById("nyuzi-main-submit");
     if (mainSubmit) {
       mainSubmit.addEventListener("click", () => {
@@ -1055,6 +783,7 @@ interface NyuziResponse {
       });
     }
 
+    // Load more
     const loadMoreBtn = shadow.getElementById("nyuzi-load-more");
     if (loadMoreBtn) {
       loadMoreBtn.addEventListener("click", () => {
@@ -1062,7 +791,7 @@ interface NyuziResponse {
       });
     }
 
-    // Upvote buttons
+    // Reaction upvote buttons
     shadow.querySelectorAll(".upvote-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
@@ -1075,6 +804,8 @@ interface NyuziResponse {
       btn.addEventListener("click", (e) => {
         const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
         activeReplyId = activeReplyId === id ? null : id;
+        editingCommentId = null;
+        confirmDeleteId = null;
         render();
       });
     });
@@ -1110,13 +841,81 @@ interface NyuziResponse {
         const cleanEmail = emailInput?.value.trim() || null;
         saveAuthorInfo(cleanName, cleanEmail);
 
-        submitComment(
-          cleanName,
-          cleanEmail,
-          replyContent.value.trim(),
-          true,
-          parentId
-        );
+        submitComment(cleanName, cleanEmail, replyContent.value.trim(), true, parentId);
+      });
+    });
+
+    // Edit triggers (15-min grace window)
+    shadow.querySelectorAll(".edit-trigger").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+        editingCommentId = id;
+        activeReplyId = null;
+        confirmDeleteId = null;
+        render();
+      });
+    });
+
+    // Cancel edit
+    shadow.querySelectorAll(".cancel-edit").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        editingCommentId = null;
+        render();
+      });
+    });
+
+    // Save edit
+    shadow.querySelectorAll(".save-edit").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+        if (!id) return;
+        const textarea = shadow.getElementById(`edit-content-${id}`) as HTMLTextAreaElement | null;
+        if (!textarea || !textarea.value.trim()) {
+          alert("Comment content cannot be empty.");
+          return;
+        }
+        editComment(id, textarea.value.trim());
+      });
+    });
+
+    // Delete trigger (15-min grace window)
+    shadow.querySelectorAll(".delete-trigger").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+        confirmDeleteId = id;
+        activeReplyId = null;
+        editingCommentId = null;
+        render();
+      });
+    });
+
+    // Cancel delete
+    shadow.querySelectorAll(".nyuzi-cancel-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        confirmDeleteId = null;
+        render();
+      });
+    });
+
+    // Confirm delete
+    shadow.querySelectorAll(".nyuzi-confirm-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+        if (id) deleteComment(id);
+      });
+    });
+
+    // Collapsible replies toggle
+    shadow.querySelectorAll(".nyuzi-collapse-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+        if (!id) return;
+        if (collapsedComments.has(id)) {
+          collapsedComments.delete(id);
+        } else {
+          collapsedComments.add(id);
+        }
+        render();
       });
     });
 
@@ -1145,7 +944,7 @@ interface NyuziResponse {
     });
   }
 
-  // Listen to hash changes in URL
+  // Listen to hash changes
   window.addEventListener("hashchange", scrollToHashComment);
 
   // Initial load
