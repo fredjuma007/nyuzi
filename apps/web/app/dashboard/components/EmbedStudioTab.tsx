@@ -37,6 +37,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
   const [bgMode, setBgMode] = useState<"transparent" | "card">("transparent");
   const [showReactionsBar, setShowReactionsBar] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");
 
   // Hyvor-style Quick Color Presets
   const curatedPalettes = [
@@ -233,10 +234,42 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
         </div>
       </div>
 
+      {/* Mobile Mode Switcher: Studio Controls vs Live Preview */}
+      <div className="lg:hidden flex items-center p-1 rounded-xl bg-[var(--bg-card)] border border-[var(--border-card)] shrink-0 shadow-xs">
+        <button
+          type="button"
+          onClick={() => setMobileTab("controls")}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            mobileTab === "controls"
+              ? "bg-[var(--brand-orange)] text-white shadow-xs"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-main)]"
+          }`}
+        >
+          <Sliders className="w-3.5 h-3.5" />
+          <span>Studio Controls</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab("preview")}
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            mobileTab === "preview"
+              ? "bg-[var(--brand-orange)] text-white shadow-xs"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-main)]"
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Live Preview</span>
+        </button>
+      </div>
+
       {/* Main Studio Dual-Pane Layout */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* Left Column: Independently Scrollable Controls Pane */}
-        <div className="lg:col-span-5 flex flex-col min-h-0 h-full rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-xs overflow-hidden">
+        <div
+          className={`lg:col-span-5 flex-col min-h-0 h-[calc(100dvh-13.5rem)] lg:h-full rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-xs overflow-hidden ${
+            mobileTab === "controls" ? "flex" : "hidden lg:flex"
+          }`}
+        >
           {/* Controls Pane Sticky Top Bar */}
           <div className="px-4 py-2.5 border-b border-[var(--border-card)] bg-[var(--bg-card-subtle)] flex items-center justify-between shrink-0">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
@@ -628,7 +661,11 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
         </div>
 
         {/* Right Column: Independently Scrollable Live Sandbox Preview Pane */}
-        <div className="lg:col-span-7 flex flex-col min-h-0 h-full rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-md overflow-hidden">
+        <div
+          className={`lg:col-span-7 flex-col min-h-0 h-[calc(100dvh-13.5rem)] lg:h-full rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-md overflow-hidden ${
+            mobileTab === "preview" ? "flex" : "hidden lg:flex"
+          }`}
+        >
           {/* Preview Pane Top Header Bar */}
           <div className="px-5 py-2.5 border-b border-[var(--border-card)] bg-[var(--bg-card-subtle)] flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
@@ -684,6 +721,27 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Floating Mobile Mode Switcher Action Pill */}
+      <div className="lg:hidden fixed bottom-5 right-5 z-40">
+        <button
+          type="button"
+          onClick={() => setMobileTab(mobileTab === "controls" ? "preview" : "controls")}
+          className="px-4 py-2.5 rounded-full bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold shadow-2xl flex items-center gap-2 cursor-pointer border border-white/20 active:scale-95 transition-all"
+        >
+          {mobileTab === "controls" ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+              <span>View Preview</span>
+            </>
+          ) : (
+            <>
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Edit Controls</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
