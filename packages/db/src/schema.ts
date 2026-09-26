@@ -16,6 +16,7 @@ export const threads = sqliteTable("threads", {
   url: text("url").notNull(),
   title: text("title"),
   commentCount: integer("comment_count").notNull().default(0),
+  reactions: text("reactions").default("{}"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 

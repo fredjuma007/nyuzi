@@ -18,6 +18,7 @@ import {
   toggleUpvoteApi,
   editCommentApi,
   deleteCommentApi,
+  toggleThreadReactionApi,
 } from "./api";
 
 (function () {
@@ -164,6 +165,31 @@ import {
   let activeReactionKey: string | null = null;
   const upvotedComments = new Set<string>();
   const collapsedComments = new Set<string>();
+
+  // Persistent Thread Reactions
+  const THREAD_REACTION_STORAGE_KEY = `nyuzi_react_${siteId}_${encodeURIComponent(threadUrl)}`;
+  const THREAD_COUNTS_STORAGE_KEY = `nyuzi_counts_${siteId}_${encodeURIComponent(threadUrl)}`;
+
+  const defaultBaseCounts: Record<string, number> =
+    themeConfig.reactionsPreset === "literary"
+      ? { coffee: 21, book: 28, lightbulb: 14, heart: 19, clap: 16 }
+      : { fire: 18, heart: 24, lightbulb: 12, laugh: 7, clap: 15 };
+
+  let threadReactionCounts: Record<string, number> = { ...defaultBaseCounts };
+
+  try {
+    const savedActiveReaction = localStorage.getItem(THREAD_REACTION_STORAGE_KEY);
+    if (savedActiveReaction) {
+      activeReactionKey = savedActiveReaction;
+    }
+  } catch {}
+
+  try {
+    const savedCounts = localStorage.getItem(THREAD_COUNTS_STORAGE_KEY);
+    if (savedCounts) {
+      threadReactionCounts = { ...threadReactionCounts, ...JSON.parse(savedCounts) };
+    }
+  } catch {}
 
   // Reader Ownership for 15-Minute Grace Window
   const OWNERSHIP_STORAGE_KEY = "nyuzi_reader_ownership";
@@ -321,6 +347,9 @@ import {
       totalComments = data.total || (data.pagination?.totalComments ?? commentsList.length);
       totalTopLevel = data.pagination?.totalTopLevel ?? commentsList.filter((c) => !c.parentId).length;
       hasMoreComments = data.pagination?.hasMore ?? false;
+      if (data.thread?.reactions && Object.keys(data.thread.reactions).length > 0) {
+        threadReactionCounts = { ...threadReactionCounts, ...data.thread.reactions };
+      }
       isLoading = false;
       render();
       scrollToHashComment();
@@ -613,7 +642,7 @@ import {
     shadow.innerHTML = `
       <style>${styles}</style>
       <div class="nyuzi-container">
-        ${themeConfig.showReactionsBar ? renderTopReactionsBar(activeReactionKey, themeConfig.reactionsPrompt, themeConfig.reactionsPreset) : ""}
+        ${themeConfig.showReactionsBar ? renderTopReactionsBar(activeReactionKey, themeConfig.reactionsPrompt, themeConfig.reactionsPreset, threadReactionCounts) : ""}
 
         <!-- Header -->
         <div class="nyuzi-header">
@@ -739,12 +768,67 @@ import {
   }
 
   function attachEventListeners() {
-    // Reactions bar pills
+    // Reactions bar pills (Persistent voting & unvoting)
     shadow.querySelectorAll(".nyuzi-reaction-pill").forEach((pill) => {
-      pill.addEventListener("click", (e) => {
+      pill.addEventListener("click", async (e) => {
         const key = (e.currentTarget as HTMLElement).getAttribute("data-reaction-key");
-        activeReactionKey = activeReactionKey === key ? null : key;
+        if (!key) return;
+
+        const prevKey = activeReactionKey;
+        let action: "react" | "unreact" | "switch";
+
+        if (activeReactionKey === key) {
+          // Unvote
+          action = "unreact";
+          activeReactionKey = null;
+          threadReactionCounts[key] = Math.max(0, (threadReactionCounts[key] || 1) - 1);
+          try {
+            localStorage.removeItem(THREAD_REACTION_STORAGE_KEY);
+          } catch {}
+        } else if (activeReactionKey) {
+          // Switch vote from previous
+          action = "switch";
+          const old = activeReactionKey;
+          activeReactionKey = key;
+          threadReactionCounts[old] = Math.max(0, (threadReactionCounts[old] || 1) - 1);
+          threadReactionCounts[key] = (threadReactionCounts[key] || 0) + 1;
+          try {
+            localStorage.setItem(THREAD_REACTION_STORAGE_KEY, key);
+          } catch {}
+        } else {
+          // New vote
+          action = "react";
+          activeReactionKey = key;
+          threadReactionCounts[key] = (threadReactionCounts[key] || 0) + 1;
+          try {
+            localStorage.setItem(THREAD_REACTION_STORAGE_KEY, key);
+          } catch {}
+        }
+
+        try {
+          localStorage.setItem(THREAD_COUNTS_STORAGE_KEY, JSON.stringify(threadReactionCounts));
+        } catch {}
+
         render();
+
+        if (!isMockMode) {
+          try {
+            const result = await toggleThreadReactionApi(apiHost, {
+              siteId,
+              threadUrl,
+              threadTitle,
+              reactionKey: key,
+              previousKey: prevKey,
+              action,
+            });
+            if (result && result.reactions) {
+              threadReactionCounts = { ...threadReactionCounts, ...result.reactions };
+              render();
+            }
+          } catch (err) {
+            console.warn("[Nyuzi] Failed to sync reaction to server:", err);
+          }
+        }
       });
     });
 

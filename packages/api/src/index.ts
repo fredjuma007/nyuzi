@@ -221,6 +221,13 @@ app.get("/api/v1/comments", async (c) => {
       url: thread.url,
       title: thread.title,
       commentCount: totalCommentsCount,
+      reactions: (() => {
+        try {
+          return thread.reactions ? JSON.parse(thread.reactions) : {};
+        } catch {
+          return {};
+        }
+      })(),
     },
     comments: [...topLevelComments, ...threadReplies],
     pagination: {
@@ -507,6 +514,82 @@ app.post("/api/v1/comments/:id/upvote", async (c) => {
     commentId,
     upvotes: newCount,
     action: isUnvote ? "unvote" : "upvote",
+  });
+});
+
+// POST /api/v1/threads/react
+app.post("/api/v1/threads/react", async (c) => {
+  let body: any;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const { siteId, threadUrl, threadTitle, reactionKey, previousKey, action } = body;
+
+  if (!siteId || !threadUrl || !reactionKey) {
+    return c.json({ error: "siteId, threadUrl, and reactionKey are required" }, 400);
+  }
+
+  const db = drizzle(c.env.DB);
+
+  // 1. Find or create thread
+  let [thread] = await db
+    .select()
+    .from(threads)
+    .where(and(eq(threads.siteId, siteId), eq(threads.url, threadUrl)))
+    .limit(1);
+
+  let reactionsObj: Record<string, number> = {};
+
+  if (!thread) {
+    const newThreadId = "th_" + crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    if (action === "unvote") {
+      reactionsObj = {};
+    } else {
+      reactionsObj[reactionKey] = 1;
+    }
+
+    const newThread = {
+      id: newThreadId,
+      siteId,
+      url: threadUrl,
+      title: threadTitle || "Untitled Thread",
+      commentCount: 0,
+      reactions: JSON.stringify(reactionsObj),
+      createdAt: new Date(),
+    };
+    await db.insert(threads).values(newThread);
+    thread = newThread as any;
+  } else {
+    try {
+      reactionsObj = thread.reactions ? JSON.parse(thread.reactions) : {};
+    } catch {
+      reactionsObj = {};
+    }
+
+    if (action === "unvote") {
+      reactionsObj[reactionKey] = Math.max(0, (reactionsObj[reactionKey] || 1) - 1);
+      if (reactionsObj[reactionKey] === 0) delete reactionsObj[reactionKey];
+    } else if (action === "switch" && previousKey) {
+      reactionsObj[previousKey] = Math.max(0, (reactionsObj[previousKey] || 1) - 1);
+      if (reactionsObj[previousKey] === 0) delete reactionsObj[previousKey];
+      reactionsObj[reactionKey] = (reactionsObj[reactionKey] || 0) + 1;
+    } else {
+      reactionsObj[reactionKey] = (reactionsObj[reactionKey] || 0) + 1;
+    }
+
+    await db
+      .update(threads)
+      .set({ reactions: JSON.stringify(reactionsObj) })
+      .where(eq(threads.id, thread.id));
+  }
+
+  return c.json({
+    success: true,
+    reactions: reactionsObj,
+    activeKey: action === "unvote" ? null : reactionKey,
   });
 });
 

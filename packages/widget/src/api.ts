@@ -92,3 +92,24 @@ export async function deleteCommentApi(
   if (!res.ok) throw new Error("Delete action failed");
   return res.json();
 }
+
+export async function toggleThreadReactionApi(
+  apiHost: string,
+  payload: {
+    siteId: string;
+    threadUrl: string;
+    threadTitle: string;
+    reactionKey: string;
+    previousKey?: string | null;
+    action: "react" | "unreact" | "switch";
+  }
+): Promise<{ success: boolean; reactions: Record<string, number>; activeKey: string | null }> {
+  const res = await fetch(`${apiHost}/api/v1/threads/react`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Thread reaction failed");
+  return res.json();
+}

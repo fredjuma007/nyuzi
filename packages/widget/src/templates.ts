@@ -208,22 +208,23 @@ export function renderFormatToolbar(targetTextareaId: string, allowedTools?: str
 export function renderTopReactionsBar(
   activeKey: string | null,
   prompt = "How was this discussion?",
-  preset: "general" | "literary" = "general"
+  preset: "general" | "literary" = "general",
+  reactionCounts?: Record<string, number>
 ): string {
   const generalReactions = [
-    { key: "fire", emoji: "🔥", label: "Superb", count: 18 },
-    { key: "heart", emoji: "❤️", label: "Love", count: 24 },
-    { key: "lightbulb", emoji: "💡", label: "Insight", count: 12 },
-    { key: "laugh", emoji: "😂", label: "Laugh", count: 7 },
-    { key: "clap", emoji: "👏", label: "Applause", count: 15 },
+    { key: "fire", emoji: "🔥", label: "Superb", defaultCount: 18 },
+    { key: "heart", emoji: "❤️", label: "Love", defaultCount: 24 },
+    { key: "lightbulb", emoji: "💡", label: "Insight", defaultCount: 12 },
+    { key: "laugh", emoji: "😂", label: "Laugh", defaultCount: 7 },
+    { key: "clap", emoji: "👏", label: "Applause", defaultCount: 15 },
   ];
 
   const literaryReactions = [
-    { key: "coffee", emoji: "☕", label: "Thoughtful", count: 21 },
-    { key: "book", emoji: "📖", label: "Engrossing", count: 28 },
-    { key: "lightbulb", emoji: "💡", label: "Insight", count: 14 },
-    { key: "heart", emoji: "❤️", label: "Moved", count: 19 },
-    { key: "clap", emoji: "👏", label: "Applause", count: 16 },
+    { key: "coffee", emoji: "☕", label: "Thoughtful", defaultCount: 21 },
+    { key: "book", emoji: "📖", label: "Engrossing", defaultCount: 28 },
+    { key: "lightbulb", emoji: "💡", label: "Insight", defaultCount: 14 },
+    { key: "heart", emoji: "❤️", label: "Moved", defaultCount: 19 },
+    { key: "clap", emoji: "👏", label: "Applause", defaultCount: 16 },
   ];
 
   const reactions = preset === "literary" ? literaryReactions : generalReactions;
@@ -233,17 +234,21 @@ export function renderTopReactionsBar(
       <div class="nyuzi-reactions-prompt">${escapeHtml(prompt || "How was this discussion?")}</div>
       <div class="nyuzi-reactions-grid">
         ${reactions
-          .map(
-            (r) => `
+          .map((r) => {
+            const count =
+              reactionCounts?.[r.key] !== undefined
+                ? reactionCounts[r.key]
+                : r.defaultCount;
+            return `
           <div class="nyuzi-reaction-pill ${activeKey === r.key ? "active" : ""}" data-reaction-key="${r.key}">
             <div class="emoji-row">
               <span>${r.emoji}</span>
-              <span class="reaction-count">${r.count + (activeKey === r.key ? 1 : 0)}</span>
+              <span class="reaction-count">${count}</span>
             </div>
             <span class="reaction-label">${r.label}</span>
           </div>
-        `
-          )
+        `;
+          })
           .join("")}
       </div>
     </div>

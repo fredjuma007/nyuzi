@@ -21,6 +21,7 @@ export interface NyuziThread {
   url: string;
   title: string | null;
   commentCount: number;
+  reactions?: Record<string, number>;
 }
 
 export interface NyuziPagination {
