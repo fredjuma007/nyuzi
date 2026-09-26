@@ -1,5 +1,15 @@
 import { ThemeConfig } from "./types";
 
+function isLightHex(hex?: string): boolean {
+  if (!hex || typeof hex !== "string" || !hex.startsWith("#")) return false;
+  const clean = hex.replace("#", "");
+  if (clean.length !== 6 && clean.length !== 3) return false;
+  const r = parseInt(clean.length === 3 ? clean[0] + clean[0] : clean.slice(0, 2), 16);
+  const g = parseInt(clean.length === 3 ? clean[1] + clean[1] : clean.slice(2, 4), 16);
+  const b = parseInt(clean.length === 3 ? clean[2] + clean[2] : clean.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 1000 > 155;
+}
+
 /**
  * Dynamic CSS Generator for Nyuzi Commenting Widget (Shadow DOM)
  * Provides deep token propagation across Canvas, Cards, Inputs, and Reactions.
@@ -17,6 +27,8 @@ export function generateWidgetStyles(config: ThemeConfig): string {
     themeMode,
     bgMode,
   } = config;
+
+  const cardIsLight = isLightHex(cardBg);
 
   return `
     :host {
@@ -81,16 +93,16 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       :host {
         --nyuzi-bg: ${bg || (bgMode === "card" ? "#090605" : "transparent")};
         --nyuzi-card-bg: ${cardBg || "#14100e"};
-        --nyuzi-text-primary: ${textColor || "#f8fafc"};
-        --nyuzi-text-secondary: ${textSecondary || "#cbd5e1"};
+        --nyuzi-text-primary: ${textColor || (cardIsLight ? "#0f172a" : "#f8fafc")};
+        --nyuzi-text-secondary: ${textSecondary || (cardIsLight ? "#475569" : "#cbd5e1")};
         --nyuzi-text-muted: #94a3b8;
-        --nyuzi-border: ${borderColor || "rgba(255, 255, 255, 0.12)"};
-        --nyuzi-input-bg: ${inputBg || "#181412"};
-        --nyuzi-reaction-bg: rgba(255, 255, 255, 0.05);
-        --nyuzi-reaction-border: rgba(255, 255, 255, 0.1);
-        --nyuzi-badge-bg: rgba(255, 255, 255, 0.08);
-        --nyuzi-badge-border: rgba(255, 255, 255, 0.12);
-        --nyuzi-thread-line: rgba(255, 255, 255, 0.12);
+        --nyuzi-border: ${borderColor || (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)")};
+        --nyuzi-input-bg: ${inputBg || (cardIsLight ? "#ffffff" : "#181412")};
+        --nyuzi-reaction-bg: ${cardIsLight ? "#ffffff" : "rgba(255, 255, 255, 0.05)"};
+        --nyuzi-reaction-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.1)"};
+        --nyuzi-badge-bg: ${cardIsLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.08)"};
+        --nyuzi-badge-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
+        --nyuzi-thread-line: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
         --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
         --nyuzi-avatar-text: var(--nyuzi-accent);
       }
@@ -105,16 +117,16 @@ export function generateWidgetStyles(config: ThemeConfig): string {
         :host {
           --nyuzi-bg: ${bg || (bgMode === "card" ? "#090605" : "transparent")};
           --nyuzi-card-bg: ${cardBg || "#14100e"};
-          --nyuzi-text-primary: ${textColor || "#f8fafc"};
-          --nyuzi-text-secondary: ${textSecondary || "#cbd5e1"};
+          --nyuzi-text-primary: ${textColor || (cardIsLight ? "#0f172a" : "#f8fafc")};
+          --nyuzi-text-secondary: ${textSecondary || (cardIsLight ? "#475569" : "#cbd5e1")};
           --nyuzi-text-muted: #94a3b8;
-          --nyuzi-border: ${borderColor || "rgba(255, 255, 255, 0.12)"};
-          --nyuzi-input-bg: ${inputBg || "#181412"};
-          --nyuzi-reaction-bg: rgba(255, 255, 255, 0.05);
-          --nyuzi-reaction-border: rgba(255, 255, 255, 0.1);
-          --nyuzi-badge-bg: rgba(255, 255, 255, 0.08);
-          --nyuzi-badge-border: rgba(255, 255, 255, 0.12);
-          --nyuzi-thread-line: rgba(255, 255, 255, 0.12);
+          --nyuzi-border: ${borderColor || (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)")};
+          --nyuzi-input-bg: ${inputBg || (cardIsLight ? "#ffffff" : "#181412")};
+          --nyuzi-reaction-bg: ${cardIsLight ? "#ffffff" : "rgba(255, 255, 255, 0.05)"};
+          --nyuzi-reaction-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.1)"};
+          --nyuzi-badge-bg: ${cardIsLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.08)"};
+          --nyuzi-badge-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
+          --nyuzi-thread-line: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
           --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
           --nyuzi-avatar-text: var(--nyuzi-accent);
         }
@@ -122,16 +134,16 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       :host-context(.dark), :host([data-theme="dark"]) {
         --nyuzi-bg: ${bg || (bgMode === "card" ? "#090605" : "transparent")};
         --nyuzi-card-bg: ${cardBg || "#14100e"};
-        --nyuzi-text-primary: ${textColor || "#f8fafc"};
-        --nyuzi-text-secondary: ${textSecondary || "#cbd5e1"};
+        --nyuzi-text-primary: ${textColor || (cardIsLight ? "#0f172a" : "#f8fafc")};
+        --nyuzi-text-secondary: ${textSecondary || (cardIsLight ? "#475569" : "#cbd5e1")};
         --nyuzi-text-muted: #94a3b8;
-        --nyuzi-border: ${borderColor || "rgba(255, 255, 255, 0.12)"};
-        --nyuzi-input-bg: ${inputBg || "#181412"};
-        --nyuzi-reaction-bg: rgba(255, 255, 255, 0.05);
-        --nyuzi-reaction-border: rgba(255, 255, 255, 0.1);
-        --nyuzi-badge-bg: rgba(255, 255, 255, 0.08);
-        --nyuzi-badge-border: rgba(255, 255, 255, 0.12);
-        --nyuzi-thread-line: rgba(255, 255, 255, 0.12);
+        --nyuzi-border: ${borderColor || (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)")};
+        --nyuzi-input-bg: ${inputBg || (cardIsLight ? "#ffffff" : "#181412")};
+        --nyuzi-reaction-bg: ${cardIsLight ? "#ffffff" : "rgba(255, 255, 255, 0.05)"};
+        --nyuzi-reaction-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.1)"};
+        --nyuzi-badge-bg: ${cardIsLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.08)"};
+        --nyuzi-badge-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
+        --nyuzi-thread-line: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
         --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
         --nyuzi-avatar-text: var(--nyuzi-accent);
       }

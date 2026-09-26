@@ -57,13 +57,13 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     },
     {
       name: "Sepia Book Parchment",
-      accent: "#854d0e",
-      bg: "#f4ead8",
-      cardBg: "#fbf3e4",
-      textColor: "#2b2118",
-      borderColor: "#e2d4bc",
-      theme: "sepia",
-      desc: "Warm paper tone for book lovers",
+      accent: studioColorMode === "dark" ? "#d97706" : "#854d0e",
+      bg: studioColorMode === "dark" ? "#14100d" : "#f4ead8",
+      cardBg: studioColorMode === "dark" ? "#1e1713" : "#fbf3e4",
+      textColor: studioColorMode === "dark" ? "#f5ede4" : "#2b2118",
+      borderColor: studioColorMode === "dark" ? "#3d3027" : "#e2d4bc",
+      theme: studioColorMode === "dark" ? "dark" : "sepia",
+      desc: "Warm vintage paper tone for book lovers",
     },
     {
       name: "Obsidian Electric",
@@ -108,24 +108,56 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
   // Toggle Light / Dark Studio Preview & Widget Mode
   const handleToggleColorMode = (mode: "light" | "dark") => {
     setStudioColorMode(mode);
+
+    // 1. Detect if Sepia Book is currently active
+    const isSepiaActive =
+      canvasBg === "#f4ead8" ||
+      cardBg === "#fbf3e4" ||
+      canvasBg === "#14100d" ||
+      cardBg === "#1e1713" ||
+      accentColor === "#854d0e" ||
+      accentColor === "#d97706" ||
+      themeMode === "sepia";
+
+    if (isSepiaActive) {
+      if (mode === "dark") {
+        setAccentColor("#d97706");
+        setCanvasBg("#14100d");
+        setCardBg("#1e1713");
+        setTextColor("#f5ede4");
+        setBorderColor("#3d3027");
+        setThemeMode("dark");
+      } else {
+        setAccentColor("#854d0e");
+        setCanvasBg("#f4ead8");
+        setCardBg("#fbf3e4");
+        setTextColor("#2b2118");
+        setBorderColor("#e2d4bc");
+        setThemeMode("sepia");
+      }
+      return;
+    }
+
     setThemeMode(mode);
-    // If using TRC Emerald, adjust accent vibrancy for dark/light contrast
+
+    // 2. If using TRC Emerald, adjust accent vibrancy for dark/light contrast
     if (accentColor === "#15803d" && mode === "dark") {
       setAccentColor("#10b981");
     } else if (accentColor === "#10b981" && mode === "light") {
       setAccentColor("#15803d");
     }
-    // Clear conflicting overrides if switching modes
-    if (mode === "dark" && (textColor === "#0f172a" || cardBg === "#ffffff" || cardBg === "#f8fafc" || canvasBg === "#ffffff")) {
-      setTextColor("");
-      setCardBg("");
-      setCanvasBg("");
-      setBorderColor("");
-    } else if (mode === "light" && (textColor === "#f8fafc" || cardBg === "#14100e" || canvasBg === "#090605")) {
-      setTextColor("");
-      setCardBg("");
-      setCanvasBg("");
-      setBorderColor("");
+
+    // 3. Clear conflicting overrides if switching modes
+    if (mode === "dark") {
+      if (textColor === "#0f172a" || textColor === "#2b2118") setTextColor("");
+      if (cardBg === "#ffffff" || cardBg === "#f8fafc" || cardBg === "#fbf3e4") setCardBg("");
+      if (canvasBg === "#ffffff" || canvasBg === "#f4ead8") setCanvasBg("");
+      if (borderColor === "#e2e8f0" || borderColor === "#e2d4bc") setBorderColor("");
+    } else if (mode === "light") {
+      if (textColor === "#f8fafc" || textColor === "#f5ede4") setTextColor("");
+      if (cardBg === "#14100e" || cardBg === "#1e1713") setCardBg("");
+      if (canvasBg === "#090605" || canvasBg === "#14100d") setCanvasBg("");
+      if (borderColor === "#26201c" || borderColor === "#3d3027") setBorderColor("");
     }
   };
 
@@ -745,21 +777,46 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
           {/* Independently Scrollable Preview Body */}
           <div
             className={`flex-1 min-h-0 overflow-y-auto studio-scrollbar p-4 sm:p-6 space-y-5 transition-colors duration-200 ${
-              studioColorMode === "dark"
+              canvasBg && canvasBg !== "transparent"
+                ? ""
+                : studioColorMode === "dark"
                 ? "bg-[#090605] text-[#f8fafc]"
                 : "bg-[#ffffff] text-[#0f172a]"
             }`}
+            style={
+              canvasBg && canvasBg !== "transparent"
+                ? {
+                    backgroundColor: canvasBg,
+                    color: textColor || (studioColorMode === "dark" ? "#f8fafc" : "#0f172a"),
+                  }
+                : undefined
+            }
           >
             {/* Mock Article Top Header */}
-            <div className={`pb-4 border-b ${studioColorMode === "dark" ? "border-white/10" : "border-slate-200"}`}>
+            <div
+              className={`pb-4 border-b ${
+                borderColor
+                  ? ""
+                  : studioColorMode === "dark"
+                  ? "border-white/10"
+                  : "border-slate-200"
+              }`}
+              style={borderColor ? { borderColor } : undefined}
+            >
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand-orange)]">
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wider"
+                  style={{ color: accentColor }}
+                >
                   The Reading Circle Blog
                 </span>
                 <span className={`${studioColorMode === "dark" ? "text-stone-500" : "text-slate-400"} text-xs`}>&bull;</span>
                 <span className={`text-[10px] ${studioColorMode === "dark" ? "text-stone-400" : "text-slate-500"}`}>Live Article Simulation</span>
               </div>
-              <h4 className={`text-lg font-bold font-serif-title ${studioColorMode === "dark" ? "text-white" : "text-slate-900"}`}>
+              <h4
+                className="text-lg font-bold font-serif-title"
+                style={{ color: textColor || (studioColorMode === "dark" ? "#ffffff" : "#0f172a") }}
+              >
                 {selectedSite === "trc254" ? "The Art of Thoughtful Reading" : "Sample Publication Article"}
               </h4>
               <p className={`text-xs mt-1 ${studioColorMode === "dark" ? "text-stone-400" : "text-slate-600"}`}>
