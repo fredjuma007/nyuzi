@@ -46,7 +46,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       accent: studioColorMode === "dark" ? "#10b981" : "#15803d",
       bg: "transparent",
       theme: "auto",
-      desc: "Designed for The Reading Circle blog",
+      desc: "The Reading Circle Blog Theme",
     },
     {
       name: "Nyuzi Amber Glow",
@@ -84,6 +84,13 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       borderColor: studioColorMode === "dark" ? "#26201c" : "#e2e8f0",
       theme: studioColorMode === "dark" ? "dark" : "light",
       desc: "Editorial Substack black & white simplicity",
+    },
+    {
+      name: "Gorgeous 12",
+      accent: studioColorMode === "dark" ? "#fb7185" : "#be123c",
+      bg: "transparent",
+      theme: "auto",
+      desc: "Literary review & arts publication",
     },
   ];
 
@@ -376,22 +383,50 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
 
           {/* Independently Scrollable Controls Body */}
           <div className="flex-1 min-h-0 overflow-y-auto studio-scrollbar p-4 space-y-4">
-            {/* Curated Presets Bar */}
-            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-2.5">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] block">
-                Curated Style Presets
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {curatedPalettes.map((p) => (
-                  <button
-                    key={p.name}
-                    onClick={() => applyPalette(p)}
-                    className="px-2.5 py-1.5 rounded-lg border border-[var(--border-card)] hover:border-[var(--brand-orange)] bg-[var(--bg-page)] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.accent }} />
-                    <span>{p.name}</span>
-                  </button>
-                ))}
+            {/* Curated Presets Suite */}
+            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
+                  <span>Curated Style Presets</span>
+                </span>
+                <span className="text-[10px] font-mono text-[var(--text-muted)]">6 Themes</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {curatedPalettes.map((p) => {
+                  const isSelected = accentColor === p.accent;
+                  return (
+                    <button
+                      key={p.name}
+                      type="button"
+                      onClick={() => applyPalette(p)}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1 relative group ${
+                        isSelected
+                          ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] shadow-xs"
+                          : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 bg-[var(--bg-page)]"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className="w-3 h-3 rounded-full shrink-0 border border-white/20 shadow-xs"
+                            style={{ backgroundColor: p.accent }}
+                          />
+                          <span className="font-bold text-xs text-[var(--text-main)] truncate">
+                            {p.name}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--brand-orange)] shrink-0" />
+                        )}
+                      </div>
+                      <span className="text-[10px] text-[var(--text-muted)] line-clamp-1 leading-tight">
+                        {p.desc}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
