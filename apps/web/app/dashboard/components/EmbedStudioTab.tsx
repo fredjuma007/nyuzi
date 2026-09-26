@@ -185,419 +185,503 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
   ]);
 
   return (
-    <div className="space-y-6">
-      {/* Studio Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-card)] pb-4">
+    <div className="flex flex-col h-full lg:h-[calc(100vh-6.5rem)] min-h-0 space-y-3.5">
+      {/* Studio Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
         <div>
-          <h3 className="font-serif-title text-2xl font-bold flex items-center gap-2.5">
-            <Palette className="w-5 h-5 text-[var(--brand-orange)]" />
-            <span>Widget Embed Studio</span>
-          </h3>
-          <p className="text-xs text-[var(--text-secondary)] mt-1">
-            Fine-tune colors, cards, borders, reactions, and typography with real-time live preview.
+          <div className="flex items-center gap-2">
+            <h3 className="font-serif-title text-xl sm:text-2xl font-bold flex items-center gap-2 text-[var(--text-main)]">
+              <Palette className="w-5 h-5 text-[var(--brand-orange)]" />
+              <span>Widget Embed Studio</span>
+            </h3>
+            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] border border-[var(--brand-orange)]/20">
+              {selectedSite === "trc254" ? "readingcircle254.com" : "Demo Sandbox"}
+            </span>
+          </div>
+          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+            Realtime dual-pane customizer. Edit styles on the left and test live discussions on the right.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleReset}
             className="px-3 py-1.5 rounded-xl border border-[var(--border-card)] hover:border-[var(--brand-orange)] hover:text-[var(--brand-orange)] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
             title="Reset to default settings"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset Defaults</span>
+            <span>Reset</span>
           </button>
-          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] border border-[var(--brand-orange)]/20">
-            {selectedSite === "trc254" ? "readingcircle254.com" : "Demo Sandbox"}
-          </span>
+
+          <button
+            type="button"
+            onClick={copyEmbedCode}
+            className="px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold shadow transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span>Copy Snippet</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Main Studio Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column: Hyvor-Grade Customizer Controls */}
-        <div className="lg:col-span-5 space-y-4">
-          {/* Curated Presets Bar */}
-          <div className="p-4 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-2.5">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-              Curated Style Presets
+      {/* Main Studio Dual-Pane Layout */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        {/* Left Column: Independently Scrollable Controls Pane */}
+        <div className="lg:col-span-5 flex flex-col min-h-0 h-full rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-xs overflow-hidden">
+          {/* Controls Pane Sticky Top Bar */}
+          <div className="px-4 py-2.5 border-b border-[var(--border-card)] bg-[var(--bg-card-subtle)] flex items-center justify-between shrink-0">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
+              <span>Studio Controls</span>
             </span>
-            <div className="flex flex-wrap gap-1.5">
-              {curatedPalettes.map((p) => (
-                <button
-                  key={p.name}
-                  onClick={() => applyPalette(p)}
-                  className="px-2.5 py-1.5 rounded-lg border border-[var(--border-card)] hover:border-[var(--brand-orange)] bg-[var(--bg-page)] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.accent }} />
-                  <span>{p.name}</span>
-                </button>
-              ))}
+
+            {/* Light / Dark Mode Switcher */}
+            <div className="flex items-center gap-1 bg-[var(--bg-page)] p-0.5 rounded-lg border border-[var(--border-card)]">
+              <button
+                onClick={() => {
+                  setStudioColorMode("light");
+                  setThemeMode("light");
+                }}
+                className={`p-1 rounded-md transition-all cursor-pointer ${
+                  studioColorMode === "light"
+                    ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                }`}
+                title="Light mode styles"
+              >
+                <Sun className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => {
+                  setStudioColorMode("dark");
+                  setThemeMode("dark");
+                }}
+                className={`p-1 rounded-md transition-all cursor-pointer ${
+                  studioColorMode === "dark"
+                    ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
+                    : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                }`}
+                title="Dark mode styles"
+              >
+                <Moon className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
 
-          {/* Granular Color Picker Suite (Hyvor Talk Style) */}
-          <div className="p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-[var(--border-card)] pb-3">
+          {/* Independently Scrollable Controls Body */}
+          <div className="flex-1 min-h-0 overflow-y-auto studio-scrollbar p-4 space-y-4">
+            {/* Curated Presets Bar */}
+            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-2.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] block">
+                Curated Style Presets
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {curatedPalettes.map((p) => (
+                  <button
+                    key={p.name}
+                    onClick={() => applyPalette(p)}
+                    className="px-2.5 py-1.5 rounded-lg border border-[var(--border-card)] hover:border-[var(--brand-orange)] bg-[var(--bg-page)] text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.accent }} />
+                    <span>{p.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Granular Color Picker Suite */}
+            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-3.5">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
                 <Palette className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
                 <span>Color Palette Tokens</span>
               </span>
 
-              {/* Light / Dark Mode Preset Switcher */}
-              <div className="flex items-center gap-1 bg-[var(--bg-page)] p-1 rounded-lg border border-[var(--border-card)]">
-                <button
-                  onClick={() => {
-                    setStudioColorMode("light");
-                    setThemeMode("light");
-                  }}
-                  className={`p-1 rounded-md transition-all cursor-pointer ${
-                    studioColorMode === "light"
-                      ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
-                      : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                  }`}
-                  title="Light mode palette"
-                >
-                  <Sun className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => {
-                    setStudioColorMode("dark");
-                    setThemeMode("dark");
-                  }}
-                  className={`p-1 rounded-md transition-all cursor-pointer ${
-                    studioColorMode === "dark"
-                      ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
-                      : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                  }`}
-                  title="Dark mode palette"
-                >
-                  <Moon className="w-3.5 h-3.5" />
-                </button>
+              <div className="space-y-3 text-xs">
+                {/* Accent Color */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-semibold text-[11px] text-[var(--text-secondary)]">Primary Accent</label>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)]">{accentColor}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="w-8 h-8 rounded-lg border border-[var(--border-card)] cursor-pointer p-0.5 bg-transparent shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs font-mono focus:outline-none focus:border-[var(--brand-orange)]"
+                    />
+                  </div>
+                </div>
+
+                {/* Canvas Background */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-semibold text-[11px] text-[var(--text-secondary)]">Background Canvas</label>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                      {canvasBg || "Transparent (Inherit)"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={canvasBg || (studioColorMode === "dark" ? "#0a0605" : "#fbf9f7")}
+                      onChange={(e) => setCanvasBg(e.target.value)}
+                      className="w-8 h-8 rounded-lg border border-[var(--border-card)] cursor-pointer p-0.5 bg-transparent shrink-0"
+                    />
+                    <input
+                      type="text"
+                      placeholder="transparent"
+                      value={canvasBg}
+                      onChange={(e) => setCanvasBg(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs font-mono focus:outline-none focus:border-[var(--brand-orange)]"
+                    />
+                    {canvasBg && (
+                      <button
+                        onClick={() => setCanvasBg("")}
+                        className="px-2 py-1.5 rounded-lg border border-[var(--border-card)] text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                        title="Clear custom background"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Comment Box / Card Surface */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-semibold text-[11px] text-[var(--text-secondary)]">Comment Box / Card</label>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                      {cardBg || "Theme Default"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={cardBg || (studioColorMode === "dark" ? "#140d0b" : "#ffffff")}
+                      onChange={(e) => setCardBg(e.target.value)}
+                      className="w-8 h-8 rounded-lg border border-[var(--border-card)] cursor-pointer p-0.5 bg-transparent shrink-0"
+                    />
+                    <input
+                      type="text"
+                      placeholder="theme default"
+                      value={cardBg}
+                      onChange={(e) => setCardBg(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs font-mono focus:outline-none focus:border-[var(--brand-orange)]"
+                    />
+                    {cardBg && (
+                      <button
+                        onClick={() => setCardBg("")}
+                        className="px-2 py-1.5 rounded-lg border border-[var(--border-card)] text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                        title="Clear custom card surface"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Text Color */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-semibold text-[11px] text-[var(--text-secondary)]">Primary Text</label>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                      {textColor || "Inherit from site"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={textColor || (studioColorMode === "dark" ? "#fcfcfc" : "#19120f")}
+                      onChange={(e) => setTextColor(e.target.value)}
+                      className="w-8 h-8 rounded-lg border border-[var(--border-card)] cursor-pointer p-0.5 bg-transparent shrink-0"
+                    />
+                    <input
+                      type="text"
+                      placeholder="inherit"
+                      value={textColor}
+                      onChange={(e) => setTextColor(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs font-mono focus:outline-none focus:border-[var(--brand-orange)]"
+                    />
+                    {textColor && (
+                      <button
+                        onClick={() => setTextColor("")}
+                        className="px-2 py-1.5 rounded-lg border border-[var(--border-card)] text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                        title="Clear custom text color"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Border Color */}
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-semibold text-[11px] text-[var(--text-secondary)]">Border & Divider</label>
+                    <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                      {borderColor || "Theme default"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={borderColor || (studioColorMode === "dark" ? "#26201c" : "#ece5df")}
+                      onChange={(e) => setBorderColor(e.target.value)}
+                      className="w-8 h-8 rounded-lg border border-[var(--border-card)] cursor-pointer p-0.5 bg-transparent shrink-0"
+                    />
+                    <input
+                      type="text"
+                      placeholder="theme default"
+                      value={borderColor}
+                      onChange={(e) => setBorderColor(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs font-mono focus:outline-none focus:border-[var(--brand-orange)]"
+                    />
+                    {borderColor && (
+                      <button
+                        onClick={() => setBorderColor("")}
+                        className="px-2 py-1.5 rounded-lg border border-[var(--border-card)] text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] cursor-pointer"
+                        title="Clear custom border color"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Color Rows */}
-            <div className="space-y-3 text-xs">
-              {/* Primary Accent */}
-              <div className="flex items-center justify-between">
+            {/* UI Geometry & Roundness */}
+            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-3.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
+                <span>UI Geometry & Roundness</span>
+              </span>
+
+              <div className="space-y-3 text-xs">
+                {/* Roundness Selection */}
                 <div>
-                  <span className="font-semibold block text-[var(--text-main)]">Brand Accent</span>
-                  <span className="text-[11px] text-[var(--text-muted)]">Submit button, active likes, author badge</span>
+                  <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1.5">
+                    Border Roundness
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Sharp", val: "0.25rem" },
+                      { label: "Rounded", val: "0.75rem" },
+                      { label: "Smooth Pill", val: "1.25rem" },
+                    ].map((r) => (
+                      <button
+                        key={r.label}
+                        onClick={() => setRadiusValue(r.val)}
+                        className={`py-1.5 px-2 rounded-lg border font-semibold text-center cursor-pointer transition-all ${
+                          radiusValue === r.val
+                            ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                            : "border-[var(--border-card)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]/40"
+                        }`}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={accentColor}
-                    onChange={(e) => setAccentColor(e.target.value)}
-                    className="w-7 h-7 rounded-lg border border-[var(--border-card)] cursor-pointer bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={accentColor}
-                    onChange={(e) => setAccentColor(e.target.value)}
-                    className="w-20 px-2 py-1 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-[11px] font-mono"
-                  />
-                </div>
-              </div>
 
-              {/* Canvas Background */}
-              <div className="flex items-center justify-between pt-2 border-t border-[var(--border-card)]/50">
+                {/* Surface Presentation */}
                 <div>
-                  <span className="font-semibold block text-[var(--text-main)]">Canvas Background</span>
-                  <span className="text-[11px] text-[var(--text-muted)]">Leave empty to blend with blog</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={canvasBg || "#ffffff"}
-                    onChange={(e) => setCanvasBg(e.target.value)}
-                    className="w-7 h-7 rounded-lg border border-[var(--border-card)] cursor-pointer bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={canvasBg}
-                    onChange={(e) => setCanvasBg(e.target.value)}
-                    placeholder="transparent"
-                    className="w-20 px-2 py-1 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-[11px] font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Card / Box Surface */}
-              <div className="flex items-center justify-between pt-2 border-t border-[var(--border-card)]/50">
-                <div>
-                  <span className="font-semibold block text-[var(--text-main)]">Card Box Surface</span>
-                  <span className="text-[11px] text-[var(--text-muted)]">Background of comment boxes</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={cardBg || "#ffffff"}
-                    onChange={(e) => setCardBg(e.target.value)}
-                    className="w-7 h-7 rounded-lg border border-[var(--border-card)] cursor-pointer bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={cardBg}
-                    onChange={(e) => setCardBg(e.target.value)}
-                    placeholder="auto"
-                    className="w-20 px-2 py-1 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-[11px] font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Primary Text */}
-              <div className="flex items-center justify-between pt-2 border-t border-[var(--border-card)]/50">
-                <div>
-                  <span className="font-semibold block text-[var(--text-main)]">Text Color</span>
-                  <span className="text-[11px] text-[var(--text-muted)]">Author names & body reading text</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={textColor || "#0f172a"}
-                    onChange={(e) => setTextColor(e.target.value)}
-                    className="w-7 h-7 rounded-lg border border-[var(--border-card)] cursor-pointer bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={textColor}
-                    onChange={(e) => setTextColor(e.target.value)}
-                    placeholder="auto"
-                    className="w-20 px-2 py-1 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-[11px] font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Border Lines */}
-              <div className="flex items-center justify-between pt-2 border-t border-[var(--border-card)]/50">
-                <div>
-                  <span className="font-semibold block text-[var(--text-main)]">Border Lines</span>
-                  <span className="text-[11px] text-[var(--text-muted)]">Dividers & card outlines</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={borderColor || "#e2e8f0"}
-                    onChange={(e) => setBorderColor(e.target.value)}
-                    className="w-7 h-7 rounded-lg border border-[var(--border-card)] cursor-pointer bg-transparent"
-                  />
-                  <input
-                    type="text"
-                    value={borderColor}
-                    onChange={(e) => setBorderColor(e.target.value)}
-                    placeholder="auto"
-                    className="w-20 px-2 py-1 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-[11px] font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* UI Geometry & Sliders (Roundness & Surface) */}
-          <div className="p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
-              <span>UI Geometry & Roundness</span>
-            </span>
-
-            <div className="space-y-3.5 text-xs">
-              {/* Roundness Selection */}
-              <div>
-                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1.5">
-                  Border Roundness
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: "Sharp", val: "0.25rem" },
-                    { label: "Rounded", val: "0.75rem" },
-                    { label: "Smooth Pill", val: "1.25rem" },
-                  ].map((r) => (
+                  <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1.5">
+                    Comment Enclosure Style
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
                     <button
-                      key={r.label}
-                      onClick={() => setRadiusValue(r.val)}
-                      className={`py-1.5 px-2 rounded-lg border font-semibold text-center cursor-pointer transition-all ${
-                        radiusValue === r.val
+                      onClick={() => setBgMode("transparent")}
+                      className={`py-2 px-3 rounded-lg border font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                        bgMode === "transparent"
                           ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
                           : "border-[var(--border-card)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]/40"
                       }`}
                     >
-                      {r.label}
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Seamless Stream</span>
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Surface Presentation */}
-              <div>
-                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1.5">
-                  Comment Enclosure Style
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setBgMode("transparent")}
-                    className={`py-2 px-3 rounded-lg border font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                      bgMode === "transparent"
-                        ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
-                        : "border-[var(--border-card)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]/40"
-                    }`}
-                  >
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>Seamless Stream</span>
-                  </button>
-                  <button
-                    onClick={() => setBgMode("card")}
-                    className={`py-2 px-3 rounded-lg border font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                      bgMode === "card"
-                        ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
-                        : "border-[var(--border-card)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]/40"
-                    }`}
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Enclosed Cards</span>
-                  </button>
+                    <button
+                      onClick={() => setBgMode("card")}
+                      className={`py-2 px-3 rounded-lg border font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                        bgMode === "card"
+                          ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                          : "border-[var(--border-card)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]/40"
+                      }`}
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Enclosed Cards</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Reactions Suite */}
-          <div className="p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-              Reactions & Interactivity
-            </span>
+            {/* Reactions Suite */}
+            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-3.5">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] block">
+                Reactions & Interactivity
+              </span>
 
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => setReactionType("like")}
-                className={`p-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
-                  reactionType === "like"
-                    ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
-                    : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
-                }`}
-              >
-                <ThumbsUp className="w-4 h-4 fill-current" />
-                <span>👍 Like</span>
-              </button>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => setReactionType("like")}
+                  className={`p-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                    reactionType === "like"
+                      ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                      : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
+                  }`}
+                >
+                  <ThumbsUp className="w-4 h-4 fill-current" />
+                  <span>👍 Like</span>
+                </button>
 
-              <button
-                onClick={() => setReactionType("heart")}
-                className={`p-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
-                  reactionType === "heart"
-                    ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
-                    : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
-                }`}
-              >
-                <Heart className="w-4 h-4 fill-current" />
-                <span>❤️ Heart Pop</span>
-              </button>
+                <button
+                  onClick={() => setReactionType("heart")}
+                  className={`p-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                    reactionType === "heart"
+                      ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                      : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
+                  }`}
+                >
+                  <Heart className="w-4 h-4 fill-current" />
+                  <span>❤️ Heart Pop</span>
+                </button>
 
-              <button
-                onClick={() => setReactionType("upvote")}
-                className={`p-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
-                  reactionType === "upvote"
-                    ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
-                    : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
-                }`}
-              >
-                <span className="text-sm font-bold">▲</span>
-                <span>▲ Upvote</span>
-              </button>
-            </div>
-
-            {/* Expressive Top Reactions Bar Toggle */}
-            <label className="flex items-center justify-between pt-2 border-t border-[var(--border-card)]/50 cursor-pointer select-none">
-              <div>
-                <span className="font-semibold text-xs text-[var(--text-main)] block">Expressive Reactions Bar</span>
-                <span className="text-[11px] text-[var(--text-muted)]">Top rating tray (🔥 Superb, ❤️ Love, 💡 Insight)</span>
+                <button
+                  onClick={() => setReactionType("upvote")}
+                  className={`p-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
+                    reactionType === "upvote"
+                      ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                      : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
+                  }`}
+                >
+                  <span className="text-sm font-bold">▲</span>
+                  <span>▲ Upvote</span>
+                </button>
               </div>
-              <input
-                type="checkbox"
-                checked={showReactionsBar}
-                onChange={(e) => setShowReactionsBar(e.target.checked)}
-                className="w-4 h-4 accent-[var(--brand-orange)] rounded cursor-pointer"
-              />
-            </label>
-          </div>
 
-          {/* Generated Ready-to-Paste Snippet */}
-          <div className="p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-2.5">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                Ready-to-Paste Snippet
+              {/* Expressive Top Reactions Bar Toggle */}
+              <label className="flex items-center justify-between pt-2 border-t border-[var(--border-card)]/50 cursor-pointer select-none">
+                <div>
+                  <span className="font-semibold text-xs text-[var(--text-main)] block">Expressive Reactions Bar</span>
+                  <span className="text-[11px] text-[var(--text-muted)]">Top rating tray (🔥 Superb, ❤️ Love, 💡 Insight)</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={showReactionsBar}
+                  onChange={(e) => setShowReactionsBar(e.target.checked)}
+                  className="w-4 h-4 accent-[var(--brand-orange)] rounded cursor-pointer"
+                />
               </label>
-              <span className="text-[10px] text-emerald-500 font-mono font-bold">&lt; 15KB bundle</span>
             </div>
 
-            <div className="relative">
-              <pre className="p-3.5 rounded-xl bg-[#090605] text-[#f8fafc] text-xs font-mono overflow-x-auto border border-[#f56220]/25 leading-relaxed">
-                <code>{embedScriptCode}</code>
-              </pre>
-              <button
-                type="button"
-                onClick={copyEmbedCode}
-                className="absolute top-2.5 right-2.5 px-3 py-1.5 rounded-lg bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold shadow transition-all cursor-pointer flex items-center gap-1.5"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Snippet</span>
-                  </>
-                )}
-              </button>
+            {/* Generated Ready-to-Paste Snippet */}
+            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                  Ready-to-Paste Snippet
+                </label>
+                <span className="text-[10px] text-emerald-500 font-mono font-bold">&lt; 15KB bundle</span>
+              </div>
+
+              <div className="relative">
+                <pre className="p-3 rounded-xl bg-[#090605] text-[#f8fafc] text-xs font-mono overflow-x-auto border border-[#f56220]/25 leading-relaxed">
+                  <code>{embedScriptCode}</code>
+                </pre>
+                <button
+                  type="button"
+                  onClick={copyEmbedCode}
+                  className="absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold shadow transition-all cursor-pointer flex items-center gap-1"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3 h-3" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Pre-Populated Realistic Live Sandbox */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="p-5 sm:p-6 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-xl overflow-hidden">
-            {/* Mock Article Top Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border-card)] pb-4 mb-5 gap-2">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand-orange)]">
-                    Interactive Live Sandbox
-                  </span>
-                  <span className="text-[var(--text-muted)] text-xs">&bull;</span>
-                  <span className="text-[10px] text-[var(--text-muted)]">Pre-populated with real discussions</span>
-                </div>
-                <h4 className="text-base font-bold text-[var(--text-main)]">
-                  {selectedSite === "trc254" ? "The Art of Thoughtful Reading" : "Sample Publication Article"}
-                </h4>
-              </div>
-
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Live Pre-populated</span>
-              </div>
+        {/* Right Column: Independently Scrollable Live Sandbox Preview Pane */}
+        <div className="lg:col-span-7 flex flex-col min-h-0 h-full rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-md overflow-hidden">
+          {/* Preview Pane Top Header Bar */}
+          <div className="px-5 py-2.5 border-b border-[var(--border-card)] bg-[var(--bg-card-subtle)] flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="font-bold text-xs uppercase tracking-wider text-[var(--text-main)]">
+                Live Interactive Sandbox
+              </span>
             </div>
 
-            {/* Widget Container Mount (Pre-populated with mock data) */}
+            <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+              <span>Synchronized</span>
+            </div>
+          </div>
+
+          {/* Independently Scrollable Preview Body */}
+          <div className="flex-1 min-h-0 overflow-y-auto studio-scrollbar p-4 sm:p-6 space-y-5">
+            {/* Mock Article Top Header */}
+            <div className="border-b border-[var(--border-card)] pb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand-orange)]">
+                  The Reading Circle Blog
+                </span>
+                <span className="text-[var(--text-muted)] text-xs">&bull;</span>
+                <span className="text-[10px] text-[var(--text-muted)]">Live Article Simulation</span>
+              </div>
+              <h4 className="text-lg font-bold text-[var(--text-main)] font-serif-title">
+                {selectedSite === "trc254" ? "The Art of Thoughtful Reading" : "Sample Publication Article"}
+              </h4>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">
+                A community-centered space for literary reflections and dialogue. Readers leave thoughts below.
+              </p>
+            </div>
+
+            {/* Widget Container Mount */}
             <div id="nyuzi-studio-preview-mount" className="min-h-[450px]">
               <div className="p-12 text-center text-xs text-[var(--text-muted)] animate-pulse">
                 Rendering studio sandbox with pre-populated discussions...
               </div>
             </div>
-          </div>
 
-          {/* Quick Integration Directions */}
-          <div className="p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-2.5">
-            <h5 className="font-bold text-xs uppercase tracking-wider flex items-center gap-2 text-[var(--text-main)]">
-              <Sparkles className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
-              <span>How this integrates into your website</span>
-            </h5>
-            <ol className="list-decimal list-inside space-y-1.5 text-xs text-[var(--text-secondary)] leading-relaxed">
-              <li>Copy the generated 2-line embed snippet above.</li>
-              <li>Place the <code>&lt;div id=&quot;nyuzi-comments&quot;&gt;</code> container on your blog template.</li>
-              <li>Include the lightweight <code>&lt;script&gt;</code> before <code>&lt;/body&gt;</code>.</li>
-              <li>All colors, surface shapes, and reactions match your preview automatically!</li>
-            </ol>
+            {/* Quick Integration Directions */}
+            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-2">
+              <h5 className="font-bold text-xs uppercase tracking-wider flex items-center gap-2 text-[var(--text-main)]">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
+                <span>How this integrates into your website</span>
+              </h5>
+              <ol className="list-decimal list-inside space-y-1 text-xs text-[var(--text-secondary)] leading-relaxed">
+                <li>Copy the generated 2-line embed snippet from the left pane.</li>
+                <li>Place the <code>&lt;div id=&quot;nyuzi-comments&quot;&gt;</code> container on your blog template.</li>
+                <li>Include the lightweight <code>&lt;script&gt;</code> before <code>&lt;/body&gt;</code>.</li>
+                <li>All colors, surface shapes, and reactions match your preview automatically!</li>
+              </ol>
+            </div>
           </div>
         </div>
       </div>

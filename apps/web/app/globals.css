@@ -98,3 +98,23 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--brand-orange);
 }
+
+/* Studio Independent Scrollbars */
+.studio-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-card) transparent;
+}
+.studio-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.studio-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.studio-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-card);
+  border-radius: 9999px;
+}
+.studio-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--brand-orange);
+}

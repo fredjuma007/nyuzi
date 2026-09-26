@@ -8,7 +8,7 @@ export default function WidgetStudioPage() {
   const { selectedSite, showToast } = useDashboard();
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 flex flex-col min-h-0 h-full">
       <EmbedStudioTab selectedSite={selectedSite} showToast={showToast} />
     </div>
   );
