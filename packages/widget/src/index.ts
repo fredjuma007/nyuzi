@@ -184,10 +184,11 @@ import {
   const THREAD_REACTION_STORAGE_KEY = `nyuzi_react_${siteId}_${encodeURIComponent(threadUrl)}`;
   const THREAD_COUNTS_STORAGE_KEY = `nyuzi_counts_${siteId}_${encodeURIComponent(threadUrl)}`;
 
-  const defaultBaseCounts: Record<string, number> =
-    themeConfig.reactionsPreset === "literary"
+  const defaultBaseCounts: Record<string, number> = isMockMode
+    ? (themeConfig.reactionsPreset === "literary"
       ? { coffee: 21, book: 28, lightbulb: 14, heart: 19, clap: 16 }
-      : { fire: 18, heart: 24, lightbulb: 12, laugh: 7, clap: 15 };
+      : { fire: 18, heart: 24, lightbulb: 12, laugh: 7, clap: 15 })
+    : {};
 
   let threadReactionCounts: Record<string, number> = { ...defaultBaseCounts };
 
@@ -198,12 +199,14 @@ import {
     }
   } catch {}
 
-  try {
-    const savedCounts = localStorage.getItem(THREAD_COUNTS_STORAGE_KEY);
-    if (savedCounts) {
-      threadReactionCounts = { ...threadReactionCounts, ...JSON.parse(savedCounts) };
-    }
-  } catch {}
+  if (isMockMode) {
+    try {
+      const savedCounts = localStorage.getItem(THREAD_COUNTS_STORAGE_KEY);
+      if (savedCounts) {
+        threadReactionCounts = { ...threadReactionCounts, ...JSON.parse(savedCounts) };
+      }
+    } catch {}
+  }
 
   // Reader Ownership for 15-Minute Grace Window
   const OWNERSHIP_STORAGE_KEY = "nyuzi_reader_ownership";
@@ -361,8 +364,11 @@ import {
       totalComments = data.total || (data.pagination?.totalComments ?? commentsList.length);
       totalTopLevel = data.pagination?.totalTopLevel ?? commentsList.filter((c) => !c.parentId).length;
       hasMoreComments = data.pagination?.hasMore ?? false;
-      if (data.thread?.reactions && Object.keys(data.thread.reactions).length > 0) {
-        threadReactionCounts = { ...threadReactionCounts, ...data.thread.reactions };
+      if (!isMockMode) {
+        threadReactionCounts =
+          data.thread?.reactions && typeof data.thread.reactions === "object"
+            ? { ...data.thread.reactions }
+            : {};
       }
       if (data.siteSettings && typeof data.siteSettings === "object") {
         const s = data.siteSettings;
@@ -852,7 +858,7 @@ import {
               action,
             });
             if (result && result.reactions) {
-              threadReactionCounts = { ...threadReactionCounts, ...result.reactions };
+              threadReactionCounts = { ...result.reactions };
               render();
             }
           } catch (err) {

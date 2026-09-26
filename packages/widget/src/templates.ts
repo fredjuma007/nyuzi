@@ -212,19 +212,19 @@ export function renderTopReactionsBar(
   reactionCounts?: Record<string, number>
 ): string {
   const generalReactions = [
-    { key: "fire", emoji: "🔥", label: "Superb", defaultCount: 18 },
-    { key: "heart", emoji: "❤️", label: "Love", defaultCount: 24 },
-    { key: "lightbulb", emoji: "💡", label: "Insight", defaultCount: 12 },
-    { key: "laugh", emoji: "😂", label: "Laugh", defaultCount: 7 },
-    { key: "clap", emoji: "👏", label: "Applause", defaultCount: 15 },
+    { key: "fire", emoji: "🔥", label: "Superb" },
+    { key: "heart", emoji: "❤️", label: "Love" },
+    { key: "lightbulb", emoji: "💡", label: "Insight" },
+    { key: "laugh", emoji: "😂", label: "Laugh" },
+    { key: "clap", emoji: "👏", label: "Applause" },
   ];
 
   const literaryReactions = [
-    { key: "coffee", emoji: "☕", label: "Thoughtful", defaultCount: 21 },
-    { key: "book", emoji: "📖", label: "Engrossing", defaultCount: 28 },
-    { key: "lightbulb", emoji: "💡", label: "Insight", defaultCount: 14 },
-    { key: "heart", emoji: "❤️", label: "Moved", defaultCount: 19 },
-    { key: "clap", emoji: "👏", label: "Applause", defaultCount: 16 },
+    { key: "coffee", emoji: "☕", label: "Thoughtful" },
+    { key: "book", emoji: "📖", label: "Engrossing" },
+    { key: "lightbulb", emoji: "💡", label: "Insight" },
+    { key: "heart", emoji: "❤️", label: "Moved" },
+    { key: "clap", emoji: "👏", label: "Applause" },
   ];
 
   const reactions = preset === "literary" ? literaryReactions : generalReactions;
@@ -235,15 +235,12 @@ export function renderTopReactionsBar(
       <div class="nyuzi-reactions-grid">
         ${reactions
           .map((r) => {
-            const count =
-              reactionCounts?.[r.key] !== undefined
-                ? reactionCounts[r.key]
-                : r.defaultCount;
+            const count = Number(reactionCounts?.[r.key]) || 0;
             return `
           <div class="nyuzi-reaction-pill ${activeKey === r.key ? "active" : ""}" data-reaction-key="${r.key}">
             <div class="emoji-row">
               <span>${r.emoji}</span>
-              <span class="reaction-count">${count}</span>
+              ${count > 0 ? `<span class="reaction-count">${count}</span>` : ""}
             </div>
             <span class="reaction-label">${r.label}</span>
           </div>
