@@ -28,10 +28,13 @@ interface EmbedStudioTabProps {
 
 export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps) {
   // Mode Tab: Light vs Dark
-  const [studioColorMode, setStudioColorMode] = useState<"light" | "dark">("light");
+  const [studioColorMode, setStudioColorMode] = useState<"light" | "dark">(
+    selectedSite === "trc254" ? "dark" : "light"
+  );
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
 
   // Tokens State
-  const [accentColor, setAccentColor] = useState(selectedSite === "trc254" ? "#15803d" : "#f56220");
+  const [accentColor, setAccentColor] = useState(selectedSite === "trc254" ? "#10b981" : "#f56220");
   const [canvasBg, setCanvasBg] = useState("");
   const [cardBg, setCardBg] = useState("");
   const [textColor, setTextColor] = useState("");
@@ -58,6 +61,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
   // Load saved site settings from edge API on mount or site switch
   useEffect(() => {
     let isMounted = true;
+    setIsSettingsLoaded(false);
     async function fetchSiteSettings() {
       try {
         const res = await fetch(`https://nyuzi-api.fredjuma8.workers.dev/api/v1/sites/${selectedSite}/settings`);
@@ -66,7 +70,12 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
           if (isMounted && data.settings && Object.keys(data.settings).length > 0) {
             const s = data.settings;
             if (s.accentColor) setAccentColor(s.accentColor);
-            if (s.themeMode) setThemeMode(s.themeMode);
+            if (s.themeMode) {
+              setThemeMode(s.themeMode);
+              if (s.themeMode === "dark" || s.themeMode === "light") {
+                setStudioColorMode(s.themeMode);
+              }
+            }
             if (s.bgMode) setBgMode(s.bgMode);
             if (s.canvasBg !== undefined) setCanvasBg(s.canvasBg);
             if (s.cardBg !== undefined) setCardBg(s.cardBg);
@@ -80,7 +89,10 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
             if (Array.isArray(s.formattingTools)) setFormattingTools(s.formattingTools);
           }
         }
-      } catch {}
+      } catch {
+      } finally {
+        if (isMounted) setIsSettingsLoaded(true);
+      }
     }
     fetchSiteSettings();
     return () => {
@@ -338,6 +350,8 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
 
   // Dynamically Mount Sandbox with Mock Discussion
   useEffect(() => {
+    if (!isSettingsLoaded) return;
+
     const timer = setTimeout(() => {
       const containerMount = document.getElementById("nyuzi-studio-preview-mount");
       if (!containerMount) return;
@@ -383,6 +397,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       if (existingScript) existingScript.remove();
     };
   }, [
+    isSettingsLoaded,
     selectedSite,
     accentColor,
     canvasBg,
@@ -515,7 +530,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                 type="button"
                 onClick={() => handleToggleColorMode("light")}
                 className={`px-2 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold ${
-                  studioColorMode === "light"
+                  (themeMode === "light" || (themeMode === "auto" && studioColorMode === "light"))
                     ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                     : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 }`}
@@ -528,7 +543,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                 type="button"
                 onClick={() => handleToggleColorMode("dark")}
                 className={`px-2 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold ${
-                  studioColorMode === "dark"
+                  (themeMode === "dark" || (themeMode === "auto" && studioColorMode === "dark"))
                     ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                     : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
                 }`}
@@ -1130,7 +1145,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                   type="button"
                   onClick={() => handleToggleColorMode("light")}
                   className={`p-1 rounded-md transition-all cursor-pointer ${
-                    studioColorMode === "light"
+                    (themeMode === "light" || (themeMode === "auto" && studioColorMode === "light"))
                       ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                       : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
                   }`}
@@ -1142,7 +1157,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                   type="button"
                   onClick={() => handleToggleColorMode("dark")}
                   className={`p-1 rounded-md transition-all cursor-pointer ${
-                    studioColorMode === "dark"
+                    (themeMode === "dark" || (themeMode === "auto" && studioColorMode === "dark"))
                       ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                       : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
                   }`}
@@ -1163,7 +1178,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
             className={`flex-1 min-h-0 overflow-y-auto studio-scrollbar p-4 sm:p-6 space-y-5 transition-colors duration-200 ${
               canvasBg && canvasBg !== "transparent"
                 ? ""
-                : studioColorMode === "dark"
+                : (themeMode === "dark" || (themeMode === "auto" && studioColorMode === "dark"))
                 ? "bg-[#090605] text-[#f8fafc]"
                 : "bg-[#ffffff] text-[#0f172a]"
             }`}
@@ -1171,7 +1186,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
               canvasBg && canvasBg !== "transparent"
                 ? {
                     backgroundColor: canvasBg,
-                    color: textColor || (studioColorMode === "dark" ? "#f8fafc" : "#0f172a"),
+                    color: textColor || (themeMode === "dark" || (themeMode === "auto" && studioColorMode === "dark") ? "#f8fafc" : "#0f172a"),
                   }
                 : undefined
             }
