@@ -14,10 +14,30 @@ export interface AuthorRecipient {
 }
 
 export const FALLBACK_AUTHOR_ROSTER: Record<string, string> = {
+  "bramwel kemoli": "readingcircle254@gmail.com",
+  "brenda frenjo": "brendafrenjo@gmail.com",
+  "chege": "readingcircle254@gmail.com",
+  "christine karori": "readingcircle254@gmail.com",
+  "edwin khakali": "readingcircle254@gmail.com",
+  "emmanuel njeru": "readingcircle254@gmail.com",
+  "esther mboche": "readingcircle254@gmail.com",
+  "esther ndunge": "readingcircle254@gmail.com",
+  "faith waweru": "readingcircle254@gmail.com",
   "fred juma": "fredjuma8@gmail.com",
-  "brenda frenjo": "readingcircle254@gmail.com",
+  "john maingi": "readingcircle254@gmail.com",
+  "kibichi": "readingcircle254@gmail.com",
+  "lillian kwamboka": "readingcircle254@gmail.com",
+  "lorret trizah mong'ina": "readingcircle254@gmail.com",
+  "lorret trizah mongina": "readingcircle254@gmail.com",
+  "nekesa": "readingcircle254@gmail.com",
+  "pith": "readingcircle254@gmail.com",
+  "prudence mukiri": "readingcircle254@gmail.com",
+  "purity migwi": "readingcircle254@gmail.com",
+  "roney mwavua": "readingcircle254@gmail.com",
+  "silent eyes": "readingcircle254@gmail.com",
   "sumeiya juma": "readingcircle254@gmail.com",
   "sumaiya juma": "readingcircle254@gmail.com",
+  "wences omondi": "readingcircle254@gmail.com",
   "the reading circle": "readingcircle254@gmail.com",
 };
 
