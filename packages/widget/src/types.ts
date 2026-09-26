@@ -52,4 +52,7 @@ export interface ThemeConfig {
   themeMode: "auto" | "light" | "dark" | "sepia";
   bgMode: "transparent" | "card";
   showReactionsBar?: boolean;
+  reactionsPrompt?: string;
+  reactionsPreset?: "general" | "literary";
+  allowedFormatting?: string[];
 }

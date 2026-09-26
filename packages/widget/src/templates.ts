@@ -40,26 +40,42 @@ export function formatTime(isoString: string): string {
  * Ultra-lightweight, safe Micro-Markdown parser (<1KB)
  * Supports: **bold**, *italic*, `code`, > quotes, [links](url), newlines
  */
-export function formatMarkdown(raw: string): string {
+export function formatMarkdown(raw: string, allowedFormatting?: string[]): string {
   if (!raw) return "";
 
   // 1. Escape HTML first to prevent any script/markup injection
   let text = escapeHtml(raw);
 
+  const tools = allowedFormatting ?? ["bold", "italic", "quote", "code", "link"];
+
   // 2. Inline code: `code`
-  text = text.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+  if (tools.includes("code")) {
+    text = text.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+  }
 
   // 3. Bold: **text**
-  text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  if (tools.includes("bold")) {
+    text = text.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  }
 
   // 4. Italic: *text* (avoiding lone asterisks)
-  text = text.replace(/(^|[^*])\*([^*]+)\*([^*]|$)/g, "$1<em>$2</em>$3");
+  if (tools.includes("italic")) {
+    text = text.replace(/(^|[^*])\*([^*]+)\*([^*]|$)/g, "$1<em>$2</em>$3");
+  }
 
   // 5. Links: [label](url) - strictly validate http, https, or mailto
-  text = text.replace(
-    /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
-  );
+  if (tools.includes("link")) {
+    text = text.replace(
+      /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+  } else {
+    // If links are disabled, render markdown links safely as label (url) without clickable anchor
+    text = text.replace(
+      /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,
+      "$1 ($2)"
+    );
+  }
 
   // 6. Blockquotes: lines starting with &gt;
   const lines = text.split("\n");
@@ -68,7 +84,7 @@ export function formatMarkdown(raw: string): string {
   let quoteBuffer: string[] = [];
 
   for (const line of lines) {
-    if (line.startsWith("&gt; ") || line === "&gt;") {
+    if (tools.includes("quote") && (line.startsWith("&gt; ") || line === "&gt;")) {
       inQuote = true;
       quoteBuffer.push(line.replace(/^&gt; ?/, ""));
     } else {
@@ -139,24 +155,49 @@ export function isVerifiedAuthor(name: string, postAuthor: string): boolean {
 /**
  * Micro-Markdown Toolbar for Composing & Editing
  */
-export function renderFormatToolbar(targetTextareaId: string): string {
-  return `
-    <div class="nyuzi-format-toolbar" data-target="${targetTextareaId}">
+export function renderFormatToolbar(targetTextareaId: string, allowedTools?: string[]): string {
+  const tools = allowedTools && allowedTools.length > 0
+    ? allowedTools
+    : ["bold", "italic", "quote", "code", "link"];
+
+  const buttons: string[] = [];
+
+  if (tools.includes("bold")) {
+    buttons.push(`
       <button type="button" class="nyuzi-format-btn" data-action="bold" title="Bold (**text**)">
         <strong>B</strong>
-      </button>
+      </button>`);
+  }
+  if (tools.includes("italic")) {
+    buttons.push(`
       <button type="button" class="nyuzi-format-btn" data-action="italic" title="Italic (*text*)">
         <em>I</em>
-      </button>
+      </button>`);
+  }
+  if (tools.includes("quote")) {
+    buttons.push(`
       <button type="button" class="nyuzi-format-btn" data-action="quote" title="Quote (> text)">
         &ldquo;
-      </button>
+      </button>`);
+  }
+  if (tools.includes("code")) {
+    buttons.push(`
       <button type="button" class="nyuzi-format-btn" data-action="code" title="Inline Code (\`code\`)">
         &lt;/&gt;
-      </button>
+      </button>`);
+  }
+  if (tools.includes("link")) {
+    buttons.push(`
       <button type="button" class="nyuzi-format-btn" data-action="link" title="Link ([text](url))">
         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-      </button>
+      </button>`);
+  }
+
+  if (buttons.length === 0) return "";
+
+  return `
+    <div class="nyuzi-format-toolbar" data-target="${targetTextareaId}">
+      ${buttons.join("")}
     </div>
   `;
 }
@@ -164,8 +205,12 @@ export function renderFormatToolbar(targetTextareaId: string): string {
 /**
  * Top Expressive Reactions Bar (Hyvor Talk Style)
  */
-export function renderTopReactionsBar(activeKey: string | null): string {
-  const reactions = [
+export function renderTopReactionsBar(
+  activeKey: string | null,
+  prompt = "How was this discussion?",
+  preset: "general" | "literary" = "general"
+): string {
+  const generalReactions = [
     { key: "fire", emoji: "🔥", label: "Superb", count: 18 },
     { key: "heart", emoji: "❤️", label: "Love", count: 24 },
     { key: "lightbulb", emoji: "💡", label: "Insight", count: 12 },
@@ -173,9 +218,19 @@ export function renderTopReactionsBar(activeKey: string | null): string {
     { key: "clap", emoji: "👏", label: "Applause", count: 15 },
   ];
 
+  const literaryReactions = [
+    { key: "coffee", emoji: "☕", label: "Thoughtful", count: 21 },
+    { key: "book", emoji: "📖", label: "Engrossing", count: 28 },
+    { key: "lightbulb", emoji: "💡", label: "Insight", count: 14 },
+    { key: "heart", emoji: "❤️", label: "Moved", count: 19 },
+    { key: "clap", emoji: "👏", label: "Applause", count: 16 },
+  ];
+
+  const reactions = preset === "literary" ? literaryReactions : generalReactions;
+
   return `
     <div class="nyuzi-reactions-bar">
-      <div class="nyuzi-reactions-prompt">How was this discussion?</div>
+      <div class="nyuzi-reactions-prompt">${escapeHtml(prompt || "How was this discussion?")}</div>
       <div class="nyuzi-reactions-grid">
         ${reactions
           .map(
@@ -210,6 +265,7 @@ export function renderComment(
     isSubmitting: boolean;
     savedAuthorName: string;
     savedAuthorEmail: string;
+    allowedFormatting?: string[];
   }
 ): string {
   const replies = allComments.filter((r) => r.parentId === c.id);
@@ -238,7 +294,7 @@ export function renderComment(
           isEditing
             ? `
             <div class="nyuzi-edit-box">
-              ${renderFormatToolbar(`edit-content-${c.id}`)}
+              ${renderFormatToolbar(`edit-content-${c.id}`, options.allowedFormatting)}
               <textarea class="nyuzi-textarea nyuzi-edit-textarea" id="edit-content-${c.id}" rows="3" maxlength="2000">${escapeHtml(c.content)}</textarea>
               <div class="nyuzi-edit-actions">
                 <button class="nyuzi-action-btn cancel-edit" data-id="${c.id}">Cancel</button>
@@ -258,7 +314,7 @@ export function renderComment(
               <button class="nyuzi-cancel-delete-btn" data-id="${c.id}">Cancel</button>
             </div>
           `
-            : `<div class="nyuzi-content">${formatMarkdown(c.content)}</div>`
+            : `<div class="nyuzi-content">${formatMarkdown(c.content, options.allowedFormatting)}</div>`
         }
 
         ${
@@ -300,7 +356,7 @@ export function renderComment(
           isReplying
             ? `
             <div class="nyuzi-reply-box">
-              ${renderFormatToolbar(`reply-content-${c.id}`)}
+              ${renderFormatToolbar(`reply-content-${c.id}`, options.allowedFormatting)}
               <textarea class="nyuzi-textarea" id="reply-content-${c.id}" placeholder="Reply to ${escapeHtml(c.authorName)}..." maxlength="2000" required></textarea>
               <div class="nyuzi-form-row">
                 <div class="nyuzi-inputs">

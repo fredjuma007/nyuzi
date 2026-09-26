@@ -14,6 +14,9 @@ import {
   Layers,
   FileText,
   RotateCcw,
+  Type,
+  Smile,
+  ShieldCheck,
 } from "lucide-react";
 
 interface EmbedStudioTabProps {
@@ -36,8 +39,23 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
   const [themeMode, setThemeMode] = useState<"auto" | "light" | "dark" | "sepia">("auto");
   const [bgMode, setBgMode] = useState<"transparent" | "card">("transparent");
   const [showReactionsBar, setShowReactionsBar] = useState(true);
+  const [reactionsPrompt, setReactionsPrompt] = useState(
+    selectedSite === "trc254" ? "What did you think of this piece?" : "How was this discussion?"
+  );
+  const [reactionsPreset, setReactionsPreset] = useState<"general" | "literary">(
+    selectedSite === "trc254" ? "literary" : "general"
+  );
+  const [formattingTools, setFormattingTools] = useState<string[]>(
+    selectedSite === "trc254" ? ["bold", "italic", "quote"] : ["bold", "italic", "quote", "code", "link"]
+  );
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");
+
+  const toggleFormattingTool = (tool: string) => {
+    setFormattingTools((prev) =>
+      prev.includes(tool) ? prev.filter((t) => t !== tool) : [...prev, tool]
+    );
+  };
 
   // Hyvor-style Quick Color Presets (Intelligently adapts to active Studio theme mode)
   const curatedPalettes = [
@@ -46,12 +64,18 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       accent: studioColorMode === "dark" ? "#10b981" : "#15803d",
       bg: "transparent",
       theme: "auto",
+      reactionsPreset: "literary" as const,
+      reactionsPrompt: "What did you think of this piece?",
+      formattingTools: ["bold", "italic", "quote"],
     },
     {
       name: "Nyuzi Amber Glow",
       accent: "#f56220",
       bg: "transparent",
       theme: "auto",
+      reactionsPreset: "general" as const,
+      reactionsPrompt: "How was this discussion?",
+      formattingTools: ["bold", "italic", "quote", "code", "link"],
     },
     {
       name: "Sepia Book Parchment",
@@ -61,6 +85,9 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       textColor: studioColorMode === "dark" ? "#f5ede4" : "#2b2118",
       borderColor: studioColorMode === "dark" ? "#3d3027" : "#e2d4bc",
       theme: studioColorMode === "dark" ? "dark" : "sepia",
+      reactionsPreset: "literary" as const,
+      reactionsPrompt: "Reader Impressions",
+      formattingTools: ["bold", "italic", "quote"],
     },
     {
       name: "Obsidian Electric",
@@ -70,6 +97,9 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       textColor: "#f8fafc",
       borderColor: "#26201c",
       theme: "dark",
+      reactionsPreset: "general" as const,
+      reactionsPrompt: "How was this discussion?",
+      formattingTools: ["bold", "italic", "quote", "code", "link"],
     },
     {
       name: "Minimalist Mono",
@@ -79,12 +109,18 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       textColor: studioColorMode === "dark" ? "#f8fafc" : "#0f172a",
       borderColor: studioColorMode === "dark" ? "#26201c" : "#e2e8f0",
       theme: studioColorMode === "dark" ? "dark" : "light",
+      reactionsPreset: "general" as const,
+      reactionsPrompt: "How was this discussion?",
+      formattingTools: ["bold", "italic", "quote", "link"],
     },
     {
       name: "Gorgeous 12",
       accent: studioColorMode === "dark" ? "#fb7185" : "#be123c",
       bg: "transparent",
       theme: "auto",
+      reactionsPreset: "general" as const,
+      reactionsPrompt: "How was this discussion?",
+      formattingTools: ["bold", "italic", "quote", "code", "link"],
     },
   ];
 
@@ -95,6 +131,9 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     setCardBg(p.cardBg || "");
     setTextColor(p.textColor || "");
     setBorderColor(p.borderColor || "");
+    if (p.reactionsPreset) setReactionsPreset(p.reactionsPreset);
+    if (p.reactionsPrompt) setReactionsPrompt(p.reactionsPrompt);
+    if (p.formattingTools) setFormattingTools(p.formattingTools);
     if (p.theme === "auto" || !p.theme) {
       setThemeMode(studioColorMode);
     } else {
@@ -174,14 +213,25 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     setThemeMode("auto");
     setBgMode("transparent");
     setShowReactionsBar(true);
+    setReactionsPrompt(selectedSite === "trc254" ? "What did you think of this piece?" : "How was this discussion?");
+    setReactionsPreset(selectedSite === "trc254" ? "literary" : "general");
+    setFormattingTools(selectedSite === "trc254" ? ["bold", "italic", "quote"] : ["bold", "italic", "quote", "code", "link"]);
     showToast("Reset studio styles to default");
   };
+
+  const isDefaultFormatting =
+    formattingTools.length === 5 &&
+    formattingTools.includes("bold") &&
+    formattingTools.includes("italic") &&
+    formattingTools.includes("quote") &&
+    formattingTools.includes("code") &&
+    formattingTools.includes("link");
 
   // Generated Embed Snippet
   const embedScriptCode = `<div id="nyuzi-comments"
   data-site-id="${selectedSite}"
   data-accent-color="${accentColor}"
-  data-reaction="${reactionType}"${themeMode !== "auto" ? `\n  data-theme="${themeMode}"` : ""}${bgMode !== "transparent" ? `\n  data-bg="${bgMode}"` : ""}${canvasBg ? `\n  data-bg-color="${canvasBg}"` : ""}${cardBg ? `\n  data-card-bg="${cardBg}"` : ""}${textColor ? `\n  data-text-color="${textColor}"` : ""}${borderColor ? `\n  data-border-color="${borderColor}"` : ""}${radiusValue !== "0.75rem" ? `\n  data-radius="${radiusValue}"` : ""}${showReactionsBar ? `\n  data-reactions-bar="true"` : ""}>
+  data-reaction="${reactionType}"${themeMode !== "auto" ? `\n  data-theme="${themeMode}"` : ""}${bgMode !== "transparent" ? `\n  data-bg="${bgMode}"` : ""}${canvasBg ? `\n  data-bg-color="${canvasBg}"` : ""}${cardBg ? `\n  data-card-bg="${cardBg}"` : ""}${textColor ? `\n  data-text-color="${textColor}"` : ""}${borderColor ? `\n  data-border-color="${borderColor}"` : ""}${radiusValue !== "0.75rem" ? `\n  data-radius="${radiusValue}"` : ""}${!showReactionsBar ? `\n  data-reactions-bar="false"` : ""}${showReactionsBar && reactionsPrompt !== "How was this discussion?" ? `\n  data-reactions-prompt="${reactionsPrompt}"` : ""}${showReactionsBar && reactionsPreset !== "general" ? `\n  data-reactions-preset="${reactionsPreset}"` : ""}${!isDefaultFormatting ? `\n  data-formatting="${formattingTools.join(",")}"` : ""}>
 </div>
 <script src="https://nyuzi-yap.vercel.app/embed.js" async></script>`;
 
@@ -218,6 +268,9 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
           ${borderColor ? `data-border-color="${borderColor}"` : ""}
           data-radius="${radiusValue}"
           data-reactions-bar="${showReactionsBar ? "true" : "false"}"
+          data-reactions-prompt="${reactionsPrompt}"
+          data-reactions-preset="${reactionsPreset}"
+          data-formatting="${formattingTools.join(",")}"
           data-mock="true">
         </div>
       `;
@@ -250,6 +303,9 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     studioColorMode,
     bgMode,
     showReactionsBar,
+    reactionsPrompt,
+    reactionsPreset,
+    formattingTools,
   ]);
 
   return (
@@ -654,63 +710,225 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
               </div>
             </div>
 
-            {/* Reactions Suite */}
+            {/* Reactions & Interactivity Suite */}
             <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-3.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] block">
-                Reactions & Interactivity
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                <Smile className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
+                <span>Reactions & Feedback</span>
               </span>
 
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => setReactionType("like")}
-                  className={`p-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
-                    reactionType === "like"
-                      ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
-                      : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
-                  }`}
-                >
-                  <ThumbsUp className="w-4 h-4 fill-current" />
-                  <span>👍 Like</span>
-                </button>
+              {/* Comment Reaction Style */}
+              <div>
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1.5">
+                  Comment Reaction Style
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => setReactionType("like")}
+                    className={`p-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      reactionType === "like"
+                        ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                        : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    <ThumbsUp className="w-3.5 h-3.5 fill-current" />
+                    <span>Like</span>
+                  </button>
 
-                <button
-                  onClick={() => setReactionType("heart")}
-                  className={`p-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
-                    reactionType === "heart"
-                      ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
-                      : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
-                  }`}
-                >
-                  <Heart className="w-4 h-4 fill-current" />
-                  <span>❤️ Heart Pop</span>
-                </button>
+                  <button
+                    onClick={() => setReactionType("heart")}
+                    className={`p-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      reactionType === "heart"
+                        ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                        : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    <Heart className="w-3.5 h-3.5 fill-current" />
+                    <span>Heart</span>
+                  </button>
 
+                  <button
+                    onClick={() => setReactionType("upvote")}
+                    className={`p-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                      reactionType === "upvote"
+                        ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                        : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
+                    }`}
+                  >
+                    <span className="text-xs font-bold">▲</span>
+                    <span>Upvote</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Expressive Article Rating Tray (Master Toggle) */}
+              <div className="pt-3 border-t border-[var(--border-card)]/60 space-y-3">
+                <label className="flex items-center justify-between cursor-pointer select-none">
+                  <div>
+                    <span className="font-semibold text-xs text-[var(--text-main)] block">
+                      Article Rating Tray
+                    </span>
+                    <span className="text-[11px] text-[var(--text-muted)]">
+                      Top rating tray above comments (🔥 Superb, ☕ Thoughtful...)
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={showReactionsBar}
+                    onChange={(e) => setShowReactionsBar(e.target.checked)}
+                    className="w-4 h-4 accent-[var(--brand-orange)] rounded cursor-pointer"
+                  />
+                </label>
+
+                {showReactionsBar && (
+                  <div className="p-3 rounded-lg bg-[var(--bg-page)]/80 border border-[var(--border-card)]/60 space-y-3">
+                    {/* Emoji Preset Selection */}
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1.5">
+                        Emoji Mood Preset
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setReactionsPreset("literary")}
+                          className={`p-2 rounded-lg border text-left cursor-pointer transition-all ${
+                            reactionsPreset === "literary"
+                              ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                              : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
+                          }`}
+                        >
+                          <div className="text-xs font-bold">Literary (TRC)</div>
+                          <div className="text-[10px] text-[var(--text-muted)] mt-0.5">☕ 📖 💡 ❤️ 👏</div>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setReactionsPreset("general")}
+                          className={`p-2 rounded-lg border text-left cursor-pointer transition-all ${
+                            reactionsPreset === "general"
+                              ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                              : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
+                          }`}
+                        >
+                          <div className="text-xs font-bold">General Social</div>
+                          <div className="text-[10px] text-[var(--text-muted)] mt-0.5">🔥 ❤️ 💡 😂 👏</div>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Custom Heading / Prompt */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-[11px] font-semibold text-[var(--text-secondary)]">
+                          Tray Heading Prompt
+                        </label>
+                        <span className="text-[10px] font-mono text-[var(--text-muted)]">Customizable</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={reactionsPrompt}
+                        onChange={(e) => setReactionsPrompt(e.target.value)}
+                        placeholder="How was this discussion?"
+                        className="w-full px-2.5 py-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs text-[var(--text-main)] focus:outline-none focus:border-[var(--brand-orange)]"
+                      />
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {[
+                          "What did you think of this piece?",
+                          "How was this discussion?",
+                          "Reader Impressions",
+                        ].map((quick) => (
+                          <button
+                            key={quick}
+                            type="button"
+                            onClick={() => setReactionsPrompt(quick)}
+                            className="text-[10px] px-2 py-0.5 rounded-md bg-[var(--bg-card-subtle)] border border-[var(--border-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--brand-orange)]/40 cursor-pointer"
+                          >
+                            {quick}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Comment Editor Toolbar Suite */}
+            <div className="p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]/50 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <Type className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
+                  <span>Comment Editor Toolbar</span>
+                </span>
+                <span className="text-[10px] font-mono text-[var(--text-muted)]">
+                  {formattingTools.length} enabled
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--text-muted)] leading-snug">
+                Control which formatting buttons readers can access when composing or editing thoughts.
+              </p>
+
+              {/* Formatting Chips */}
+              <div className="grid grid-cols-5 gap-1.5">
+                {[
+                  { id: "bold", label: "Bold", icon: "B", tip: "**text**" },
+                  { id: "italic", label: "Italic", icon: "I", tip: "*text*" },
+                  { id: "quote", label: "Quote", icon: '"', tip: "> quote" },
+                  { id: "code", label: "Code", icon: "</>", tip: "`code`" },
+                  { id: "link", label: "Link", icon: "🔗", tip: "[url]" },
+                ].map((tool) => {
+                  const isActive = formattingTools.includes(tool.id);
+                  return (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      onClick={() => toggleFormattingTool(tool.id)}
+                      className={`py-2 px-1 rounded-xl border text-center cursor-pointer transition-all flex flex-col items-center justify-center gap-0.5 ${
+                        isActive
+                          ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
+                          : "border-[var(--border-card)] text-[var(--text-muted)] hover:border-[var(--border-card)]/80 bg-[var(--bg-page)] opacity-60"
+                      }`}
+                      title={`${tool.label} (${tool.tip})`}
+                    >
+                      <span className="text-xs font-mono font-bold">{tool.icon}</span>
+                      <span className="text-[10px] leading-none">{tool.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Preset Shortcuts */}
+              <div className="flex items-center justify-between gap-1.5 pt-1">
                 <button
-                  onClick={() => setReactionType("upvote")}
-                  className={`p-2.5 rounded-xl border text-xs font-semibold flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${
-                    reactionType === "upvote"
-                      ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs"
-                      : "border-[var(--border-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)]"
-                  }`}
+                  type="button"
+                  onClick={() => setFormattingTools(["bold", "italic", "quote"])}
+                  className="text-[10px] px-2 py-1 rounded-md bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)]/40 cursor-pointer font-medium"
                 >
-                  <span className="text-sm font-bold">▲</span>
-                  <span>▲ Upvote</span>
+                  TRC Clean Prose (B, I, &ldquo;)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormattingTools(["bold", "italic", "quote", "code", "link"])}
+                  className="text-[10px] px-2 py-1 rounded-md bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)]/40 cursor-pointer font-medium"
+                >
+                  Full Suite (All 5)
                 </button>
               </div>
 
-              {/* Expressive Top Reactions Bar Toggle */}
-              <label className="flex items-center justify-between pt-2 border-t border-[var(--border-card)]/50 cursor-pointer select-none">
-                <div>
-                  <span className="font-semibold text-xs text-[var(--text-main)] block">Expressive Reactions Bar</span>
-                  <span className="text-[11px] text-[var(--text-muted)]">Top rating tray (🔥 Superb, ❤️ Love, 💡 Insight)</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={showReactionsBar}
-                  onChange={(e) => setShowReactionsBar(e.target.checked)}
-                  className="w-4 h-4 accent-[var(--brand-orange)] rounded cursor-pointer"
-                />
-              </label>
+              {/* Helpful spam / literary notice */}
+              <div className="space-y-1">
+                {!formattingTools.includes("link") && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400">
+                    <ShieldCheck className="w-3 h-3 shrink-0" />
+                    <span>Links disabled: 100% spam-protected from promo bots</span>
+                  </div>
+                )}
+                {!formattingTools.includes("code") && (
+                  <div className="text-[10px] text-[var(--text-muted)]">
+                    📖 Code tags disabled for clean literary readability
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Generated Ready-to-Paste Snippet */}

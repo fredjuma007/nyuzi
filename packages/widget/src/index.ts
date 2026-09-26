@@ -49,9 +49,32 @@ import {
     currentScript?.getAttribute("data-mock") === "true" ||
     container.getAttribute("data-mock") === "true";
 
+  const rawReactionsAttr =
+    currentScript?.getAttribute("data-reactions-bar") ??
+    container.getAttribute("data-reactions-bar");
   const showReactionsBar =
-    currentScript?.getAttribute("data-reactions-bar") === "true" ||
-    container.getAttribute("data-reactions-bar") === "true";
+    rawReactionsAttr === null ? true : rawReactionsAttr !== "false";
+
+  const reactionsPrompt =
+    currentScript?.getAttribute("data-reactions-prompt") ||
+    container.getAttribute("data-reactions-prompt") ||
+    "How was this discussion?";
+
+  const reactionsPreset = (
+    currentScript?.getAttribute("data-reactions-preset") ||
+    container.getAttribute("data-reactions-preset") ||
+    "general"
+  ) as "general" | "literary";
+
+  const rawFormatting =
+    currentScript?.getAttribute("data-formatting") ||
+    container.getAttribute("data-formatting") ||
+    "bold,italic,quote,code,link";
+
+  const allowedFormatting = rawFormatting
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
 
   const themeConfig: ThemeConfig = {
     accent:
@@ -96,6 +119,9 @@ import {
       container.getAttribute("data-bg") ||
       "transparent") as any,
     showReactionsBar,
+    reactionsPrompt,
+    reactionsPreset,
+    allowedFormatting,
   };
 
   // 3. Attach Shadow DOM for CSS isolation
@@ -587,7 +613,7 @@ import {
     shadow.innerHTML = `
       <style>${styles}</style>
       <div class="nyuzi-container">
-        ${themeConfig.showReactionsBar ? renderTopReactionsBar(activeReactionKey) : ""}
+        ${themeConfig.showReactionsBar ? renderTopReactionsBar(activeReactionKey, themeConfig.reactionsPrompt, themeConfig.reactionsPreset) : ""}
 
         <!-- Header -->
         <div class="nyuzi-header">
@@ -608,7 +634,7 @@ import {
               : ""
           }
 
-          ${renderFormatToolbar("nyuzi-main-content")}
+          ${renderFormatToolbar("nyuzi-main-content", themeConfig.allowedFormatting)}
           <textarea class="nyuzi-textarea" id="nyuzi-main-content" maxlength="2000" placeholder="Share your thoughts or leave a question..." required></textarea>
           <div class="nyuzi-counter-row">
             <span id="nyuzi-char-count">0 / 2,000</span>
@@ -669,6 +695,7 @@ import {
                        isSubmitting,
                        savedAuthorName,
                        savedAuthorEmail,
+                       allowedFormatting: themeConfig.allowedFormatting,
                      })
                    )
                    .join("")}
