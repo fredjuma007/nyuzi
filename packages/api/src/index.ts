@@ -2,9 +2,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { drizzle } from "drizzle-orm/d1";
 import { eq, and, asc, desc, isNull, isNotNull, sql } from "drizzle-orm";
-import { sites, threads, comments } from "@nyuzi/db";
+import { sites, threads, comments, authors } from "@nyuzi/db";
 import { sendReplyNotificationEmail, sendAuthorNotificationEmail } from "./email";
-import { resolveAuthorEmails } from "./authors";
+import { resolveAndProvisionAuthors } from "./authors";
 
 type Bindings = {
   DB: D1Database;
@@ -248,6 +248,7 @@ app.post("/api/v1/comments", async (c) => {
     threadUrl,
     threadTitle,
     postAuthor,
+    postAuthorEmail,
     parentId,
     authorName,
     authorEmail,
@@ -409,7 +410,12 @@ app.post("/api/v1/comments", async (c) => {
     c.executionCtx.waitUntil(
       (async () => {
         try {
-          const authorRecipients = resolveAuthorEmails(postAuthor, siteId);
+          const authorRecipients = await resolveAndProvisionAuthors(
+            db,
+            siteId,
+            postAuthor,
+            postAuthorEmail
+          );
           for (const recipient of authorRecipients) {
             // Self-comment guard: don't alert the author if the author is the one commenting
             if (cleanEmail && cleanEmail.toLowerCase() === recipient.email.toLowerCase()) {
@@ -687,6 +693,150 @@ app.delete("/api/v1/comments/:id", async (c) => {
   }
 
   return c.json({ success: true, commentId, status: "deleted" });
+});
+
+// GET /api/v1/authors?siteId=...
+app.get("/api/v1/authors", async (c) => {
+  const siteId = c.req.query("siteId");
+  if (!siteId) return c.json({ error: "siteId query parameter is required" }, 400);
+
+  const db = drizzle(c.env.DB);
+
+  try {
+    // 1. Fetch authors for this site
+    const siteAuthors = await db
+      .select()
+      .from(authors)
+      .where(eq(authors.siteId, siteId))
+      .orderBy(desc(authors.createdAt));
+
+    // 2. Aggregate discussion counts per author
+    const authorCounts = await db
+      .select({
+        authorName: comments.authorName,
+        count: sql<number>`count(${comments.id})`,
+      })
+      .from(comments)
+      .where(and(eq(comments.siteId, siteId), sql`${comments.status} != 'deleted'`))
+      .groupBy(comments.authorName);
+
+    const countMap: Record<string, number> = {};
+    for (const ac of authorCounts) {
+      if (ac.authorName) {
+        countMap[ac.authorName.toLowerCase()] = Number(ac.count || 0);
+      }
+    }
+
+    const enrichedAuthors = siteAuthors.map((a) => ({
+      id: a.id,
+      name: a.name,
+      email: a.email,
+      status: a.status,
+      autoDiscovered: Boolean(a.autoDiscovered),
+      discussionsCount: countMap[a.name.toLowerCase()] ?? 0,
+      createdAt: a.createdAt,
+    }));
+
+    return c.json({ success: true, authors: enrichedAuthors });
+  } catch (err: any) {
+    console.error("[Nyuzi Authors] Fetch error:", err);
+    return c.json({ success: false, error: err.message || "Failed to load authors" }, 500);
+  }
+});
+
+// POST /api/v1/authors
+app.post("/api/v1/authors", async (c) => {
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch {}
+
+  const { siteId, name, email, status = "active" } = body;
+  if (!siteId || !name?.trim()) {
+    return c.json({ error: "siteId and author name are required" }, 400);
+  }
+
+  const cleanName = sanitizeContent(name).slice(0, 60);
+  const cleanEmail =
+    typeof email === "string" && email.includes("@") ? email.trim().slice(0, 120) : null;
+  const db = drizzle(c.env.DB);
+
+  // Check if author already exists for this site (case-insensitive)
+  const [existing] = await db
+    .select()
+    .from(authors)
+    .where(and(eq(authors.siteId, siteId), sql`lower(${authors.name}) = ${cleanName.toLowerCase()}`))
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(authors)
+      .set({
+        email: cleanEmail ?? existing.email,
+        status: (status as any) || existing.status,
+      })
+      .where(eq(authors.id, existing.id));
+
+    return c.json({
+      success: true,
+      author: { ...existing, email: cleanEmail ?? existing.email, status },
+    });
+  }
+
+  const authorId = "auth_" + crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  const newAuthor = {
+    id: authorId,
+    siteId,
+    name: cleanName,
+    email: cleanEmail,
+    status: (status as any) || "active",
+    autoDiscovered: false,
+    createdAt: new Date(),
+  };
+
+  await db.insert(authors).values(newAuthor);
+
+  return c.json({ success: true, author: newAuthor }, 201);
+});
+
+// PATCH /api/v1/authors/:id
+app.patch("/api/v1/authors/:id", async (c) => {
+  const authorId = c.req.param("id");
+  let body: any = {};
+  try {
+    body = await c.req.json();
+  } catch {}
+
+  const updates: Record<string, any> = {};
+  if (typeof body.name === "string" && body.name.trim()) {
+    updates.name = sanitizeContent(body.name).slice(0, 60);
+  }
+  if (body.email !== undefined) {
+    updates.email =
+      typeof body.email === "string" && body.email.includes("@")
+        ? body.email.trim().slice(0, 120)
+        : null;
+  }
+  if (["active", "discovered", "muted"].includes(body.status)) {
+    updates.status = body.status;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return c.json({ error: "No valid fields to update" }, 400);
+  }
+
+  const db = drizzle(c.env.DB);
+  await db.update(authors).set(updates).where(eq(authors.id, authorId));
+
+  return c.json({ success: true, authorId, ...updates });
+});
+
+// DELETE /api/v1/authors/:id
+app.delete("/api/v1/authors/:id", async (c) => {
+  const authorId = c.req.param("id");
+  const db = drizzle(c.env.DB);
+  await db.delete(authors).where(eq(authors.id, authorId));
+  return c.json({ success: true, authorId, deleted: true });
 });
 
 export default app;

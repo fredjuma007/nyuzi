@@ -29,6 +29,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     selectedSite,
     setSelectedSite,
     commentsList,
+    authors,
     isRefreshing,
     apiStatus,
     fetchLiveDashboard,
@@ -60,6 +61,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     (c) => c.status === "pending" || c.status === "spam"
   ).length;
 
+  const pendingDiscoveredCount = authors.filter(
+    (a) => a.status === "discovered" || (!a.email && a.status !== "muted")
+  ).length;
+
   const navItems = [
     {
       group: "SALON MANAGEMENT",
@@ -89,7 +94,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           label: "Author Roster",
           href: "/dashboard/authors",
           icon: Users,
-          badge: null,
+          badge: pendingDiscoveredCount > 0 ? `${pendingDiscoveredCount} New` : null,
           exact: false,
         },
       ],
@@ -227,6 +232,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                             className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
                               item.badge.includes("Alert")
                                 ? "bg-rose-500/15 text-rose-500 border border-rose-500/20"
+                                : item.badge.includes("New")
+                                ? "bg-amber-500/15 text-amber-500 border border-amber-500/20"
                                 : "bg-[var(--brand-orange)]/15 text-[var(--brand-orange)]"
                             }`}
                           >

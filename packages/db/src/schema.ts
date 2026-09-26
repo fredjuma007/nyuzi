@@ -35,7 +35,24 @@ export const comments = sqliteTable("comments", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
 });
 
+export const authors = sqliteTable(
+  "authors",
+  {
+    id: text("id").primaryKey(), // auth_xxx
+    siteId: text("site_id").notNull().references(() => sites.id),
+    name: text("name").notNull(),
+    email: text("email"),
+    status: text("status", { enum: ["active", "discovered", "muted"] })
+      .notNull()
+      .default("active"),
+    autoDiscovered: integer("auto_discovered", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  }
+);
+
 export type Site = typeof sites.$inferSelect;
 export type Thread = typeof threads.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
+export type Author = typeof authors.$inferSelect;
+export type NewAuthor = typeof authors.$inferInsert;

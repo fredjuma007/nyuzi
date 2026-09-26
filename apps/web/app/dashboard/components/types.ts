@@ -22,7 +22,9 @@ export interface ThreadItem {
 export interface AuthorEntry {
   id: string;
   name: string;
-  email: string;
-  status: "active" | "muted";
+  email: string | null;
+  status: "active" | "discovered" | "muted";
   discussionsCount: number;
+  autoDiscovered?: boolean;
+  createdAt?: string;
 }

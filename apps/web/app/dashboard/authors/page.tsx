@@ -6,7 +6,13 @@ import { AuthorsTab } from "../components/AuthorsTab";
 import { AuthorEntry } from "../components/types";
 
 export default function AuthorsPage() {
-  const { authors, setAuthors, selectedSite, showToast } = useDashboard();
+  const {
+    authors,
+    selectedSite,
+    handleAddAuthor: addAuthorToDb,
+    handleUpdateAuthor: updateAuthorInDb,
+    handleDeleteAuthor: deleteAuthorFromDb,
+  } = useDashboard();
 
   // Local Author Modal & Form State
   const [showAddAuthor, setShowAddAuthor] = useState(false);
@@ -16,63 +22,55 @@ export default function AuthorsPage() {
   const [editAuthorName, setEditAuthorName] = useState("");
   const [editAuthorEmail, setEditAuthorEmail] = useState("");
 
-  const handleToggleAuthor = (id: string) => {
-    const updated = authors.map((a) =>
-      a.id === id
-        ? { ...a, status: (a.status === "active" ? "muted" : "active") as "active" | "muted" }
-        : a
-    );
-    setAuthors(updated);
-    localStorage.setItem(`nyuzi_authors_${selectedSite}`, JSON.stringify(updated));
-    showToast("Author notification preferences updated.");
+  const handleToggleAuthor = async (id: string) => {
+    const author = authors.find((a) => a.id === id);
+    if (!author) return;
+    const nextStatus = author.status === "active" ? "muted" : "active";
+    await updateAuthorInDb(id, { status: nextStatus });
   };
 
   const handleOpenEditAuthor = (author: AuthorEntry) => {
     setEditingAuthor(author);
     setEditAuthorName(author.name);
-    setEditAuthorEmail(author.email);
+    setEditAuthorEmail(author.email || "");
   };
 
-  const handleSaveEditAuthor = (e: React.FormEvent) => {
+  const handleSaveEditAuthor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingAuthor || !editAuthorName.trim() || !editAuthorEmail.trim()) return;
 
-    const updated = authors.map((a) =>
-      a.id === editingAuthor.id
-        ? { ...a, name: editAuthorName.trim(), email: editAuthorEmail.trim() }
-        : a
-    );
-    setAuthors(updated);
-    localStorage.setItem(`nyuzi_authors_${selectedSite}`, JSON.stringify(updated));
+    await updateAuthorInDb(editingAuthor.id, {
+      name: editAuthorName.trim(),
+      email: editAuthorEmail.trim(),
+      status: editingAuthor.status === "discovered" ? "active" : editingAuthor.status,
+    });
     setEditingAuthor(null);
-    showToast(`Saved author details for ${editAuthorName.trim()}`);
   };
 
-  const handleAddAuthor = (e: React.FormEvent) => {
+  const handleAddAuthor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAuthorName.trim() || !newAuthorEmail.trim()) return;
 
-    const newEntry: AuthorEntry = {
-      id: `author_${Date.now()}`,
-      name: newAuthorName.trim(),
-      email: newAuthorEmail.trim(),
-      status: "active",
-      discussionsCount: 0,
-    };
-
-    const updated = [...authors, newEntry];
-    setAuthors(updated);
-    localStorage.setItem(`nyuzi_authors_${selectedSite}`, JSON.stringify(updated));
+    await addAuthorToDb(newAuthorName.trim(), newAuthorEmail.trim(), "active");
     setNewAuthorName("");
     setNewAuthorEmail("");
     setShowAddAuthor(false);
-    showToast(`Added ${newEntry.name} to author roster`);
+  };
+
+  const handleQuickAssignDefault = async (author: AuthorEntry) => {
+    const defaultEmail =
+      selectedSite === "trc254" ? "readingcircle254@gmail.com" : "admin@nyuzi.dev";
+    await updateAuthorInDb(author.id, {
+      email: defaultEmail,
+      status: "active",
+    });
   };
 
   return (
     <div className="space-y-6">
       <AuthorsTab
         authors={authors}
+        selectedSite={selectedSite}
         showAddAuthor={showAddAuthor}
         setShowAddAuthor={setShowAddAuthor}
         newAuthorName={newAuthorName}
@@ -89,6 +87,8 @@ export default function AuthorsPage() {
         handleOpenEditAuthor={handleOpenEditAuthor}
         handleSaveEditAuthor={handleSaveEditAuthor}
         handleToggleAuthor={handleToggleAuthor}
+        handleDeleteAuthor={deleteAuthorFromDb}
+        handleQuickAssignDefault={handleQuickAssignDefault}
       />
     </div>
   );

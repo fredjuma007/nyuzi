@@ -22,6 +22,10 @@ export interface DashboardContextType {
   isRefreshing: boolean;
   apiStatus: "live" | "fallback" | "error";
   fetchLiveDashboard: () => Promise<void>;
+  fetchAuthors: () => Promise<void>;
+  handleAddAuthor: (name: string, email: string, status?: "active" | "discovered" | "muted") => Promise<void>;
+  handleUpdateAuthor: (id: string, updates: Partial<AuthorEntry>) => Promise<void>;
+  handleDeleteAuthor: (id: string) => Promise<void>;
   handleApprove: (id: string) => Promise<void>;
   handleFlagSpam: (id: string) => Promise<void>;
   handleDelete: (id: string) => Promise<void>;
@@ -68,9 +72,9 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
   const defaultAuthors: Record<string, AuthorEntry[]> = {
     trc254: [
-      { id: "1", name: "Fred Juma", email: "fredjuma8@gmail.com", status: "active", discussionsCount: 0 },
-      { id: "2", name: "Brenda Frenjo", email: "readingcircle254@gmail.com", status: "active", discussionsCount: 0 },
-      { id: "3", name: "Sumeiya Juma", email: "sumeiyajuma@gmail.com", status: "active", discussionsCount: 0 },
+      { id: "auth_trc_fred", name: "Fred Juma", email: "fredjuma8@gmail.com", status: "active", discussionsCount: 0 },
+      { id: "auth_trc_brenda", name: "Brenda Frenjo", email: "readingcircle254@gmail.com", status: "active", discussionsCount: 0 },
+      { id: "auth_trc_sumeiya", name: "Sumeiya Juma", email: "readingcircle254@gmail.com", status: "active", discussionsCount: 0 },
     ],
     demo: [
       { id: "demo-1", name: "Sarah Jenkins", email: "sarah@example.com", status: "active", discussionsCount: 0 },
@@ -80,30 +84,97 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
   const [authors, setAuthors] = useState<AuthorEntry[]>(defaultAuthors.trc254);
 
-  // Restore author preferences from localStorage on site switch
-  useEffect(() => {
-    const saved = localStorage.getItem(`nyuzi_authors_${selectedSite}`);
-    if (saved) {
-      try {
-        setAuthors(JSON.parse(saved));
-        return;
-      } catch {}
-    }
-    setAuthors(defaultAuthors[selectedSite] || defaultAuthors.trc254);
-  }, [selectedSite]);
-
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  };
+
+  // Fetch Authors dynamically from Cloudflare D1
+  const fetchAuthors = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/authors?siteId=${selectedSite}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.authors) && data.authors.length > 0) {
+          setAuthors(data.authors);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("[Authors Sync] Failed to fetch authors from API:", err);
+    }
+    // Fallback to defaults if no authors yet in D1
+    setAuthors(defaultAuthors[selectedSite] || defaultAuthors.trc254);
+  }, [selectedSite]);
+
+  const handleAddAuthor = async (
+    name: string,
+    email: string,
+    status: "active" | "discovered" | "muted" = "active"
+  ) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/authors`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId: selectedSite, name, email, status }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.author) {
+          setAuthors((prev) => [
+            { ...data.author, discussionsCount: 0 },
+            ...prev.filter((a) => a.id !== data.author.id),
+          ]);
+        }
+        showToast(`Added ${name} to verified author roster`);
+      } else {
+        showToast("Error adding author to database");
+      }
+    } catch {
+      showToast("Error connecting to author server");
+    }
+  };
+
+  const handleUpdateAuthor = async (id: string, updates: Partial<AuthorEntry>) => {
+    setAuthors((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/authors/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        showToast("Author preferences updated in D1 database");
+      }
+    } catch {
+      showToast("Failed to sync author update with database");
+    }
+  };
+
+  const handleDeleteAuthor = async (id: string) => {
+    setAuthors((prev) => prev.filter((a) => a.id !== id));
+    try {
+      await fetch(`${API_BASE}/api/v1/authors/${id}`, {
+        method: "DELETE",
+      });
+      showToast("Author removed from roster");
+    } catch {
+      showToast("Failed to remove author from database");
+    }
   };
 
   const fetchLiveDashboard = useCallback(async () => {
     setLoading(true);
     setIsRefreshing(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/dashboard?siteId=${selectedSite}`);
-      if (res.ok) {
-        const data = await res.json();
+      // Parallel fetch: dashboard summary & dynamic D1 authors
+      const [dashRes] = await Promise.all([
+        fetch(`${API_BASE}/api/v1/dashboard?siteId=${selectedSite}`),
+        fetchAuthors(),
+      ]);
+
+      if (dashRes.ok) {
+        const data = await dashRes.json();
         setApiStatus("live");
         setMetrics({
           totalComments: data.metrics?.totalComments || 0,
@@ -140,31 +211,6 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
               commentCount: t.commentCount || 0,
               reactionsCount: t.reactionsCount || 0,
             }))
-          );
-        }
-
-        if (Array.isArray(data.authorCounts)) {
-          const countMap: Record<string, number> = {};
-          for (const item of data.authorCounts) {
-            if (item.authorName) {
-              countMap[item.authorName.toLowerCase()] = Number(item.count || 0);
-            }
-          }
-          setAuthors((prev) =>
-            prev.map((a) => ({
-              ...a,
-              discussionsCount: countMap[a.name.toLowerCase()] ?? a.discussionsCount ?? 0,
-            }))
-          );
-        } else if (data.authorCountMap && typeof data.authorCountMap === "object") {
-          const map = data.authorCountMap;
-          setAuthors((prev) =>
-            prev.map((a) => {
-              const matched =
-                map[a.name] ??
-                map[Object.keys(map).find((k) => k.toLowerCase() === a.name.toLowerCase()) || ""];
-              return matched !== undefined ? { ...a, discussionsCount: Number(matched) } : a;
-            })
           );
         }
         return;
@@ -245,7 +291,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [selectedSite]);
+  }, [selectedSite, fetchAuthors]);
 
   useEffect(() => {
     fetchLiveDashboard();
@@ -327,6 +373,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         isRefreshing,
         apiStatus,
         fetchLiveDashboard,
+        fetchAuthors,
+        handleAddAuthor,
+        handleUpdateAuthor,
+        handleDeleteAuthor,
         handleApprove,
         handleFlagSpam,
         handleDelete,
