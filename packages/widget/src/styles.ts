@@ -386,14 +386,58 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       border-radius: var(--nyuzi-radius);
       overflow: hidden;
       border: 1px solid var(--nyuzi-border);
-      max-width: 180px;
-      max-height: 120px;
+      width: 160px;
+      height: 100px;
+      background: var(--nyuzi-input-bg);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease-in-out;
+    }
+    .nyuzi-attached-gif-preview.loading {
+      background: linear-gradient(90deg, var(--nyuzi-input-bg) 25%, var(--nyuzi-border) 50%, var(--nyuzi-input-bg) 75%);
+      background-size: 200% 100%;
+      animation: nyuzi-shimmer 1.5s infinite;
+    }
+    @keyframes nyuzi-shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
     .nyuzi-attached-gif-preview img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
+      transition: opacity 0.25s ease-in-out;
+    }
+    .nyuzi-attached-gif-preview img.full-gif {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+    }
+    .nyuzi-attached-gif-preview.loaded img.full-gif {
+      opacity: 1;
+    }
+    .nyuzi-attached-gif-badge {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 2.5px 7px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      pointer-events: none;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      transition: opacity 0.25s;
+      z-index: 2;
     }
     .nyuzi-attached-gif-remove {
       position: absolute;
@@ -412,6 +456,7 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       font-size: 11px;
       line-height: 1;
       transition: background 0.15s;
+      z-index: 3;
     }
     .nyuzi-attached-gif-remove:hover {
       background: #ef4444;

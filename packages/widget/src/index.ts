@@ -1353,6 +1353,7 @@ import {
         grid.querySelectorAll(".nyuzi-gif-card").forEach((card) => {
           card.addEventListener("click", () => {
             const url = card.getAttribute("data-gif-url");
+            const previewUrl = card.getAttribute("data-gif-preview") || url || "";
             if (url) {
               // Preload/pre-warm full image in browser cache
               try {
@@ -1360,7 +1361,7 @@ import {
                 preloadImg.src = url;
               } catch {}
 
-              attachGifToForm(toolbar, targetTextarea, url);
+              attachGifToForm(toolbar, targetTextarea, url, previewUrl);
               gifPopover.style.display = "none";
             }
           });
@@ -1421,18 +1422,56 @@ import {
       }
     }
 
-    // Attach GIF Thumbnail Preview to Form
-    function attachGifToForm(toolbar: HTMLElement, targetTextarea: HTMLTextAreaElement, gifUrl: string) {
+    // Attach GIF Thumbnail Preview to Form with Instant Thumbnail Swap & Loading Shimmer
+    function attachGifToForm(
+      toolbar: HTMLElement,
+      targetTextarea: HTMLTextAreaElement,
+      gifUrl: string,
+      previewUrl = ""
+    ) {
       targetTextarea.dataset.attachedGif = gifUrl;
       const previewId = `${targetTextarea.id}-gif-preview`;
       const previewContainer = shadow.getElementById(previewId);
       if (!previewContainer) return;
 
+      const fallbackThumb = previewUrl || gifUrl;
+      previewContainer.className = "nyuzi-attached-gif-preview loading";
+      previewContainer.style.display = "inline-block";
+
       previewContainer.innerHTML = `
-        <img src="${escapeHtml(gifUrl)}" alt="Attached GIF" />
+        <img class="thumb-gif" src="${escapeHtml(fallbackThumb)}" alt="Preview GIF" />
+        <img class="full-gif" src="${escapeHtml(gifUrl)}" alt="Attached GIF" />
+        <span class="nyuzi-attached-gif-badge">
+          <span class="nyuzi-spinner" style="width: 8px; height: 8px; border-width: 1.5px; border-color: rgba(255,255,255,0.3); border-top-color: #fff;"></span>
+          <span>Attaching...</span>
+        </span>
         <button type="button" class="nyuzi-attached-gif-remove" title="Remove GIF">✕</button>
       `;
-      previewContainer.style.display = "inline-block";
+
+      const fullImg = previewContainer.querySelector("img.full-gif") as HTMLImageElement | null;
+      const badge = previewContainer.querySelector(".nyuzi-attached-gif-badge") as HTMLElement | null;
+
+      function onFullGifLoaded() {
+        if (!previewContainer) return;
+        previewContainer.classList.remove("loading");
+        previewContainer.classList.add("loaded");
+        if (badge) {
+          badge.style.opacity = "0";
+          setTimeout(() => badge.remove(), 250);
+        }
+      }
+
+      if (fullImg) {
+        if (fullImg.complete && fullImg.naturalWidth > 0) {
+          onFullGifLoaded();
+        } else {
+          fullImg.addEventListener("load", onFullGifLoaded, { once: true });
+          fullImg.addEventListener("error", () => {
+            if (badge) badge.remove();
+            previewContainer.classList.remove("loading");
+          }, { once: true });
+        }
+      }
 
       const removeBtn = previewContainer.querySelector(".nyuzi-attached-gif-remove");
       if (removeBtn) {
@@ -1440,6 +1479,7 @@ import {
           e.preventDefault();
           e.stopPropagation();
           delete targetTextarea.dataset.attachedGif;
+          previewContainer.className = "nyuzi-attached-gif-preview";
           previewContainer.innerHTML = "";
           previewContainer.style.display = "none";
         });
