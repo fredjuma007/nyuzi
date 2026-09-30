@@ -1355,8 +1355,21 @@ import {
           render();
           return;
         }
-        if (!contentInput || !contentInput.value.trim()) {
-          formError = "Comment content cannot be empty.";
+
+        let finalContent = contentInput ? contentInput.value.trim() : "";
+        const attachedGif = contentInput?.dataset.attachedGif;
+        if (attachedGif) {
+          finalContent = finalContent ? `${finalContent}\n\n![GIF](${attachedGif})` : `![GIF](${attachedGif})`;
+          if (contentInput) delete contentInput.dataset.attachedGif;
+          const preview = shadow.getElementById("nyuzi-main-content-gif-preview");
+          if (preview) {
+            preview.innerHTML = "";
+            preview.style.display = "none";
+          }
+        }
+
+        if (!finalContent) {
+          formError = "Please write a comment or attach a GIF.";
           render();
           return;
         }
@@ -1364,18 +1377,6 @@ import {
         const cleanName = nameInput.value.trim();
         const cleanEmail = emailInput.value.trim() || null;
         saveAuthorInfo(cleanName, cleanEmail);
-
-        let finalContent = contentInput.value.trim();
-        const attachedGif = contentInput.dataset.attachedGif;
-        if (attachedGif) {
-          finalContent += `\n\n![GIF](${attachedGif})`;
-          delete contentInput.dataset.attachedGif;
-          const preview = shadow.getElementById("nyuzi-main-content-gif-preview");
-          if (preview) {
-            preview.innerHTML = "";
-            preview.style.display = "none";
-          }
-        }
 
         submitComment(
           cleanName,
@@ -1436,26 +1437,27 @@ import {
           alert("Please enter your name.");
           return;
         }
-        if (!replyContent || !replyContent.value.trim()) {
-          alert("Reply content cannot be empty.");
-          return;
-        }
 
-        const cleanName = nameInput.value.trim();
-        const cleanEmail = emailInput?.value.trim() || null;
-        saveAuthorInfo(cleanName, cleanEmail);
-
-        let finalReply = replyContent.value.trim();
-        const attachedGif = replyContent.dataset.attachedGif;
+        let finalReply = replyContent ? replyContent.value.trim() : "";
+        const attachedGif = replyContent?.dataset.attachedGif;
         if (attachedGif) {
-          finalReply += `\n\n![GIF](${attachedGif})`;
-          delete replyContent.dataset.attachedGif;
+          finalReply = finalReply ? `${finalReply}\n\n![GIF](${attachedGif})` : `![GIF](${attachedGif})`;
+          if (replyContent) delete replyContent.dataset.attachedGif;
           const preview = shadow.getElementById(`reply-content-${parentId}-gif-preview`);
           if (preview) {
             preview.innerHTML = "";
             preview.style.display = "none";
           }
         }
+
+        if (!finalReply) {
+          alert("Please write a reply or attach a GIF.");
+          return;
+        }
+
+        const cleanName = nameInput.value.trim();
+        const cleanEmail = emailInput?.value.trim() || null;
+        saveAuthorInfo(cleanName, cleanEmail);
 
         submitComment(cleanName, cleanEmail, finalReply, true, parentId);
       });
@@ -1486,21 +1488,23 @@ import {
         const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
         if (!id) return;
         const textarea = shadow.getElementById(`edit-content-${id}`) as HTMLTextAreaElement | null;
-        if (!textarea || !textarea.value.trim()) {
-          alert("Comment content cannot be empty.");
-          return;
-        }
+        if (!textarea) return;
 
         let finalEdit = textarea.value.trim();
         const attachedGif = textarea.dataset.attachedGif;
         if (attachedGif) {
-          finalEdit += `\n\n![GIF](${attachedGif})`;
+          finalEdit = finalEdit ? `${finalEdit}\n\n![GIF](${attachedGif})` : `![GIF](${attachedGif})`;
           delete textarea.dataset.attachedGif;
           const preview = shadow.getElementById(`edit-content-${id}-gif-preview`);
           if (preview) {
             preview.innerHTML = "";
             preview.style.display = "none";
           }
+        }
+
+        if (!finalEdit) {
+          alert("Comment content cannot be empty.");
+          return;
         }
 
         editComment(id, finalEdit);
