@@ -1137,6 +1137,9 @@ import {
       }
     }
 
+    // Session cache for GIF searches (0ms instant hits across popover openings)
+    const gifSessionCache = new Map<string, Array<{ id: string; title: string; url: string; preview: string }>>();
+
     // GIF Popover Toggle
     async function toggleGifPopover(toolbar: HTMLElement, targetTextarea: HTMLTextAreaElement) {
       const popover = toolbar.querySelector(".nyuzi-gif-popover") as HTMLElement | null;
@@ -1326,45 +1329,18 @@ import {
         setTimeout(() => searchInput.focus(), 50);
       }
 
-      async function renderGifs(query = "") {
+      function displayResults(items: Array<{ id: string; title: string; url: string; preview: string }>, activeQuery: string) {
         if (!grid) return;
-        grid.innerHTML = `
-          <div style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--nyuzi-text-muted); font-size: 0.8125rem;">
-            <span class="nyuzi-spinner" style="display: inline-block; margin-bottom: 0.35rem;"></span>
-            <div>Searching...</div>
-          </div>
-        `;
-
-        let list: Array<{ id: string; title: string; url: string; preview: string }> = [];
-        try {
-          // Attempt real API search first (works in both sandbox & production when API is reachable)
-          list = await fetchGifsApi(apiHost, query);
-        } catch {
-          list = [];
-        }
-
-        // If remote search had no results or host wasn't reachable, use rich curated reaction GIFs
-        if (!list || list.length === 0) {
-          const q = query.toLowerCase().trim();
-          list = q
-            ? fallbackGifs.filter(
-                (g) =>
-                  g.title.toLowerCase().includes(q) ||
-                  g.tags.some((t) => t.toLowerCase().includes(q) || q.includes(t.toLowerCase()))
-              )
-            : fallbackGifs;
-        }
-
-        if (list.length === 0) {
+        if (items.length === 0) {
           grid.innerHTML = `
             <div style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--nyuzi-text-muted); font-size: 0.8125rem;">
-              No GIFs found for "${escapeHtml(query)}"
+              No GIFs found for "${escapeHtml(activeQuery)}"
             </div>
           `;
           return;
         }
 
-        grid.innerHTML = list
+        grid.innerHTML = items
           .map(
             (g) => `
           <div class="nyuzi-gif-card" data-gif-url="${escapeHtml(g.url)}" title="${escapeHtml(g.title)}">
@@ -1378,11 +1354,58 @@ import {
           card.addEventListener("click", () => {
             const url = card.getAttribute("data-gif-url");
             if (url) {
+              // Preload/pre-warm full image in browser cache
+              try {
+                const preloadImg = new Image();
+                preloadImg.src = url;
+              } catch {}
+
               attachGifToForm(toolbar, targetTextarea, url);
               gifPopover.style.display = "none";
             }
           });
         });
+      }
+
+      async function renderGifs(query = "") {
+        if (!grid) return;
+        const normalizedKey = query.toLowerCase().trim();
+
+        // Tier 2: Instant 0ms memory cache hit
+        if (gifSessionCache.has(normalizedKey)) {
+          displayResults(gifSessionCache.get(normalizedKey)!, query);
+          return;
+        }
+
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--nyuzi-text-muted); font-size: 0.8125rem;">
+            <span class="nyuzi-spinner" style="display: inline-block; margin-bottom: 0.35rem;"></span>
+            <div>Searching...</div>
+          </div>
+        `;
+
+        let list: Array<{ id: string; title: string; url: string; preview: string }> = [];
+        try {
+          // Attempt real API search first (served in ~5ms from Cloudflare Edge cache if query was seen)
+          list = await fetchGifsApi(apiHost, query);
+        } catch {
+          list = [];
+        }
+
+        // If remote search had no results or host wasn't reachable, use rich curated reaction GIFs
+        if (!list || list.length === 0) {
+          list = normalizedKey
+            ? fallbackGifs.filter(
+                (g) =>
+                  g.title.toLowerCase().includes(normalizedKey) ||
+                  g.tags.some((t) => t.toLowerCase().includes(normalizedKey) || normalizedKey.includes(t.toLowerCase()))
+              )
+            : fallbackGifs;
+        }
+
+        // Save to Tier 2 session memory cache
+        gifSessionCache.set(normalizedKey, list);
+        displayResults(list, query);
       }
 
       renderGifs("");

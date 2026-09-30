@@ -67,6 +67,31 @@ app.get("/api/v1/gifs", async (c) => {
   const limit = Math.min(24, Math.max(1, parseInt(c.req.query("limit") || "16", 10)));
   const apiKey = c.env.GIPHY_API_KEY;
 
+  // 1. Cloudflare Edge Cache: Check if response for this exact URL is already cached
+  const cacheKey = new Request(c.req.url, c.req.raw);
+  const cache = typeof caches !== "undefined" ? (caches as any).default : null;
+  if (cache) {
+    try {
+      const cachedResponse = await cache.match(cacheKey);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+    } catch {}
+  }
+
+  const sendCachedJson = (dataObj: { data: any[]; source: string }) => {
+    const res = c.json(dataObj);
+    // Browser caches 5m, Cloudflare Edge CDN caches 1h, background stale-revalidate 24h
+    res.headers.set("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+    res.headers.set("Vary", "Accept-Encoding");
+    if (cache && c.executionCtx?.waitUntil) {
+      try {
+        c.executionCtx.waitUntil(cache.put(cacheKey, res.clone()));
+      } catch {}
+    }
+    return res;
+  };
+
   // Curated fallback reaction GIFs (Works immediately in local dev and if GIPHY key not yet configured)
   const fallbackGifs: Array<{
     id: string;
@@ -226,7 +251,7 @@ app.get("/api/v1/gifs", async (c) => {
             g.tags.some((t) => t.toLowerCase().includes(q) || q.includes(t.toLowerCase()))
         )
       : fallbackGifs;
-    return c.json({ data: filtered.slice(0, limit), source: "curated" });
+    return sendCachedJson({ data: filtered.slice(0, limit), source: "curated" });
   }
 
   try {
@@ -239,7 +264,7 @@ app.get("/api/v1/gifs", async (c) => {
     });
 
     if (!res.ok) {
-      return c.json({ data: fallbackGifs.slice(0, limit), source: "curated" });
+      return sendCachedJson({ data: fallbackGifs.slice(0, limit), source: "curated" });
     }
 
     const json: any = await res.json();
@@ -250,9 +275,9 @@ app.get("/api/v1/gifs", async (c) => {
       preview: item.images?.fixed_width_small?.url || item.images?.downsized_still?.url || item.images?.downsized?.url,
     }));
 
-    return c.json({ data, source: "giphy" });
+    return sendCachedJson({ data, source: "giphy" });
   } catch (err) {
-    return c.json({ data: fallbackGifs.slice(0, limit), source: "curated" });
+    return sendCachedJson({ data: fallbackGifs.slice(0, limit), source: "curated" });
   }
 });
 
