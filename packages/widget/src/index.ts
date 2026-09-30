@@ -11,6 +11,7 @@ import {
   renderComment,
   renderTopReactionsBar,
   renderFormatToolbar,
+  renderBottomToolbar,
 } from "./templates";
 import {
   fetchCommentsApi,
@@ -906,9 +907,7 @@ import {
           ${renderFormatToolbar("nyuzi-main-content", themeConfig.allowedFormatting)}
           <textarea class="nyuzi-textarea" id="nyuzi-main-content" maxlength="2000" placeholder="Share your thoughts or leave a question..." required></textarea>
           <div class="nyuzi-attached-gif-preview" id="nyuzi-main-content-gif-preview" style="display: none;"></div>
-          <div class="nyuzi-counter-row">
-            <span id="nyuzi-char-count">0 / 2,000</span>
-          </div>
+          ${renderBottomToolbar("nyuzi-main-content", themeConfig.allowedFormatting, "nyuzi-char-count")}
 
           <div class="nyuzi-form-row">
             <div class="nyuzi-inputs">
@@ -1299,7 +1298,7 @@ import {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         const action = (e.currentTarget as HTMLElement).getAttribute("data-action");
-        const toolbar = (e.currentTarget as HTMLElement).closest(".nyuzi-format-toolbar");
+        const toolbar = (e.currentTarget as HTMLElement).closest("[data-target]") as HTMLElement | null;
         const targetId = toolbar?.getAttribute("data-target");
         if (!action || !targetId) return;
 

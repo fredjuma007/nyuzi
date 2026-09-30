@@ -454,6 +454,25 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       background: var(--nyuzi-card-bg);
       box-shadow: 0 0 0 2px var(--nyuzi-accent-soft);
     }
+    .nyuzi-bottom-toolbar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.35rem;
+      min-height: 26px;
+    }
+    .nyuzi-media-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .nyuzi-char-count {
+      font-size: 0.75rem;
+      color: var(--nyuzi-text-muted);
+      user-select: none;
+      margin-left: auto;
+    }
     .nyuzi-counter-row {
       display: flex;
       justify-content: flex-end;

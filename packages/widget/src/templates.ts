@@ -168,7 +168,7 @@ export function isVerifiedAuthor(name: string, postAuthor: string): boolean {
 }
 
 /**
- * Micro-Markdown Toolbar for Composing & Editing
+ * Micro-Markdown Toolbar for Composing & Editing (Top Typography Suite)
  */
 export function renderFormatToolbar(targetTextareaId: string, allowedTools?: string[]): string {
   const tools = allowedTools && allowedTools.length > 0
@@ -207,26 +207,62 @@ export function renderFormatToolbar(targetTextareaId: string, allowedTools?: str
         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
       </button>`);
   }
-  if (tools.includes("emoji")) {
-    buttons.push(`
-      <button type="button" class="nyuzi-format-btn nyuzi-emoji-btn" data-action="emoji" title="Insert Emoji">
-        <span style="font-size: 0.95rem; line-height: 1; display: inline-block;">😀</span>
-      </button>`);
-  }
-  if (tools.includes("gif")) {
-    buttons.push(`
-      <button type="button" class="nyuzi-format-btn nyuzi-gif-btn" data-action="gif" title="Search & Insert GIF">
-        <span style="font-size: 0.6875rem; font-weight: 800; letter-spacing: -0.02em; padding: 1px 4px; border-radius: 4px; background: var(--nyuzi-accent-soft); color: var(--nyuzi-accent);">GIF</span>
-      </button>`);
-  }
 
   if (buttons.length === 0) return "";
 
   return `
     <div class="nyuzi-format-toolbar" data-target="${targetTextareaId}">
       ${buttons.join("")}
-      <div class="nyuzi-emoji-popover" style="display: none;"></div>
-      <div class="nyuzi-gif-popover" style="display: none;"></div>
+    </div>
+  `;
+}
+
+/**
+ * Bottom Composer Toolbar (Expressive Media & Character Counter)
+ */
+export function renderBottomToolbar(
+  targetTextareaId: string,
+  allowedTools?: string[],
+  counterId?: string
+): string {
+  const tools = allowedTools && allowedTools.length > 0
+    ? allowedTools
+    : ["bold", "italic", "quote", "code", "link", "emoji", "gif"];
+
+  const mediaButtons: string[] = [];
+
+  if (tools.includes("emoji")) {
+    mediaButtons.push(`
+      <button type="button" class="nyuzi-format-btn nyuzi-emoji-btn" data-action="emoji" title="Insert Emoji">
+        <span style="font-size: 0.95rem; line-height: 1; display: inline-block;">😀</span>
+      </button>`);
+  }
+  if (tools.includes("gif")) {
+    mediaButtons.push(`
+      <button type="button" class="nyuzi-format-btn nyuzi-gif-btn" data-action="gif" title="Search & Insert GIF">
+        <span style="font-size: 0.6875rem; font-weight: 800; letter-spacing: -0.02em; padding: 1px 5px; border-radius: 4px; background: var(--nyuzi-accent-soft); color: var(--nyuzi-accent);">GIF</span>
+      </button>`);
+  }
+
+  const hasMedia = mediaButtons.length > 0;
+  if (!hasMedia && !counterId) {
+    return "";
+  }
+
+  return `
+    <div class="nyuzi-bottom-toolbar" data-target="${targetTextareaId}">
+      <div class="nyuzi-media-actions">
+        ${mediaButtons.join("")}
+        ${
+          hasMedia
+            ? `
+          <div class="nyuzi-emoji-popover" style="display: none;"></div>
+          <div class="nyuzi-gif-popover" style="display: none;"></div>
+        `
+            : ""
+        }
+      </div>
+      ${counterId ? `<span class="nyuzi-char-count" id="${counterId}">0 / 2,000</span>` : "<span></span>"}
     </div>
   `;
 }
@@ -328,6 +364,7 @@ export function renderComment(
               ${renderFormatToolbar(`edit-content-${c.id}`, options.allowedFormatting)}
               <textarea class="nyuzi-textarea nyuzi-edit-textarea" id="edit-content-${c.id}" rows="3" maxlength="2000">${escapeHtml(c.content)}</textarea>
               <div class="nyuzi-attached-gif-preview" id="edit-content-${c.id}-gif-preview" style="display: none;"></div>
+              ${renderBottomToolbar(`edit-content-${c.id}`, options.allowedFormatting)}
               <div class="nyuzi-edit-actions">
                 <button class="nyuzi-action-btn cancel-edit" data-id="${c.id}">Cancel</button>
                 <button class="nyuzi-submit-btn save-edit" data-id="${c.id}" ${options.isSubmitting ? "disabled" : ""}>
@@ -391,6 +428,7 @@ export function renderComment(
               ${renderFormatToolbar(`reply-content-${c.id}`, options.allowedFormatting)}
               <textarea class="nyuzi-textarea" id="reply-content-${c.id}" placeholder="Reply to ${escapeHtml(c.authorName)}..." maxlength="2000" required></textarea>
               <div class="nyuzi-attached-gif-preview" id="reply-content-${c.id}-gif-preview" style="display: none;"></div>
+              ${renderBottomToolbar(`reply-content-${c.id}`, options.allowedFormatting)}
               <div class="nyuzi-form-row">
                 <div class="nyuzi-inputs">
                   <input type="text" class="nyuzi-input" id="reply-name-${c.id}" placeholder="Your Name *" value="${escapeHtml(options.savedAuthorName)}" required />
