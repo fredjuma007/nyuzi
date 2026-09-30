@@ -57,4 +57,6 @@ export interface ThemeConfig {
   reactionsPrompt?: string;
   reactionsPreset?: "general" | "literary";
   allowedFormatting?: string[];
+  resolvedTheme?: "light" | "dark" | "sepia";
+  isCardIsolated?: boolean;
 }

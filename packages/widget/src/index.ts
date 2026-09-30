@@ -93,7 +93,102 @@ import {
   const hasExplicitReactionsBar = rawReactionsAttr !== null && rawReactionsAttr !== undefined;
   const hasExplicitPrompt = Boolean(currentScript?.getAttribute("data-reactions-prompt") || container.getAttribute("data-reactions-prompt"));
   const hasExplicitPreset = Boolean(currentScript?.getAttribute("data-reactions-preset") || container.getAttribute("data-reactions-preset"));
-  const hasExplicitFormatting = Boolean(currentScript?.getAttribute("data-formatting") || container.getAttribute("data-formatting"));
+  /**
+   * Host Theme Auto-Detection (#2)
+   * Deeply inspects host <html>/<body> class names, data attributes,
+   * computed parent background luminance, and system prefers-color-scheme.
+   */
+  function detectHostTheme(): "light" | "dark" {
+    try {
+      const html = document.documentElement;
+      const body = document.body;
+
+      // 1. Check explicit attributes or class names on <html> or <body>
+      const htmlTheme =
+        html.getAttribute("data-theme") ||
+        html.getAttribute("data-color-mode") ||
+        html.getAttribute("data-bs-theme") ||
+        "";
+      const bodyTheme =
+        body?.getAttribute("data-theme") ||
+        body?.getAttribute("data-color-mode") ||
+        body?.getAttribute("data-bs-theme") ||
+        "";
+      const explicitTheme = `${htmlTheme} ${bodyTheme}`.toLowerCase();
+      if (explicitTheme.includes("dark")) return "dark";
+      if (explicitTheme.includes("light")) return "light";
+
+      const hasDarkClass =
+        html.classList.contains("dark") ||
+        html.classList.contains("dark-theme") ||
+        html.classList.contains("dark-mode") ||
+        html.classList.contains("theme-dark") ||
+        Boolean(
+          body && (
+            body.classList.contains("dark") ||
+            body.classList.contains("dark-theme") ||
+            body.classList.contains("dark-mode") ||
+            body.classList.contains("theme-dark")
+          )
+        );
+      if (hasDarkClass) return "dark";
+
+      const hasLightClass =
+        html.classList.contains("light") ||
+        html.classList.contains("light-theme") ||
+        html.classList.contains("light-mode") ||
+        html.classList.contains("theme-light") ||
+        Boolean(
+          body && (
+            body.classList.contains("light") ||
+            body.classList.contains("light-theme") ||
+            body.classList.contains("light-mode") ||
+            body.classList.contains("theme-light")
+          )
+        );
+      if (hasLightClass) return "light";
+
+      // 2. Computed background color walk-up from container to body/html
+      let el: HTMLElement | null = container.parentElement;
+      while (el && el !== document.documentElement) {
+        const bg = window.getComputedStyle(el).backgroundColor;
+        if (bg && bg !== "transparent" && !bg.startsWith("rgba(0, 0, 0, 0)")) {
+          const rgb = bg.match(/\d+/g);
+          if (rgb && rgb.length >= 3) {
+            const r = parseInt(rgb[0], 10);
+            const g = parseInt(rgb[1], 10);
+            const b = parseInt(rgb[2], 10);
+            const a = rgb.length >= 4 ? parseFloat(rgb[3]) : 1;
+            if (a > 0.1) {
+              const lum = (r * 299 + g * 587 + b * 114) / 1000;
+              return lum < 130 ? "dark" : "light";
+            }
+          }
+        }
+        el = el.parentElement;
+      }
+
+      if (body) {
+        const bg = window.getComputedStyle(body).backgroundColor;
+        if (bg && bg !== "transparent" && !bg.startsWith("rgba(0, 0, 0, 0)")) {
+          const rgb = bg.match(/\d+/g);
+          if (rgb && rgb.length >= 3) {
+            const r = parseInt(rgb[0], 10);
+            const g = parseInt(rgb[1], 10);
+            const b = parseInt(rgb[2], 10);
+            const lum = (r * 299 + g * 587 + b * 114) / 1000;
+            return lum < 130 ? "dark" : "light";
+          }
+        }
+      }
+    } catch {}
+
+    // 3. Fallback to browser/OS prefers-color-scheme
+    if (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      return "dark";
+    }
+    return "light";
+  }
 
   const themeConfig: ThemeConfig = {
     accent:
@@ -674,10 +769,44 @@ import {
   // Main Render Routine
   function render() {
     const topLevelComments = commentsList.filter((c) => !c.parentId);
-    const styles = generateWidgetStyles(themeConfig);
+    const hostTheme = detectHostTheme();
+    const resolvedTheme =
+      themeConfig.themeMode === "auto"
+        ? hostTheme
+        : themeConfig.themeMode || hostTheme;
+
+    // Check if the widget's theme clashes with the host's background
+    const isOpposite =
+      (resolvedTheme === "light" && hostTheme === "dark") ||
+      (resolvedTheme === "dark" && hostTheme === "light");
+
+    const isTransparentBg =
+      !themeConfig.bg ||
+      themeConfig.bg === "transparent" ||
+      themeConfig.bgMode === "transparent";
+
+    // Smart Card Isolation (#1):
+    // When a forced opposite theme (e.g. Light widget on Dark host) is placed on a transparent canvas,
+    // isolate it inside an elevated card container with its own solid canvas bg, border, and depth shadow.
+    const isCardIsolated = Boolean(
+      isOpposite && isTransparentBg && themeConfig.themeMode !== "auto"
+    );
+
+    const activeConfig: ThemeConfig = {
+      ...themeConfig,
+      resolvedTheme,
+      isCardIsolated,
+    };
+
+    const styles = generateWidgetStyles(activeConfig);
     const myComments = getMyActiveComments();
-    if (themeConfig.themeMode && container) {
-      container.setAttribute("data-theme", themeConfig.themeMode);
+    if (container) {
+      container.setAttribute("data-theme", resolvedTheme);
+      if (isCardIsolated) {
+        container.setAttribute("data-card-isolated", "true");
+      } else {
+        container.removeAttribute("data-card-isolated");
+      }
     }
 
     shadow.innerHTML = `
@@ -1110,6 +1239,53 @@ import {
 
   // Listen to hash changes
   window.addEventListener("hashchange", scrollToHashComment);
+
+  // Dynamic Host Theme Observer (#2)
+  // Re-evaluates theme styles live if the host website toggles dark/light mode
+  try {
+    let themeDebounce: any = null;
+    const handleHostThemeChange = () => {
+      clearTimeout(themeDebounce);
+      themeDebounce = setTimeout(() => {
+        render();
+      }, 50);
+    };
+
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (
+          m.type === "attributes" &&
+          (m.attributeName === "class" ||
+            m.attributeName === "data-theme" ||
+            m.attributeName === "data-color-mode" ||
+            m.attributeName === "data-bs-theme" ||
+            m.attributeName === "style")
+        ) {
+          handleHostThemeChange();
+          break;
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme", "data-color-mode", "data-bs-theme", "style"],
+    });
+
+    if (document.body) {
+      observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ["class", "data-theme", "data-color-mode", "data-bs-theme", "style"],
+      });
+    }
+
+    if (typeof window !== "undefined" && window.matchMedia) {
+      const colorSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      colorSchemeQuery.addEventListener("change", handleHostThemeChange);
+    }
+  } catch (err) {
+    console.debug("[Nyuzi] Theme observer warning:", err);
+  }
 
   // Initial load
   loadComments();

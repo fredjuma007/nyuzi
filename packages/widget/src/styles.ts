@@ -26,8 +26,11 @@ export function generateWidgetStyles(config: ThemeConfig): string {
     radius = "0.75rem",
     themeMode,
     bgMode,
+    resolvedTheme = (themeMode === "auto" ? "dark" : themeMode),
+    isCardIsolated = false,
   } = config;
 
+  const effectiveTheme = resolvedTheme || "dark";
   const cardIsLight = isLightHex(cardBg);
 
   return `
@@ -37,18 +40,42 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       --nyuzi-accent-soft: color-mix(in srgb, var(--nyuzi-accent) 12%, transparent);
       --nyuzi-accent-border: color-mix(in srgb, var(--nyuzi-accent) 30%, transparent);
 
-      --nyuzi-bg: ${bg || (bgMode === "card" ? "#f8fafc" : "transparent")};
-      --nyuzi-card-bg: ${cardBg || "#ffffff"};
-      --nyuzi-text-primary: ${textColor || "#0f172a"};
-      --nyuzi-text-secondary: ${textSecondary || "#475569"};
-      --nyuzi-text-muted: #94a3b8;
-      --nyuzi-border: ${borderColor || "#e2e8f0"};
-      --nyuzi-input-bg: ${inputBg || "#f8fafc"};
-      --nyuzi-reaction-bg: #ffffff;
-      --nyuzi-reaction-border: #e2e8f0;
-      --nyuzi-badge-bg: #f1f5f9;
-      --nyuzi-badge-border: #e2e8f0;
-      --nyuzi-thread-line: #e2e8f0;
+      --nyuzi-bg: ${
+        isCardIsolated
+          ? (effectiveTheme === "light" ? "#ffffff" : "#090605")
+          : (bg || (bgMode === "card" ? (effectiveTheme === "dark" ? "#090605" : "#f8fafc") : "transparent"))
+      };
+      --nyuzi-card-bg: ${
+        cardBg || (effectiveTheme === "dark" ? "#14100e" : effectiveTheme === "sepia" ? "#fbf3e4" : "#ffffff")
+      };
+      --nyuzi-text-primary: ${
+        textColor || (effectiveTheme === "dark" ? (cardIsLight ? "#0f172a" : "#f8fafc") : effectiveTheme === "sepia" ? "#2b2118" : "#0f172a")
+      };
+      --nyuzi-text-secondary: ${
+        textSecondary || (effectiveTheme === "dark" ? (cardIsLight ? "#475569" : "#cbd5e1") : effectiveTheme === "sepia" ? "#6a5949" : "#475569")
+      };
+      --nyuzi-text-muted: ${effectiveTheme === "sepia" ? "#968370" : "#94a3b8"};
+      --nyuzi-border: ${
+        borderColor || (effectiveTheme === "dark" ? (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)") : effectiveTheme === "sepia" ? "#e2d4bc" : "#e2e8f0")
+      };
+      --nyuzi-input-bg: ${
+        inputBg || (effectiveTheme === "dark" ? (cardIsLight ? "#ffffff" : "#181412") : effectiveTheme === "sepia" ? "#fbf7ef" : "#f8fafc")
+      };
+      --nyuzi-reaction-bg: ${
+        effectiveTheme === "dark" ? (cardIsLight ? "#ffffff" : "rgba(255, 255, 255, 0.05)") : effectiveTheme === "sepia" ? "#fbf7ef" : "#ffffff"
+      };
+      --nyuzi-reaction-border: ${
+        effectiveTheme === "dark" ? (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.1)") : effectiveTheme === "sepia" ? "#e2d4bc" : "#e2e8f0"
+      };
+      --nyuzi-badge-bg: ${
+        effectiveTheme === "dark" ? (cardIsLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.08)") : effectiveTheme === "sepia" ? "#ece0cd" : "#f1f5f9"
+      };
+      --nyuzi-badge-border: ${
+        effectiveTheme === "dark" ? (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)") : effectiveTheme === "sepia" ? "#e2d4bc" : "#e2e8f0"
+      };
+      --nyuzi-thread-line: ${
+        effectiveTheme === "dark" ? (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)") : effectiveTheme === "sepia" ? "#e2d4bc" : "#e2e8f0"
+      };
       --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
       --nyuzi-avatar-text: var(--nyuzi-accent);
       --nyuzi-radius: ${radius};
@@ -64,99 +91,31 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       border-radius: var(--nyuzi-radius);
     }
 
-    ${
-      themeMode === "sepia"
-        ? `
-      :host {
-        --nyuzi-bg: ${bg || (bgMode === "card" ? "#f4ead8" : "transparent")};
-        --nyuzi-card-bg: ${cardBg || "#fbf3e4"};
-        --nyuzi-text-primary: ${textColor || "#2b2118"};
-        --nyuzi-text-secondary: ${textSecondary || "#6a5949"};
-        --nyuzi-text-muted: #968370;
-        --nyuzi-border: ${borderColor || "#e2d4bc"};
-        --nyuzi-input-bg: ${inputBg || "#fbf7ef"};
-        --nyuzi-reaction-bg: #fbf7ef;
-        --nyuzi-reaction-border: #e2d4bc;
-        --nyuzi-badge-bg: #ece0cd;
-        --nyuzi-badge-border: #e2d4bc;
-        --nyuzi-thread-line: #e2d4bc;
-        --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
-        --nyuzi-avatar-text: var(--nyuzi-accent);
-      }
-    `
-        : ""
-    }
 
-    ${
-      themeMode === "dark"
-        ? `
-      :host {
-        --nyuzi-bg: ${bg || (bgMode === "card" ? "#090605" : "transparent")};
-        --nyuzi-card-bg: ${cardBg || "#14100e"};
-        --nyuzi-text-primary: ${textColor || (cardIsLight ? "#0f172a" : "#f8fafc")};
-        --nyuzi-text-secondary: ${textSecondary || (cardIsLight ? "#475569" : "#cbd5e1")};
-        --nyuzi-text-muted: #94a3b8;
-        --nyuzi-border: ${borderColor || (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)")};
-        --nyuzi-input-bg: ${inputBg || (cardIsLight ? "#ffffff" : "#181412")};
-        --nyuzi-reaction-bg: ${cardIsLight ? "#ffffff" : "rgba(255, 255, 255, 0.05)"};
-        --nyuzi-reaction-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.1)"};
-        --nyuzi-badge-bg: ${cardIsLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.08)"};
-        --nyuzi-badge-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
-        --nyuzi-thread-line: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
-        --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
-        --nyuzi-avatar-text: var(--nyuzi-accent);
-      }
-    `
-        : ""
-    }
-
-    ${
-      themeMode === "auto"
-        ? `
-      @media (prefers-color-scheme: dark) {
-        :host {
-          --nyuzi-bg: ${bg || (bgMode === "card" ? "#090605" : "transparent")};
-          --nyuzi-card-bg: ${cardBg || "#14100e"};
-          --nyuzi-text-primary: ${textColor || (cardIsLight ? "#0f172a" : "#f8fafc")};
-          --nyuzi-text-secondary: ${textSecondary || (cardIsLight ? "#475569" : "#cbd5e1")};
-          --nyuzi-text-muted: #94a3b8;
-          --nyuzi-border: ${borderColor || (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)")};
-          --nyuzi-input-bg: ${inputBg || (cardIsLight ? "#ffffff" : "#181412")};
-          --nyuzi-reaction-bg: ${cardIsLight ? "#ffffff" : "rgba(255, 255, 255, 0.05)"};
-          --nyuzi-reaction-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.1)"};
-          --nyuzi-badge-bg: ${cardIsLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.08)"};
-          --nyuzi-badge-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
-          --nyuzi-thread-line: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
-          --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
-          --nyuzi-avatar-text: var(--nyuzi-accent);
-        }
-      }
-      :host-context(.dark), :host([data-theme="dark"]) {
-        --nyuzi-bg: ${bg || (bgMode === "card" ? "#090605" : "transparent")};
-        --nyuzi-card-bg: ${cardBg || "#14100e"};
-        --nyuzi-text-primary: ${textColor || (cardIsLight ? "#0f172a" : "#f8fafc")};
-        --nyuzi-text-secondary: ${textSecondary || (cardIsLight ? "#475569" : "#cbd5e1")};
-        --nyuzi-text-muted: #94a3b8;
-        --nyuzi-border: ${borderColor || (cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)")};
-        --nyuzi-input-bg: ${inputBg || (cardIsLight ? "#ffffff" : "#181412")};
-        --nyuzi-reaction-bg: ${cardIsLight ? "#ffffff" : "rgba(255, 255, 255, 0.05)"};
-        --nyuzi-reaction-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.1)"};
-        --nyuzi-badge-bg: ${cardIsLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.08)"};
-        --nyuzi-badge-border: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
-        --nyuzi-thread-line: ${cardIsLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.12)"};
-        --nyuzi-avatar-bg: var(--nyuzi-accent-soft);
-        --nyuzi-avatar-text: var(--nyuzi-accent);
-      }
-    `
-        : ""
-    }
 
     *, *::before, *::after {
       box-sizing: inherit;
     }
 
     .nyuzi-container {
-      padding: 0.75rem 0.5rem;
+      padding: ${isCardIsolated ? "1.5rem 1.25rem" : "0.75rem 0.5rem"};
+      ${
+        isCardIsolated
+          ? effectiveTheme === "light"
+            ? `
+        background: var(--nyuzi-bg);
+        border: 1px solid #e2e8f0;
+        border-radius: var(--nyuzi-radius);
+        box-shadow: 0 14px 38px -6px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.2);
+      `
+            : `
+        background: var(--nyuzi-bg);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: var(--nyuzi-radius);
+        box-shadow: 0 14px 38px -6px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(0, 0, 0, 0.1);
+      `
+          : ""
+      }
     }
 
     /* Top Expressive Reactions Bar (Hyvor Talk Style) */
