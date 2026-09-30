@@ -74,12 +74,81 @@ import {
   const rawFormatting =
     currentScript?.getAttribute("data-formatting") ||
     container.getAttribute("data-formatting") ||
-    "bold,italic,quote,code,link";
+    "bold,italic,quote,code,link,emoji";
 
   const allowedFormatting = rawFormatting
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
+
+  // Lazy-Loaded Emoji Architecture (Option C)
+  const scriptSrc = currentScript?.src || "";
+  let widgetOrigin = "https://nyuzi-yap.vercel.app";
+  if (scriptSrc) {
+    try {
+      const url = new URL(scriptSrc);
+      widgetOrigin = url.origin;
+    } catch {}
+  }
+  const emojiPickerScriptUrl = `${widgetOrigin}/emoji-picker.js`;
+
+  let isEmojiPickerLoaded = false;
+  let isEmojiPickerLoading = false;
+
+  function loadEmojiPicker(): Promise<void> {
+    if (typeof customElements !== "undefined" && customElements.get("emoji-picker")) {
+      isEmojiPickerLoaded = true;
+      return Promise.resolve();
+    }
+    if (isEmojiPickerLoaded) return Promise.resolve();
+
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src*="emoji-picker.js"]`);
+      if (existing) {
+        if (customElements.get("emoji-picker")) {
+          isEmojiPickerLoaded = true;
+          return resolve();
+        }
+        existing.addEventListener("load", () => {
+          isEmojiPickerLoaded = true;
+          resolve();
+        });
+        existing.addEventListener("error", reject);
+        return;
+      }
+
+      isEmojiPickerLoading = true;
+      const script = document.createElement("script");
+      script.src = emojiPickerScriptUrl;
+      script.async = true;
+      script.onload = () => {
+        isEmojiPickerLoaded = true;
+        isEmojiPickerLoading = false;
+        resolve();
+      };
+      script.onerror = (err) => {
+        isEmojiPickerLoading = false;
+        reject(err);
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  function prefetchEmojiPicker() {
+    if (isEmojiPickerLoaded || isEmojiPickerLoading || (typeof customElements !== "undefined" && customElements.get("emoji-picker"))) return;
+    loadEmojiPicker().catch(() => {});
+  }
+
+  function insertEmojiAtCursor(textarea: HTMLTextAreaElement, emoji: string) {
+    const start = textarea.selectionStart ?? textarea.value.length;
+    const end = textarea.selectionEnd ?? textarea.value.length;
+    const val = textarea.value;
+    textarea.value = val.substring(0, start) + emoji + val.substring(end);
+    const newPos = start + emoji.length;
+    textarea.focus();
+    textarea.setSelectionRange(newPos, newPos);
+    textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  }
 
   const hasExplicitAccent = Boolean(currentScript?.getAttribute("data-accent-color") || container.getAttribute("data-accent-color"));
   const hasExplicitTheme = Boolean(currentScript?.getAttribute("data-theme") || container.getAttribute("data-theme"));
@@ -1009,8 +1078,70 @@ import {
       });
     });
 
+    // Emoji Popover Toggle
+    async function toggleEmojiPopover(toolbar: HTMLElement, targetTextarea: HTMLTextAreaElement) {
+      const popover = toolbar.querySelector(".nyuzi-emoji-popover") as HTMLElement | null;
+      if (!popover) return;
+
+      if (popover.style.display !== "none") {
+        popover.style.display = "none";
+        return;
+      }
+
+      // Close all other open emoji popovers
+      shadow.querySelectorAll(".nyuzi-emoji-popover").forEach((p) => {
+        (p as HTMLElement).style.display = "none";
+      });
+
+      popover.style.display = "block";
+
+      const existingPicker = popover.querySelector("emoji-picker");
+      if (existingPicker) {
+        setTimeout(() => (existingPicker as any).shadowRoot?.querySelector("input")?.focus(), 50);
+        return;
+      }
+
+      popover.innerHTML = `
+        <div class="nyuzi-emoji-loading">
+          <span class="nyuzi-spinner"></span>
+          <span>Loading emoji library...</span>
+        </div>
+      `;
+
+      try {
+        await loadEmojiPicker();
+        if (popover.style.display === "none") return;
+
+        const currentTheme = container.getAttribute("data-theme") || "dark";
+        const picker = document.createElement("emoji-picker") as any;
+        picker.className = currentTheme === "light" ? "light" : "dark";
+
+        picker.addEventListener("emoji-click", (ev: any) => {
+          const unicode = ev.detail?.unicode;
+          if (unicode) {
+            insertEmojiAtCursor(targetTextarea, unicode);
+          }
+        });
+
+        popover.innerHTML = "";
+        popover.appendChild(picker);
+        setTimeout(() => picker.shadowRoot?.querySelector("input")?.focus(), 50);
+      } catch (err) {
+        console.error("[Nyuzi] Failed to load emoji picker:", err);
+        popover.innerHTML = `
+          <div class="nyuzi-emoji-loading" style="color: #ef4444;">
+            <span>Failed to load emoji library.</span>
+          </div>
+        `;
+      }
+    }
+
     // Formatting Toolbar Buttons
     shadow.querySelectorAll(".nyuzi-format-btn").forEach((btn) => {
+      if (btn.getAttribute("data-action") === "emoji") {
+        btn.addEventListener("mouseenter", prefetchEmojiPicker, { once: true });
+      }
+
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         const action = (e.currentTarget as HTMLElement).getAttribute("data-action");
@@ -1019,10 +1150,20 @@ import {
         if (!action || !targetId) return;
 
         const targetTextarea = shadow.getElementById(targetId) as HTMLTextAreaElement | null;
-        if (targetTextarea) {
-          applyFormatting(targetTextarea, action);
+        if (!targetTextarea) return;
+
+        if (action === "emoji") {
+          toggleEmojiPopover(toolbar as HTMLElement, targetTextarea);
+          return;
         }
+
+        applyFormatting(targetTextarea, action);
       });
+    });
+
+    // Predictive prefetch when user focuses any comment textarea
+    shadow.querySelectorAll("textarea").forEach((textarea) => {
+      textarea.addEventListener("focus", prefetchEmojiPicker, { once: true });
     });
 
     // Character counter
@@ -1286,6 +1427,29 @@ import {
   } catch (err) {
     console.debug("[Nyuzi] Theme observer warning:", err);
   }
+
+  // Dismiss emoji popover on outside click or Escape
+  document.addEventListener("click", (e) => {
+    const path = e.composedPath();
+    const isInside = path.some((el: any) =>
+      el?.classList?.contains("nyuzi-emoji-popover") ||
+      el?.classList?.contains("nyuzi-emoji-btn") ||
+      el?.tagName?.toLowerCase() === "emoji-picker"
+    );
+    if (!isInside) {
+      shadow.querySelectorAll(".nyuzi-emoji-popover").forEach((p) => {
+        (p as HTMLElement).style.display = "none";
+      });
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      shadow.querySelectorAll(".nyuzi-emoji-popover").forEach((p) => {
+        (p as HTMLElement).style.display = "none";
+      });
+    }
+  });
 
   // Initial load
   loadComments();

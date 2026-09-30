@@ -51,7 +51,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     selectedSite === "trc254" ? "literary" : "general"
   );
   const [formattingTools, setFormattingTools] = useState<string[]>(
-    selectedSite === "trc254" ? ["bold", "italic", "quote"] : ["bold", "italic", "quote", "code", "link"]
+    selectedSite === "trc254" ? ["bold", "italic", "quote", "emoji"] : ["bold", "italic", "quote", "code", "link", "emoji"]
   );
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");
@@ -316,12 +316,13 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
   };
 
   const isDefaultFormatting =
-    formattingTools.length === 5 &&
+    formattingTools.length === 6 &&
     formattingTools.includes("bold") &&
     formattingTools.includes("italic") &&
     formattingTools.includes("quote") &&
     formattingTools.includes("code") &&
-    formattingTools.includes("link");
+    formattingTools.includes("link") &&
+    formattingTools.includes("emoji");
 
   // Generated Embed Snippets
   const autoSyncSnippetCode = `<div id="nyuzi-comments"
@@ -993,13 +994,14 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
               </p>
 
               {/* Formatting Chips */}
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-6 gap-1.5">
                 {[
                   { id: "bold", label: "Bold", icon: "B", tip: "**text**" },
                   { id: "italic", label: "Italic", icon: "I", tip: "*text*" },
                   { id: "quote", label: "Quote", icon: '"', tip: "> quote" },
                   { id: "code", label: "Code", icon: "</>", tip: "`code`" },
                   { id: "link", label: "Link", icon: "🔗", tip: "[url]" },
+                  { id: "emoji", label: "Emoji", icon: "😀", tip: "Searchable Emoji Picker" },
                 ].map((tool) => {
                   const isActive = formattingTools.includes(tool.id);
                   return (
@@ -1025,17 +1027,17 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
               <div className="flex items-center justify-between gap-1.5 pt-1">
                 <button
                   type="button"
-                  onClick={() => setFormattingTools(["bold", "italic", "quote"])}
+                  onClick={() => setFormattingTools(["bold", "italic", "quote", "emoji"])}
                   className="text-[10px] px-2 py-1 rounded-md bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)]/40 cursor-pointer font-medium"
                 >
-                  TRC Clean Prose (B, I, &ldquo;)
+                  TRC Clean Prose + Emoji
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormattingTools(["bold", "italic", "quote", "code", "link"])}
+                  onClick={() => setFormattingTools(["bold", "italic", "quote", "code", "link", "emoji"])}
                   className="text-[10px] px-2 py-1 rounded-md bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)]/40 cursor-pointer font-medium"
                 >
-                  Full Suite (All 5)
+                  Full Suite (All 6)
                 </button>
               </div>
 

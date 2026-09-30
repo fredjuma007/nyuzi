@@ -239,6 +239,74 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       border-color: var(--nyuzi-accent);
       box-shadow: 0 0 0 3px var(--nyuzi-accent-soft);
     }
+    .nyuzi-format-toolbar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      margin-bottom: 0.4rem;
+    }
+    .nyuzi-format-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 0.375rem;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--nyuzi-text-secondary);
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+      padding: 0;
+    }
+    .nyuzi-format-btn:hover {
+      background: var(--nyuzi-reaction-bg);
+      border-color: var(--nyuzi-border);
+      color: var(--nyuzi-text-primary);
+    }
+    .nyuzi-emoji-popover {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 1000;
+      border-radius: var(--nyuzi-radius);
+      box-shadow: 0 16px 40px -6px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--nyuzi-border);
+      background: var(--nyuzi-card-bg);
+      overflow: hidden;
+      max-width: 340px;
+      width: calc(100vw - 2.5rem);
+      animation: nyuziFadeDown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes nyuziFadeDown {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .nyuzi-emoji-loading {
+      padding: 2.5rem 1rem;
+      text-align: center;
+      font-size: 0.8125rem;
+      color: var(--nyuzi-text-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    emoji-picker {
+      width: 100%;
+      height: 330px;
+      --background: var(--nyuzi-card-bg);
+      --border-color: var(--nyuzi-border);
+      --input-border-color: var(--nyuzi-border);
+      --input-placeholder-color: var(--nyuzi-text-muted);
+      --outline-color: var(--nyuzi-accent);
+      --indicator-color: var(--nyuzi-accent);
+      --category-emoji-size: 1.15rem;
+      font-family: inherit;
+    }
     .nyuzi-textarea {
       width: 100%;
       min-height: 90px;
