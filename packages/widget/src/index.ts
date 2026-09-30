@@ -19,6 +19,7 @@ import {
   editCommentApi,
   deleteCommentApi,
   toggleThreadReactionApi,
+  fetchGifsApi,
 } from "./api";
 
 (function () {
@@ -74,7 +75,7 @@ import {
   const rawFormatting =
     currentScript?.getAttribute("data-formatting") ||
     container.getAttribute("data-formatting") ||
-    "bold,italic,quote,code,link,emoji";
+    "bold,italic,quote,code,link,emoji,gif";
 
   const allowedFormatting = rawFormatting
     .split(",")
@@ -466,7 +467,7 @@ import {
         authorName: "Brenda Frenjo",
         authorEmail: "readingcircle254@gmail.com",
         content:
-          "The second chapter in particular felt so poignant. The pacing and character progression really resonated with what we discussed during Sunday's book circle session!",
+          "The second chapter in particular felt so poignant. The pacing and character progression really resonated with what we discussed during Sunday's book circle session!\n\n![Mind Blown](https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif)",
         status: "approved",
         upvotes: 8,
         createdAt: new Date(Date.now() - 3600000).toISOString(),
@@ -904,6 +905,7 @@ import {
 
           ${renderFormatToolbar("nyuzi-main-content", themeConfig.allowedFormatting)}
           <textarea class="nyuzi-textarea" id="nyuzi-main-content" maxlength="2000" placeholder="Share your thoughts or leave a question..." required></textarea>
+          <div class="nyuzi-attached-gif-preview" id="nyuzi-main-content-gif-preview" style="display: none;"></div>
           <div class="nyuzi-counter-row">
             <span id="nyuzi-char-count">0 / 2,000</span>
           </div>
@@ -1088,8 +1090,8 @@ import {
         return;
       }
 
-      // Close all other open emoji popovers
-      shadow.querySelectorAll(".nyuzi-emoji-popover").forEach((p) => {
+      // Close all other open emoji & gif popovers
+      shadow.querySelectorAll(".nyuzi-emoji-popover, .nyuzi-gif-popover").forEach((p) => {
         (p as HTMLElement).style.display = "none";
       });
 
@@ -1136,6 +1138,158 @@ import {
       }
     }
 
+    // GIF Popover Toggle
+    async function toggleGifPopover(toolbar: HTMLElement, targetTextarea: HTMLTextAreaElement) {
+      const popover = toolbar.querySelector(".nyuzi-gif-popover") as HTMLElement | null;
+      if (!popover) return;
+      const gifPopover: HTMLElement = popover;
+
+      if (gifPopover.style.display !== "none") {
+        gifPopover.style.display = "none";
+        return;
+      }
+
+      // Close all other open emoji & gif popovers
+      shadow.querySelectorAll(".nyuzi-emoji-popover, .nyuzi-gif-popover").forEach((p) => {
+        (p as HTMLElement).style.display = "none";
+      });
+
+      popover.style.display = "block";
+
+      const fallbackGifs = [
+        { id: "1", title: "Clap", url: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Ts4/giphy.gif", preview: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Ts4/200_d.gif" },
+        { id: "2", title: "Mind Blown", url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif", preview: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/200_d.gif" },
+        { id: "3", title: "Reading Book", url: "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif", preview: "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/200_d.gif" },
+        { id: "4", title: "Laughing", url: "https://media.giphy.com/media/10JhviFuU2gWD6/giphy.gif", preview: "https://media.giphy.com/media/10JhviFuU2gWD6/200_d.gif" },
+        { id: "5", title: "Thinking", url: "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/giphy.gif", preview: "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/200_d.gif" },
+        { id: "6", title: "Thumbs Up", url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif", preview: "https://media.giphy.com/media/111ebonMs90YLu/200_d.gif" },
+        { id: "7", title: "Love / Heart", url: "https://media.giphy.com/media/26FLdm964upIslUZ2/giphy.gif", preview: "https://media.giphy.com/media/26FLdm964upIslUZ2/200_d.gif" },
+        { id: "8", title: "Speechless", url: "https://media.giphy.com/media/l0HlvtIPzPdt2usKs/giphy.gif", preview: "https://media.giphy.com/media/l0HlvtIPzPdt2usKs/200_d.gif" },
+        { id: "9", title: "Celebration", url: "https://media.giphy.com/media/ely3apij36BJhoZ234/giphy.gif", preview: "https://media.giphy.com/media/ely3apij36BJhoZ234/200_d.gif" },
+        { id: "10", title: "Coffee", url: "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif", preview: "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/200_d.gif" },
+        { id: "11", title: "Writing", url: "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif", preview: "https://media.giphy.com/media/13HgwGsXF0aiGY/200_d.gif" },
+        { id: "12", title: "Excited", url: "https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif", preview: "https://media.giphy.com/media/5GoVLqeAOo6PK/200_d.gif" },
+      ];
+
+      popover.innerHTML = `
+        <div class="nyuzi-gif-header">
+          <input type="text" class="nyuzi-gif-search-input" placeholder="Search GIFs..." autocomplete="off" />
+        </div>
+        <div class="nyuzi-gif-grid">
+          <div style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--nyuzi-text-muted); font-size: 0.8125rem;">
+            <span class="nyuzi-spinner" style="display: inline-block; margin-bottom: 0.35rem;"></span>
+            <div>Loading GIFs...</div>
+          </div>
+        </div>
+        <div class="nyuzi-gif-footer">
+          <span>Powered by GIPHY</span>
+        </div>
+      `;
+
+      const searchInput = popover.querySelector(".nyuzi-gif-search-input") as HTMLInputElement | null;
+      const grid = popover.querySelector(".nyuzi-gif-grid") as HTMLElement | null;
+
+      if (searchInput) {
+        setTimeout(() => searchInput.focus(), 50);
+      }
+
+      async function renderGifs(query = "") {
+        if (!grid) return;
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--nyuzi-text-muted); font-size: 0.8125rem;">
+            <span class="nyuzi-spinner" style="display: inline-block; margin-bottom: 0.35rem;"></span>
+            <div>Searching...</div>
+          </div>
+        `;
+
+        let list: Array<{ id: string; title: string; url: string; preview: string }> = [];
+        try {
+          if (isMockMode) {
+            list = query
+              ? fallbackGifs.filter((g) => g.title.toLowerCase().includes(query.toLowerCase()))
+              : fallbackGifs;
+          } else {
+            list = await fetchGifsApi(apiHost, query);
+            if (!list || list.length === 0) {
+              list = query
+                ? fallbackGifs.filter((g) => g.title.toLowerCase().includes(query.toLowerCase()))
+                : fallbackGifs;
+            }
+          }
+        } catch {
+          list = query
+            ? fallbackGifs.filter((g) => g.title.toLowerCase().includes(query.toLowerCase()))
+            : fallbackGifs;
+        }
+
+        if (list.length === 0) {
+          grid.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 1.5rem; text-align: center; color: var(--nyuzi-text-muted); font-size: 0.8125rem;">
+              No GIFs found for "${escapeHtml(query)}"
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = list
+          .map(
+            (g) => `
+          <div class="nyuzi-gif-card" data-gif-url="${escapeHtml(g.url)}" title="${escapeHtml(g.title)}">
+            <img src="${escapeHtml(g.preview || g.url)}" alt="${escapeHtml(g.title)}" loading="lazy" />
+          </div>
+        `
+          )
+          .join("");
+
+        grid.querySelectorAll(".nyuzi-gif-card").forEach((card) => {
+          card.addEventListener("click", () => {
+            const url = card.getAttribute("data-gif-url");
+            if (url) {
+              attachGifToForm(toolbar, targetTextarea, url);
+              gifPopover.style.display = "none";
+            }
+          });
+        });
+      }
+
+      renderGifs("");
+
+      let searchTimeout: any = null;
+      if (searchInput) {
+        searchInput.addEventListener("input", () => {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            renderGifs(searchInput.value.trim());
+          }, 350);
+        });
+      }
+    }
+
+    // Attach GIF Thumbnail Preview to Form
+    function attachGifToForm(toolbar: HTMLElement, targetTextarea: HTMLTextAreaElement, gifUrl: string) {
+      targetTextarea.dataset.attachedGif = gifUrl;
+      const previewId = `${targetTextarea.id}-gif-preview`;
+      const previewContainer = shadow.getElementById(previewId);
+      if (!previewContainer) return;
+
+      previewContainer.innerHTML = `
+        <img src="${escapeHtml(gifUrl)}" alt="Attached GIF" />
+        <button type="button" class="nyuzi-attached-gif-remove" title="Remove GIF">✕</button>
+      `;
+      previewContainer.style.display = "inline-block";
+
+      const removeBtn = previewContainer.querySelector(".nyuzi-attached-gif-remove");
+      if (removeBtn) {
+        removeBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          delete targetTextarea.dataset.attachedGif;
+          previewContainer.innerHTML = "";
+          previewContainer.style.display = "none";
+        });
+      }
+    }
+
     // Formatting Toolbar Buttons
     shadow.querySelectorAll(".nyuzi-format-btn").forEach((btn) => {
       if (btn.getAttribute("data-action") === "emoji") {
@@ -1154,6 +1308,11 @@ import {
 
         if (action === "emoji") {
           toggleEmojiPopover(toolbar as HTMLElement, targetTextarea);
+          return;
+        }
+
+        if (action === "gif") {
+          toggleGifPopover(toolbar as HTMLElement, targetTextarea);
           return;
         }
 
@@ -1207,10 +1366,22 @@ import {
         const cleanEmail = emailInput.value.trim() || null;
         saveAuthorInfo(cleanName, cleanEmail);
 
+        let finalContent = contentInput.value.trim();
+        const attachedGif = contentInput.dataset.attachedGif;
+        if (attachedGif) {
+          finalContent += `\n\n![GIF](${attachedGif})`;
+          delete contentInput.dataset.attachedGif;
+          const preview = shadow.getElementById("nyuzi-main-content-gif-preview");
+          if (preview) {
+            preview.innerHTML = "";
+            preview.style.display = "none";
+          }
+        }
+
         submitComment(
           cleanName,
           cleanEmail,
-          contentInput.value.trim(),
+          finalContent,
           notifyCheck ? notifyCheck.checked : true,
           null
         );
@@ -1275,7 +1446,19 @@ import {
         const cleanEmail = emailInput?.value.trim() || null;
         saveAuthorInfo(cleanName, cleanEmail);
 
-        submitComment(cleanName, cleanEmail, replyContent.value.trim(), true, parentId);
+        let finalReply = replyContent.value.trim();
+        const attachedGif = replyContent.dataset.attachedGif;
+        if (attachedGif) {
+          finalReply += `\n\n![GIF](${attachedGif})`;
+          delete replyContent.dataset.attachedGif;
+          const preview = shadow.getElementById(`reply-content-${parentId}-gif-preview`);
+          if (preview) {
+            preview.innerHTML = "";
+            preview.style.display = "none";
+          }
+        }
+
+        submitComment(cleanName, cleanEmail, finalReply, true, parentId);
       });
     });
 
@@ -1308,7 +1491,20 @@ import {
           alert("Comment content cannot be empty.");
           return;
         }
-        editComment(id, textarea.value.trim());
+
+        let finalEdit = textarea.value.trim();
+        const attachedGif = textarea.dataset.attachedGif;
+        if (attachedGif) {
+          finalEdit += `\n\n![GIF](${attachedGif})`;
+          delete textarea.dataset.attachedGif;
+          const preview = shadow.getElementById(`edit-content-${id}-gif-preview`);
+          if (preview) {
+            preview.innerHTML = "";
+            preview.style.display = "none";
+          }
+        }
+
+        editComment(id, finalEdit);
       });
     });
 
@@ -1428,16 +1624,18 @@ import {
     console.debug("[Nyuzi] Theme observer warning:", err);
   }
 
-  // Dismiss emoji popover on outside click or Escape
+  // Dismiss emoji & GIF popovers on outside click or Escape
   document.addEventListener("click", (e) => {
     const path = e.composedPath();
     const isInside = path.some((el: any) =>
       el?.classList?.contains("nyuzi-emoji-popover") ||
       el?.classList?.contains("nyuzi-emoji-btn") ||
+      el?.classList?.contains("nyuzi-gif-popover") ||
+      el?.classList?.contains("nyuzi-gif-btn") ||
       el?.tagName?.toLowerCase() === "emoji-picker"
     );
     if (!isInside) {
-      shadow.querySelectorAll(".nyuzi-emoji-popover").forEach((p) => {
+      shadow.querySelectorAll(".nyuzi-emoji-popover, .nyuzi-gif-popover").forEach((p) => {
         (p as HTMLElement).style.display = "none";
       });
     }
@@ -1445,7 +1643,7 @@ import {
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      shadow.querySelectorAll(".nyuzi-emoji-popover").forEach((p) => {
+      shadow.querySelectorAll(".nyuzi-emoji-popover, .nyuzi-gif-popover").forEach((p) => {
         (p as HTMLElement).style.display = "none";
       });
     }

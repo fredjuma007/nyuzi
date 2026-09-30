@@ -307,6 +307,130 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       --category-emoji-size: 1.15rem;
       font-family: inherit;
     }
+    .nyuzi-gif-popover {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 1000;
+      border-radius: var(--nyuzi-radius);
+      box-shadow: 0 16px 40px -6px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--nyuzi-border);
+      background: var(--nyuzi-card-bg);
+      overflow: hidden;
+      width: 320px;
+      max-width: calc(100vw - 2.5rem);
+      animation: nyuziFadeDown 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .nyuzi-gif-header {
+      padding: 0.5rem;
+      border-bottom: 1px solid var(--nyuzi-border);
+      background: var(--nyuzi-input-bg);
+    }
+    .nyuzi-gif-search-input {
+      width: 100%;
+      padding: 0.45rem 0.65rem;
+      border-radius: 0.375rem;
+      border: 1px solid var(--nyuzi-border);
+      background: var(--nyuzi-card-bg);
+      color: var(--nyuzi-text-primary);
+      font-size: 0.8125rem;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.15s;
+    }
+    .nyuzi-gif-search-input:focus {
+      border-color: var(--nyuzi-accent);
+    }
+    .nyuzi-gif-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.35rem;
+      padding: 0.5rem;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .nyuzi-gif-card {
+      position: relative;
+      border-radius: 0.375rem;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--nyuzi-reaction-bg);
+      height: 90px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .nyuzi-gif-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .nyuzi-gif-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .nyuzi-gif-footer {
+      padding: 0.3rem 0.5rem;
+      text-align: right;
+      font-size: 0.625rem;
+      font-weight: 700;
+      color: var(--nyuzi-text-muted);
+      border-top: 1px solid var(--nyuzi-border);
+      background: var(--nyuzi-input-bg);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .nyuzi-attached-gif-preview {
+      position: relative;
+      display: inline-block;
+      margin-top: 0.5rem;
+      border-radius: var(--nyuzi-radius);
+      overflow: hidden;
+      border: 1px solid var(--nyuzi-border);
+      max-width: 180px;
+      max-height: 120px;
+    }
+    .nyuzi-attached-gif-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .nyuzi-attached-gif-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.65);
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      line-height: 1;
+      transition: background 0.15s;
+    }
+    .nyuzi-attached-gif-remove:hover {
+      background: #ef4444;
+    }
+    .nyuzi-comment-gif-wrapper {
+      margin-top: 0.65rem;
+      max-width: 320px;
+      border-radius: var(--nyuzi-radius);
+      overflow: hidden;
+      border: 1px solid var(--nyuzi-border);
+      background: var(--nyuzi-card-bg);
+    }
+    .nyuzi-comment-gif {
+      display: block;
+      width: 100%;
+      max-height: 220px;
+      object-fit: cover;
+      border-radius: var(--nyuzi-radius);
+    }
     .nyuzi-textarea {
       width: 100%;
       min-height: 90px;

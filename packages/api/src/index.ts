@@ -10,6 +10,7 @@ type Bindings = {
   DB: D1Database;
   TURNSTILE_SECRET_KEY?: string;
   RESEND_API_KEY?: string;
+  GIPHY_API_KEY?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -47,6 +48,7 @@ app.get("/", (c) => {
       getComments: "GET /api/v1/comments?siteId={id}&threadUrl={url}",
       postComment: "POST /api/v1/comments",
       upvoteComment: "POST /api/v1/comments/:id/upvote",
+      getGifs: "GET /api/v1/gifs?q={query}",
     },
   });
 });
@@ -57,6 +59,62 @@ app.get("/health", (c) => {
     service: "nyuzi-api",
     timestamp: new Date().toISOString(),
   });
+});
+
+// GET /api/v1/gifs?q=...&limit=16
+app.get("/api/v1/gifs", async (c) => {
+  const query = c.req.query("q")?.trim() || "";
+  const limit = Math.min(24, Math.max(1, parseInt(c.req.query("limit") || "16", 10)));
+  const apiKey = c.env.GIPHY_API_KEY;
+
+  // Curated fallback reaction GIFs (Works immediately in local dev and if GIPHY key not yet configured)
+  const fallbackGifs = [
+    { id: "1", title: "Clap", url: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Ts4/giphy.gif", preview: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Ts4/200_d.gif" },
+    { id: "2", title: "Mind Blown", url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif", preview: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/200_d.gif" },
+    { id: "3", title: "Reading Book", url: "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif", preview: "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/200_d.gif" },
+    { id: "4", title: "Laughing", url: "https://media.giphy.com/media/10JhviFuU2gWD6/giphy.gif", preview: "https://media.giphy.com/media/10JhviFuU2gWD6/200_d.gif" },
+    { id: "5", title: "Thinking", url: "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/giphy.gif", preview: "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/200_d.gif" },
+    { id: "6", title: "Thumbs Up", url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif", preview: "https://media.giphy.com/media/111ebonMs90YLu/200_d.gif" },
+    { id: "7", title: "Love / Heart", url: "https://media.giphy.com/media/26FLdm964upIslUZ2/giphy.gif", preview: "https://media.giphy.com/media/26FLdm964upIslUZ2/200_d.gif" },
+    { id: "8", title: "Speechless", url: "https://media.giphy.com/media/l0HlvtIPzPdt2usKs/giphy.gif", preview: "https://media.giphy.com/media/l0HlvtIPzPdt2usKs/200_d.gif" },
+    { id: "9", title: "Celebration", url: "https://media.giphy.com/media/ely3apij36BJhoZ234/giphy.gif", preview: "https://media.giphy.com/media/ely3apij36BJhoZ234/200_d.gif" },
+    { id: "10", title: "Coffee", url: "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif", preview: "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/200_d.gif" },
+    { id: "11", title: "Writing", url: "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif", preview: "https://media.giphy.com/media/13HgwGsXF0aiGY/200_d.gif" },
+    { id: "12", title: "Excited", url: "https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif", preview: "https://media.giphy.com/media/5GoVLqeAOo6PK/200_d.gif" },
+  ];
+
+  if (!apiKey) {
+    const filtered = query
+      ? fallbackGifs.filter((g) => g.title.toLowerCase().includes(query.toLowerCase()))
+      : fallbackGifs;
+    return c.json({ data: filtered.slice(0, limit), source: "curated" });
+  }
+
+  try {
+    const endpoint = query
+      ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query)}&limit=${limit}&rating=g`
+      : `https://api.giphy.com/v1/gifs/trending?api_key=${apiKey}&limit=${limit}&rating=g`;
+
+    const res = await fetch(endpoint, {
+      cf: { cacheTtl: 3600, cacheEverything: true },
+    });
+
+    if (!res.ok) {
+      return c.json({ data: fallbackGifs.slice(0, limit), source: "curated" });
+    }
+
+    const json: any = await res.json();
+    const data = (json.data || []).map((item: any) => ({
+      id: item.id,
+      title: item.title || "GIF",
+      url: item.images?.downsized?.url || item.images?.original?.url,
+      preview: item.images?.fixed_width_small?.url || item.images?.downsized_still?.url || item.images?.downsized?.url,
+    }));
+
+    return c.json({ data, source: "giphy" });
+  } catch (err) {
+    return c.json({ data: fallbackGifs.slice(0, limit), source: "curated" });
+  }
 });
 
 // GET /api/v1/comments?siteId=...&threadUrl=...&page=1&limit=15&highlight=cmt_xxx

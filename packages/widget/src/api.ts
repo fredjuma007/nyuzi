@@ -113,3 +113,14 @@ export async function toggleThreadReactionApi(
   if (!res.ok) throw new Error("Thread reaction failed");
   return res.json();
 }
+
+export async function fetchGifsApi(
+  apiHost: string,
+  query = ""
+): Promise<Array<{ id: string; title: string; url: string; preview: string }>> {
+  const url = `${apiHost}/api/v1/gifs?q=${encodeURIComponent(query)}&limit=16`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to load GIFs");
+  const json: any = await res.json();
+  return json.data || [];
+}

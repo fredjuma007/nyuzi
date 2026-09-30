@@ -46,7 +46,7 @@ export function formatMarkdown(raw: string, allowedFormatting?: string[]): strin
   // 1. Escape HTML first to prevent any script/markup injection
   let text = escapeHtml(raw);
 
-  const tools = allowedFormatting ?? ["bold", "italic", "quote", "code", "link"];
+  const tools = allowedFormatting ?? ["bold", "italic", "quote", "code", "link", "emoji", "gif"];
 
   // 2. Inline code: `code`
   if (tools.includes("code")) {
@@ -63,7 +63,22 @@ export function formatMarkdown(raw: string, allowedFormatting?: string[]): strin
     text = text.replace(/(^|[^*])\*([^*]+)\*([^*]|$)/g, "$1<em>$2</em>$3");
   }
 
-  // 5. Links: [label](url) - strictly validate http, https, or mailto
+  // 5. Image/GIF embeds: ![alt](url) (Enforce max 1 GIF per comment)
+  if (tools.includes("gif")) {
+    let gifCount = 0;
+    text = text.replace(
+      /!\[([^\]]*)\]\(((?:https?:\/\/)[^\s)]+(?:\.(?:gif|webp|png|jpg|jpeg)[^\s)]*|(?:giphy\.com|tenor\.com)[^\s)]*))\)/gi,
+      (_match, alt, url) => {
+        if (gifCount === 0) {
+          gifCount++;
+          return `<div class="nyuzi-comment-gif-wrapper"><img src="${url}" alt="${alt}" class="nyuzi-comment-gif" loading="lazy" /></div>`;
+        }
+        return `[GIF: ${alt}]`;
+      }
+    );
+  }
+
+  // 6. Links: [label](url) - strictly validate http, https, or mailto
   if (tools.includes("link")) {
     text = text.replace(
       /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g,
@@ -77,7 +92,7 @@ export function formatMarkdown(raw: string, allowedFormatting?: string[]): strin
     );
   }
 
-  // 6. Blockquotes: lines starting with &gt;
+  // 7. Blockquotes: lines starting with &gt;
   const lines = text.split("\n");
   const processedLines: string[] = [];
   let inQuote = false;
@@ -100,7 +115,7 @@ export function formatMarkdown(raw: string, allowedFormatting?: string[]): strin
     processedLines.push(`<blockquote>${quoteBuffer.join("<br/>")}</blockquote>`);
   }
 
-  // 7. Join lines with <br/>, avoiding breaks directly adjacent to blockquotes
+  // 8. Join lines with <br/>, avoiding breaks directly adjacent to blockquotes
   return processedLines
     .join("\n")
     .replace(/(<\/blockquote>)\n+/g, "$1")
@@ -158,7 +173,7 @@ export function isVerifiedAuthor(name: string, postAuthor: string): boolean {
 export function renderFormatToolbar(targetTextareaId: string, allowedTools?: string[]): string {
   const tools = allowedTools && allowedTools.length > 0
     ? allowedTools
-    : ["bold", "italic", "quote", "code", "link", "emoji"];
+    : ["bold", "italic", "quote", "code", "link", "emoji", "gif"];
 
   const buttons: string[] = [];
 
@@ -198,6 +213,12 @@ export function renderFormatToolbar(targetTextareaId: string, allowedTools?: str
         <span style="font-size: 0.95rem; line-height: 1; display: inline-block;">😀</span>
       </button>`);
   }
+  if (tools.includes("gif")) {
+    buttons.push(`
+      <button type="button" class="nyuzi-format-btn nyuzi-gif-btn" data-action="gif" title="Search & Insert GIF">
+        <span style="font-size: 0.6875rem; font-weight: 800; letter-spacing: -0.02em; padding: 1px 4px; border-radius: 4px; background: var(--nyuzi-accent-soft); color: var(--nyuzi-accent);">GIF</span>
+      </button>`);
+  }
 
   if (buttons.length === 0) return "";
 
@@ -205,6 +226,7 @@ export function renderFormatToolbar(targetTextareaId: string, allowedTools?: str
     <div class="nyuzi-format-toolbar" data-target="${targetTextareaId}">
       ${buttons.join("")}
       <div class="nyuzi-emoji-popover" style="display: none;"></div>
+      <div class="nyuzi-gif-popover" style="display: none;"></div>
     </div>
   `;
 }
@@ -305,6 +327,7 @@ export function renderComment(
             <div class="nyuzi-edit-box">
               ${renderFormatToolbar(`edit-content-${c.id}`, options.allowedFormatting)}
               <textarea class="nyuzi-textarea nyuzi-edit-textarea" id="edit-content-${c.id}" rows="3" maxlength="2000">${escapeHtml(c.content)}</textarea>
+              <div class="nyuzi-attached-gif-preview" id="edit-content-${c.id}-gif-preview" style="display: none;"></div>
               <div class="nyuzi-edit-actions">
                 <button class="nyuzi-action-btn cancel-edit" data-id="${c.id}">Cancel</button>
                 <button class="nyuzi-submit-btn save-edit" data-id="${c.id}" ${options.isSubmitting ? "disabled" : ""}>
@@ -367,6 +390,7 @@ export function renderComment(
             <div class="nyuzi-reply-box">
               ${renderFormatToolbar(`reply-content-${c.id}`, options.allowedFormatting)}
               <textarea class="nyuzi-textarea" id="reply-content-${c.id}" placeholder="Reply to ${escapeHtml(c.authorName)}..." maxlength="2000" required></textarea>
+              <div class="nyuzi-attached-gif-preview" id="reply-content-${c.id}-gif-preview" style="display: none;"></div>
               <div class="nyuzi-form-row">
                 <div class="nyuzi-inputs">
                   <input type="text" class="nyuzi-input" id="reply-name-${c.id}" placeholder="Your Name *" value="${escapeHtml(options.savedAuthorName)}" required />

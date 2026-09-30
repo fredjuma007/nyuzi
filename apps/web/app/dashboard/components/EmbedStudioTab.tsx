@@ -51,7 +51,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     selectedSite === "trc254" ? "literary" : "general"
   );
   const [formattingTools, setFormattingTools] = useState<string[]>(
-    selectedSite === "trc254" ? ["bold", "italic", "quote", "emoji"] : ["bold", "italic", "quote", "code", "link", "emoji"]
+    selectedSite === "trc254" ? ["bold", "italic", "quote", "emoji"] : ["bold", "italic", "quote", "code", "link", "emoji", "gif"]
   );
   const [copied, setCopied] = useState(false);
   const [mobileTab, setMobileTab] = useState<"controls" | "preview">("controls");
@@ -171,7 +171,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       theme: "auto",
       reactionsPreset: "general" as const,
       reactionsPrompt: "How was this discussion?",
-      formattingTools: ["bold", "italic", "quote", "code", "link"],
+      formattingTools: ["bold", "italic", "quote", "code", "link", "emoji", "gif"],
     },
     {
       name: "Sepia Book Parchment",
@@ -195,7 +195,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       theme: "dark",
       reactionsPreset: "general" as const,
       reactionsPrompt: "How was this discussion?",
-      formattingTools: ["bold", "italic", "quote", "code", "link"],
+      formattingTools: ["bold", "italic", "quote", "code", "link", "emoji", "gif"],
     },
     {
       name: "Minimalist Mono",
@@ -216,7 +216,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
       theme: "auto",
       reactionsPreset: "general" as const,
       reactionsPrompt: "How was this discussion?",
-      formattingTools: ["bold", "italic", "quote", "code", "link"],
+      formattingTools: ["bold", "italic", "quote", "code", "link", "emoji", "gif"],
     },
   ];
 
@@ -311,18 +311,19 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
     setShowReactionsBar(true);
     setReactionsPrompt(selectedSite === "trc254" ? "What did you think of this piece?" : "How was this discussion?");
     setReactionsPreset(selectedSite === "trc254" ? "literary" : "general");
-    setFormattingTools(selectedSite === "trc254" ? ["bold", "italic", "quote"] : ["bold", "italic", "quote", "code", "link"]);
+    setFormattingTools(selectedSite === "trc254" ? ["bold", "italic", "quote", "emoji"] : ["bold", "italic", "quote", "code", "link", "emoji", "gif"]);
     showToast("Reset studio styles to default");
   };
 
   const isDefaultFormatting =
-    formattingTools.length === 6 &&
+    formattingTools.length === 7 &&
     formattingTools.includes("bold") &&
     formattingTools.includes("italic") &&
     formattingTools.includes("quote") &&
     formattingTools.includes("code") &&
     formattingTools.includes("link") &&
-    formattingTools.includes("emoji");
+    formattingTools.includes("emoji") &&
+    formattingTools.includes("gif");
 
   // Generated Embed Snippets
   const autoSyncSnippetCode = `<div id="nyuzi-comments"
@@ -994,7 +995,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
               </p>
 
               {/* Formatting Chips */}
-              <div className="grid grid-cols-6 gap-1.5">
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
                 {[
                   { id: "bold", label: "Bold", icon: "B", tip: "**text**" },
                   { id: "italic", label: "Italic", icon: "I", tip: "*text*" },
@@ -1002,6 +1003,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                   { id: "code", label: "Code", icon: "</>", tip: "`code`" },
                   { id: "link", label: "Link", icon: "🔗", tip: "[url]" },
                   { id: "emoji", label: "Emoji", icon: "😀", tip: "Searchable Emoji Picker" },
+                  { id: "gif", label: "GIF", icon: "🎞️", tip: "Searchable GIF Tray" },
                 ].map((tool) => {
                   const isActive = formattingTools.includes(tool.id);
                   return (
@@ -1034,10 +1036,10 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFormattingTools(["bold", "italic", "quote", "code", "link", "emoji"])}
+                  onClick={() => setFormattingTools(["bold", "italic", "quote", "code", "link", "emoji", "gif"])}
                   className="text-[10px] px-2 py-1 rounded-md bg-[var(--bg-page)] border border-[var(--border-card)] text-[var(--text-secondary)] hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)]/40 cursor-pointer font-medium"
                 >
-                  Full Suite (All 6)
+                  Full Suite (All 7)
                 </button>
               </div>
 
