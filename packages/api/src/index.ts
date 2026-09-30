@@ -68,24 +68,163 @@ app.get("/api/v1/gifs", async (c) => {
   const apiKey = c.env.GIPHY_API_KEY;
 
   // Curated fallback reaction GIFs (Works immediately in local dev and if GIPHY key not yet configured)
-  const fallbackGifs = [
-    { id: "1", title: "Clap", url: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Ts4/giphy.gif", preview: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Ts4/200_d.gif" },
-    { id: "2", title: "Mind Blown", url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif", preview: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/200_d.gif" },
-    { id: "3", title: "Reading Book", url: "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif", preview: "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/200_d.gif" },
-    { id: "4", title: "Laughing", url: "https://media.giphy.com/media/10JhviFuU2gWD6/giphy.gif", preview: "https://media.giphy.com/media/10JhviFuU2gWD6/200_d.gif" },
-    { id: "5", title: "Thinking", url: "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/giphy.gif", preview: "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/200_d.gif" },
-    { id: "6", title: "Thumbs Up", url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif", preview: "https://media.giphy.com/media/111ebonMs90YLu/200_d.gif" },
-    { id: "7", title: "Love / Heart", url: "https://media.giphy.com/media/26FLdm964upIslUZ2/giphy.gif", preview: "https://media.giphy.com/media/26FLdm964upIslUZ2/200_d.gif" },
-    { id: "8", title: "Speechless", url: "https://media.giphy.com/media/l0HlvtIPzPdt2usKs/giphy.gif", preview: "https://media.giphy.com/media/l0HlvtIPzPdt2usKs/200_d.gif" },
-    { id: "9", title: "Celebration", url: "https://media.giphy.com/media/ely3apij36BJhoZ234/giphy.gif", preview: "https://media.giphy.com/media/ely3apij36BJhoZ234/200_d.gif" },
-    { id: "10", title: "Coffee", url: "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif", preview: "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/200_d.gif" },
-    { id: "11", title: "Writing", url: "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif", preview: "https://media.giphy.com/media/13HgwGsXF0aiGY/200_d.gif" },
-    { id: "12", title: "Excited", url: "https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif", preview: "https://media.giphy.com/media/5GoVLqeAOo6PK/200_d.gif" },
+  const fallbackGifs: Array<{
+    id: string;
+    title: string;
+    tags: string[];
+    url: string;
+    preview: string;
+  }> = [
+    {
+      id: "dance_carlton",
+      title: "Carlton Dance",
+      tags: ["dance", "dancing", "happy", "party", "celebration", "groove", "vibes"],
+      url: "https://media.giphy.com/media/pa37AAGzKXoek/giphy.gif",
+      preview: "https://media.giphy.com/media/pa37AAGzKXoek/200_d.gif",
+    },
+    {
+      id: "dance_snoopy",
+      title: "Snoopy Dance",
+      tags: ["dance", "dancing", "snoopy", "cartoon", "happy", "cute", "vibing"],
+      url: "https://media.giphy.com/media/mKMGLhoD8L4yc/giphy.gif",
+      preview: "https://media.giphy.com/media/mKMGLhoD8L4yc/200_d.gif",
+    },
+    {
+      id: "dance_kid",
+      title: "Dancing Kid",
+      tags: ["dance", "dancing", "kid", "excited", "happy", "party", "moves"],
+      url: "https://media.giphy.com/media/blSTtZehjAZ8I/giphy.gif",
+      preview: "https://media.giphy.com/media/blSTtZehjAZ8I/200_d.gif",
+    },
+    {
+      id: "dance_cat",
+      title: "Dancing Cat",
+      tags: ["dance", "dancing", "cat", "kitten", "pet", "vibes", "funny"],
+      url: "https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif",
+      preview: "https://media.giphy.com/media/JIX9t2j0ZTN9S/200_d.gif",
+    },
+    {
+      id: "cheers_gatsby",
+      title: "Gatsby Cheers",
+      tags: ["cheers", "toast", "drink", "respect", "congrats", "salute", "celebrate"],
+      url: "https://media.giphy.com/media/g9582DNuQppxC/giphy.gif",
+      preview: "https://media.giphy.com/media/g9582DNuQppxC/200_d.gif",
+    },
+    {
+      id: "nod_yes",
+      title: "Jack Nicholson Nod",
+      tags: ["yes", "nod", "nodding", "agree", "perfect", "evil smile", "indeed"],
+      url: "https://media.giphy.com/media/10Jpr9KSaXLchW/giphy.gif",
+      preview: "https://media.giphy.com/media/10Jpr9KSaXLchW/200_d.gif",
+    },
+    {
+      id: "popcorn_mj",
+      title: "Eating Popcorn",
+      tags: ["popcorn", "drama", "watching", "waiting", "reading", "thriller", "tea"],
+      url: "https://media.giphy.com/media/gl0mkIZOW6Nwc/giphy.gif",
+      preview: "https://media.giphy.com/media/gl0mkIZOW6Nwc/200_d.gif",
+    },
+    {
+      id: "facepalm_picard",
+      title: "Facepalm",
+      tags: ["facepalm", "smh", "disappointed", "no", "why", "ugh", "sigh"],
+      url: "https://media.giphy.com/media/3og0INyCmHlNylks9O/giphy.gif",
+      preview: "https://media.giphy.com/media/3og0INyCmHlNylks9O/200_d.gif",
+    },
+    {
+      id: "clap_applause",
+      title: "Clap",
+      tags: ["clap", "applause", "bravo", "cheer", "great", "awesome", "yes"],
+      url: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Ts4/giphy.gif",
+      preview: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Ts4/200_d.gif",
+    },
+    {
+      id: "mind_blown",
+      title: "Mind Blown",
+      tags: ["mind blown", "shocked", "wow", "amazing", "boom", "galaxy", "crazy"],
+      url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
+      preview: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/200_d.gif",
+    },
+    {
+      id: "reading_book",
+      title: "Reading Book",
+      tags: ["reading", "book", "read", "learn", "study", "literature", "words"],
+      url: "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif",
+      preview: "https://media.giphy.com/media/3o7btPCcdNniyf0ArS/200_d.gif",
+    },
+    {
+      id: "laughing_lol",
+      title: "Laughing",
+      tags: ["laugh", "laughing", "lol", "haha", "funny", "lmao", "rofl"],
+      url: "https://media.giphy.com/media/10JhviFuU2gWD6/giphy.gif",
+      preview: "https://media.giphy.com/media/10JhviFuU2gWD6/200_d.gif",
+    },
+    {
+      id: "thinking_brain",
+      title: "Thinking",
+      tags: ["think", "thinking", "smart", "brain", "idea", "clever", "plan"],
+      url: "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/giphy.gif",
+      preview: "https://media.giphy.com/media/d3mlE7uhX8KFgEmY/200_d.gif",
+    },
+    {
+      id: "thumbs_up",
+      title: "Thumbs Up",
+      tags: ["thumbs up", "good", "nice", "ok", "cool", "like", "approve"],
+      url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif",
+      preview: "https://media.giphy.com/media/111ebonMs90YLu/200_d.gif",
+    },
+    {
+      id: "love_heart",
+      title: "Love / Heart",
+      tags: ["love", "heart", "wholesome", "sweet", "aww", "lovely", "care"],
+      url: "https://media.giphy.com/media/26FLdm964upIslUZ2/giphy.gif",
+      preview: "https://media.giphy.com/media/26FLdm964upIslUZ2/200_d.gif",
+    },
+    {
+      id: "speechless_cat",
+      title: "Speechless",
+      tags: ["speechless", "confused", "what", "awkward", "silence", "stare"],
+      url: "https://media.giphy.com/media/l0HlvtIPzPdt2usKs/giphy.gif",
+      preview: "https://media.giphy.com/media/l0HlvtIPzPdt2usKs/200_d.gif",
+    },
+    {
+      id: "celebration_party",
+      title: "Celebration",
+      tags: ["celebration", "celebrate", "party", "winner", "victory", "hurray", "dance"],
+      url: "https://media.giphy.com/media/ely3apij36BJhoZ234/giphy.gif",
+      preview: "https://media.giphy.com/media/ely3apij36BJhoZ234/200_d.gif",
+    },
+    {
+      id: "coffee_cup",
+      title: "Coffee",
+      tags: ["coffee", "tea", "morning", "work", "cafe", "warm"],
+      url: "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/giphy.gif",
+      preview: "https://media.giphy.com/media/3oKIPnAiaMCws8nOsE/200_d.gif",
+    },
+    {
+      id: "writing_type",
+      title: "Writing",
+      tags: ["writing", "write", "author", "typing", "keyboard", "essay", "draft"],
+      url: "https://media.giphy.com/media/13HgwGsXF0aiGY/giphy.gif",
+      preview: "https://media.giphy.com/media/13HgwGsXF0aiGY/200_d.gif",
+    },
+    {
+      id: "excited_jonah",
+      title: "Excited",
+      tags: ["excited", "hype", "scream", "omg", "yes", "dance", "happy"],
+      url: "https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif",
+      preview: "https://media.giphy.com/media/5GoVLqeAOo6PK/200_d.gif",
+    },
   ];
 
   if (!apiKey) {
-    const filtered = query
-      ? fallbackGifs.filter((g) => g.title.toLowerCase().includes(query.toLowerCase()))
+    const q = query.toLowerCase().trim();
+    const filtered = q
+      ? fallbackGifs.filter(
+          (g) =>
+            g.title.toLowerCase().includes(q) ||
+            g.tags.some((t) => t.toLowerCase().includes(q) || q.includes(t.toLowerCase()))
+        )
       : fallbackGifs;
     return c.json({ data: filtered.slice(0, limit), source: "curated" });
   }
