@@ -377,19 +377,19 @@ import {
       }
       if (data.siteSettings && typeof data.siteSettings === "object") {
         const s = data.siteSettings;
-        if (!hasExplicitAccent && s.accentColor) themeConfig.accent = s.accentColor;
-        if (!hasExplicitTheme && s.themeMode) themeConfig.themeMode = s.themeMode;
-        if (!hasExplicitBgMode && s.bgMode) themeConfig.bgMode = s.bgMode;
-        if (!hasExplicitBgColor && s.canvasBg !== undefined) themeConfig.bg = s.canvasBg;
-        if (!hasExplicitCardBg && s.cardBg !== undefined) themeConfig.cardBg = s.cardBg;
-        if (!hasExplicitTextColor && s.textColor !== undefined) themeConfig.textColor = s.textColor;
-        if (!hasExplicitBorderColor && s.borderColor !== undefined) themeConfig.borderColor = s.borderColor;
-        if (!hasExplicitRadius && s.radiusValue) themeConfig.radius = s.radiusValue;
-        if (!hasExplicitReactionType && s.reactionType) themeConfig.reactionType = s.reactionType;
-        if (!hasExplicitReactionsBar && s.showReactionsBar !== undefined) themeConfig.showReactionsBar = Boolean(s.showReactionsBar);
-        if (!hasExplicitPrompt && s.reactionsPrompt) themeConfig.reactionsPrompt = s.reactionsPrompt;
-        if (!hasExplicitPreset && s.reactionsPreset) themeConfig.reactionsPreset = s.reactionsPreset;
-        if (!hasExplicitFormatting && Array.isArray(s.formattingTools)) themeConfig.allowedFormatting = s.formattingTools;
+        if (s.accentColor) themeConfig.accent = s.accentColor;
+        if (s.themeMode) themeConfig.themeMode = s.themeMode;
+        if (s.bgMode) themeConfig.bgMode = s.bgMode;
+        if (s.canvasBg !== undefined && s.canvasBg !== "") themeConfig.bg = s.canvasBg;
+        if (s.cardBg !== undefined && s.cardBg !== "") themeConfig.cardBg = s.cardBg;
+        if (s.textColor !== undefined && s.textColor !== "") themeConfig.textColor = s.textColor;
+        if (s.borderColor !== undefined && s.borderColor !== "") themeConfig.borderColor = s.borderColor;
+        if (s.radiusValue) themeConfig.radius = s.radiusValue;
+        if (s.reactionType) themeConfig.reactionType = s.reactionType;
+        if (s.showReactionsBar !== undefined) themeConfig.showReactionsBar = Boolean(s.showReactionsBar);
+        if (s.reactionsPrompt) themeConfig.reactionsPrompt = s.reactionsPrompt;
+        if (s.reactionsPreset) themeConfig.reactionsPreset = s.reactionsPreset;
+        if (Array.isArray(s.formattingTools)) themeConfig.allowedFormatting = s.formattingTools;
       }
       isLoading = false;
       render();
