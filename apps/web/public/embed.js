@@ -1247,9 +1247,10 @@ Feel free to share your thoughts, quote your favorite passages, or reply to fell
                         </button>
                       </div>`:""}`}
 
-        <!-- Footer -->
+        <!-- Footer (link commented out to protect dashboard until auth is ready) -->
         <div class="nyuzi-footer">
-          <a href="https://nyuzi-yap.vercel.app/" target="_blank" rel="noreferrer" class="nyuzi-brand" title="NyuziYap \u2014 Privacy-first, edge-powered comments">
+          <!-- <a href="https://nyuzi-yap.vercel.app/" target="_blank" rel="noreferrer" class="nyuzi-brand" title="NyuziYap \u2014 Privacy-first, edge-powered comments"> -->
+          <span class="nyuzi-brand" title="NyuziYap \u2014 Privacy-first, edge-powered comments" style="cursor: default; pointer-events: none;">
             <svg class="nyuzi-bolt-icon" viewBox="0 0 24 24" fill="url(#nyuzi-bolt-grad)">
               <defs>
                 <linearGradient id="nyuzi-bolt-grad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -1261,7 +1262,8 @@ Feel free to share your thoughts, quote your favorite passages, or reply to fell
             </svg>
             <span>Powered by</span>
             <strong>NyuziYap</strong>
-          </a>
+          </span>
+          <!-- </a> -->
         </div>
       </div>
     `,Je()}function Je(){m.querySelectorAll(".nyuzi-reaction-pill").forEach(l=>{l.addEventListener("click",async p=>{if(se)return;let a=p.currentTarget.getAttribute("data-reaction-key");if(!a)return;se=!0;let g=G,f;if(G===a){f="unreact",G=null,B[a]=Math.max(0,(B[a]||1)-1);try{localStorage.removeItem(le)}catch{}}else if(G){f="switch";let d=G;G=a,B[d]=Math.max(0,(B[d]||1)-1),B[a]=(B[a]||0)+1;try{localStorage.setItem(le,a)}catch{}}else{f="react",G=a,B[a]=(B[a]||0)+1;try{localStorage.setItem(le,a)}catch{}}try{localStorage.setItem(we,JSON.stringify(B))}catch{}if(y(),v)se=!1;else try{let d=await He(z,{siteId:s,threadUrl:ee,threadTitle:ze,reactionKey:a,previousKey:g,action:f});d&&d.reactions&&(B={...d.reactions},y())}catch(d){console.warn("[Nyuzi] Failed to sync reaction to server:",d)}finally{se=!1}})});async function i(l,p){let a=l.querySelector(".nyuzi-emoji-popover");if(!a)return;if(a.style.display!=="none"){a.style.display="none";return}m.querySelectorAll(".nyuzi-emoji-popover, .nyuzi-gif-popover").forEach(f=>{f.style.display="none"}),a.style.display="block";let g=a.querySelector("emoji-picker");if(g){setTimeout(()=>g.shadowRoot?.querySelector("input")?.focus(),50);return}a.innerHTML=`

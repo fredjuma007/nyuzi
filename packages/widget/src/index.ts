@@ -984,9 +984,10 @@ import {
                }`
         }
 
-        <!-- Footer -->
+        <!-- Footer (link commented out to protect dashboard until auth is ready) -->
         <div class="nyuzi-footer">
-          <a href="https://nyuzi-yap.vercel.app/" target="_blank" rel="noreferrer" class="nyuzi-brand" title="NyuziYap — Privacy-first, edge-powered comments">
+          <!-- <a href="https://nyuzi-yap.vercel.app/" target="_blank" rel="noreferrer" class="nyuzi-brand" title="NyuziYap — Privacy-first, edge-powered comments"> -->
+          <span class="nyuzi-brand" title="NyuziYap — Privacy-first, edge-powered comments" style="cursor: default; pointer-events: none;">
             <svg class="nyuzi-bolt-icon" viewBox="0 0 24 24" fill="url(#nyuzi-bolt-grad)">
               <defs>
                 <linearGradient id="nyuzi-bolt-grad" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -998,7 +999,8 @@ import {
             </svg>
             <span>Powered by</span>
             <strong>NyuziYap</strong>
-          </a>
+          </span>
+          <!-- </a> -->
         </div>
       </div>
     `;
