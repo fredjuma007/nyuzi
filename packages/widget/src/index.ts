@@ -434,11 +434,28 @@ import {
     return mine;
   }
 
-  // Restore upvoted comments from session
+  // Persistent Upvotes in LocalStorage (prevents duplicate likes across sessions/revisits)
+  const UPVOTES_STORAGE_KEY = siteId ? `nyuzi_upvotes_${siteId}` : "nyuzi_upvotes";
+  const inFlightUpvotes = new Set<string>();
+
   try {
-    const saved = sessionStorage.getItem("nyuzi_upvotes");
-    if (saved) JSON.parse(saved).forEach((id: string) => upvotedComments.add(id));
+    const saved =
+      localStorage.getItem(UPVOTES_STORAGE_KEY) ||
+      localStorage.getItem("nyuzi_upvotes") ||
+      sessionStorage.getItem("nyuzi_upvotes");
+    if (saved) {
+      JSON.parse(saved).forEach((id: string) => upvotedComments.add(id));
+      localStorage.setItem(UPVOTES_STORAGE_KEY, JSON.stringify(Array.from(upvotedComments)));
+    }
   } catch {}
+
+  function persistUpvotes() {
+    try {
+      const serialized = JSON.stringify(Array.from(upvotedComments));
+      localStorage.setItem(UPVOTES_STORAGE_KEY, serialized);
+      localStorage.setItem("nyuzi_upvotes", serialized);
+    } catch {}
+  }
 
   // Author Persistence in LocalStorage (Prioritizing host site user identity)
   let savedAuthorName = initialUserName || "";
@@ -621,6 +638,9 @@ import {
 
   // Toggle upvote / like
   async function toggleUpvote(commentId: string) {
+    if (inFlightUpvotes.has(commentId)) return;
+    inFlightUpvotes.add(commentId);
+
     const isCurrentlyUpvoted = upvotedComments.has(commentId);
     const action = isCurrentlyUpvoted ? "unvote" : "upvote";
     const c = commentsList.find((item) => item.id === commentId);
@@ -633,13 +653,13 @@ import {
       if (c) c.upvotes = (c.upvotes || 0) + 1;
     }
 
-    try {
-      sessionStorage.setItem("nyuzi_upvotes", JSON.stringify(Array.from(upvotedComments)));
-    } catch {}
-
+    persistUpvotes();
     render();
 
-    if (isMockMode) return;
+    if (isMockMode) {
+      inFlightUpvotes.delete(commentId);
+      return;
+    }
 
     try {
       const data = await toggleUpvoteApi(apiHost, commentId, action);
@@ -656,7 +676,10 @@ import {
         upvotedComments.delete(commentId);
         if (c) c.upvotes = Math.max(0, (c.upvotes || 1) - 1);
       }
+      persistUpvotes();
       render();
+    } finally {
+      inFlightUpvotes.delete(commentId);
     }
   }
 
