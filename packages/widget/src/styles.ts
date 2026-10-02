@@ -533,6 +533,29 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       align-items: center;
       justify-content: space-between;
     }
+    .nyuzi-logged-in-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-top: 0.6rem;
+    }
+    .nyuzi-member-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.8125rem;
+      color: var(--nyuzi-text-secondary);
+      user-select: none;
+    }
+    .nyuzi-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--nyuzi-accent);
+      box-shadow: 0 0 6px var(--nyuzi-accent);
+      flex-shrink: 0;
+    }
     .nyuzi-inputs {
       display: flex;
       gap: 0.5rem;
@@ -602,10 +625,18 @@ export function generateWidgetStyles(config: ThemeConfig): string {
     }
 
     @media (max-width: 580px) {
-      .nyuzi-form-row {
+      .nyuzi-form-row:not(.nyuzi-logged-in-row) {
         flex-direction: column;
         align-items: stretch;
         gap: 0.65rem;
+      }
+      .nyuzi-logged-in-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .nyuzi-logged-in-row .nyuzi-submit-btn {
+        width: auto;
       }
       .nyuzi-inputs {
         flex-direction: column;
@@ -616,7 +647,7 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       .nyuzi-input {
         width: 100%;
       }
-      .nyuzi-submit-btn {
+      .nyuzi-form-row:not(.nyuzi-logged-in-row) .nyuzi-submit-btn {
         width: 100%;
         justify-content: center;
       }

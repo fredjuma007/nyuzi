@@ -917,6 +917,11 @@ import {
       }
     }
 
+    const firstName = savedAuthorName ? savedAuthorName.trim().split(" ")[0] : "";
+    const mainPlaceholder = initialUserName && firstName
+      ? `Share your thoughts, ${firstName}...`
+      : "Share your thoughts or leave a question...";
+
     shadow.innerHTML = `
       <style>${styles}</style>
       <div class="nyuzi-container">
@@ -942,26 +947,37 @@ import {
           }
 
           ${renderFormatToolbar("nyuzi-main-content", themeConfig.allowedFormatting)}
-          <textarea class="nyuzi-textarea" id="nyuzi-main-content" maxlength="2000" placeholder="Share your thoughts or leave a question..." required></textarea>
+          <textarea class="nyuzi-textarea" id="nyuzi-main-content" maxlength="2000" placeholder="${escapeHtml(mainPlaceholder)}" required></textarea>
           <div class="nyuzi-attached-gif-preview" id="nyuzi-main-content-gif-preview" style="display: none;"></div>
+          ${renderBottomToolbar("nyuzi-main-content", themeConfig.allowedFormatting, "nyuzi-char-count")}
+
           ${
             initialUserName
-              ? `<div class="nyuzi-member-chip" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:9999px;background:var(--nyuzi-accent-soft);color:var(--nyuzi-accent);font-size:0.75rem;font-weight:700;margin-bottom:8px;border:1px solid var(--nyuzi-accent-border);">
-                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                   <span>Logged in as <strong>${escapeHtml(savedAuthorName)}</strong>${savedAuthorEmail ? ` &bull; ${escapeHtml(savedAuthorEmail)}` : ""}</span>
-                 </div>`
-              : ""
+              ? `
+              <input type="hidden" id="nyuzi-main-name" value="${escapeHtml(savedAuthorName)}" />
+              <input type="hidden" id="nyuzi-main-email" value="${escapeHtml(savedAuthorEmail)}" />
+              <div class="nyuzi-form-row nyuzi-logged-in-row">
+                <div class="nyuzi-member-tag">
+                  <span class="nyuzi-status-dot"></span>
+                  <span>Logged in as <strong style="color:var(--nyuzi-text-primary); font-weight:600;">${escapeHtml(savedAuthorName)}</strong></span>
+                </div>
+                <button class="nyuzi-submit-btn" id="nyuzi-main-submit" ${isSubmitting ? "disabled" : ""}>
+                  ${isSubmitting ? "Posting..." : "Post Comment"}
+                </button>
+              </div>
+            `
+              : `
+              <div class="nyuzi-form-row">
+                <div class="nyuzi-inputs">
+                  <input type="text" class="nyuzi-input" id="nyuzi-main-name" placeholder="Name *" value="${escapeHtml(savedAuthorName)}" required />
+                  <input type="email" class="nyuzi-input" id="nyuzi-main-email" placeholder="Email (for reply alerts)" value="${escapeHtml(savedAuthorEmail)}" />
+                </div>
+                <button class="nyuzi-submit-btn" id="nyuzi-main-submit" ${isSubmitting ? "disabled" : ""}>
+                  ${isSubmitting ? "Posting..." : "Post Comment"}
+                </button>
+              </div>
+            `
           }
-
-          <div class="nyuzi-form-row">
-            <div class="nyuzi-inputs">
-              <input type="text" class="nyuzi-input" id="nyuzi-main-name" placeholder="Name *" value="${escapeHtml(savedAuthorName)}" required />
-              <input type="email" class="nyuzi-input" id="nyuzi-main-email" placeholder="Email (for reply alerts)" value="${escapeHtml(savedAuthorEmail)}" />
-            </div>
-            <button class="nyuzi-submit-btn" id="nyuzi-main-submit" ${isSubmitting ? "disabled" : ""}>
-              ${isSubmitting ? "Posting..." : "Post Comment"}
-            </button>
-          </div>
 
           <label class="nyuzi-optin" id="nyuzi-optin-wrapper">
             <input type="checkbox" id="nyuzi-main-notify" checked />
@@ -1009,6 +1025,7 @@ import {
                        savedAuthorName,
                        savedAuthorEmail,
                        allowedFormatting: themeConfig.allowedFormatting,
+                       isLoggedInMember: Boolean(initialUserName),
                      })
                    )
                    .join("")}

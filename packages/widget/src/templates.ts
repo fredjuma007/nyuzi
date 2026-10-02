@@ -333,6 +333,7 @@ export function renderComment(
     savedAuthorName: string;
     savedAuthorEmail: string;
     allowedFormatting?: string[];
+    isLoggedInMember?: boolean;
   }
 ): string {
   const replies = allComments.filter((r) => r.parentId === c.id);
@@ -429,18 +430,39 @@ export function renderComment(
               <textarea class="nyuzi-textarea" id="reply-content-${c.id}" placeholder="Reply to ${escapeHtml(c.authorName)}..." maxlength="2000" required></textarea>
               <div class="nyuzi-attached-gif-preview" id="reply-content-${c.id}-gif-preview" style="display: none;"></div>
               ${renderBottomToolbar(`reply-content-${c.id}`, options.allowedFormatting)}
-              <div class="nyuzi-form-row">
-                <div class="nyuzi-inputs">
-                  <input type="text" class="nyuzi-input" id="reply-name-${c.id}" placeholder="Your Name *" value="${escapeHtml(options.savedAuthorName)}" required />
-                  <input type="email" class="nyuzi-input" id="reply-email-${c.id}" placeholder="Email (for reply alerts)" value="${escapeHtml(options.savedAuthorEmail)}" />
+              ${
+                options.isLoggedInMember
+                  ? `
+                <input type="hidden" id="reply-name-${c.id}" value="${escapeHtml(options.savedAuthorName)}" />
+                <input type="hidden" id="reply-email-${c.id}" value="${escapeHtml(options.savedAuthorEmail)}" />
+                <div class="nyuzi-form-row nyuzi-logged-in-row">
+                  <div class="nyuzi-member-tag">
+                    <span class="nyuzi-status-dot"></span>
+                    <span>Replying as <strong style="color:var(--nyuzi-text-primary); font-weight:600;">${escapeHtml(options.savedAuthorName)}</strong></span>
+                  </div>
+                  <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button class="nyuzi-action-btn cancel-reply" style="padding: 0.5rem 0.75rem;">Cancel</button>
+                    <button class="nyuzi-submit-btn submit-reply" data-parent-id="${c.id}" ${options.isSubmitting ? "disabled" : ""}>
+                      ${options.isSubmitting ? "Posting..." : "Post Reply"}
+                    </button>
+                  </div>
                 </div>
-                <div style="display:flex; gap:0.5rem; align-items:flex-end;">
-                  <button class="nyuzi-action-btn cancel-reply" style="padding: 0.5rem 0.75rem;">Cancel</button>
-                  <button class="nyuzi-submit-btn submit-reply" data-parent-id="${c.id}" ${options.isSubmitting ? "disabled" : ""}>
-                    ${options.isSubmitting ? "Posting..." : "Reply"}
-                  </button>
+              `
+                  : `
+                <div class="nyuzi-form-row">
+                  <div class="nyuzi-inputs">
+                    <input type="text" class="nyuzi-input" id="reply-name-${c.id}" placeholder="Your Name *" value="${escapeHtml(options.savedAuthorName)}" required />
+                    <input type="email" class="nyuzi-input" id="reply-email-${c.id}" placeholder="Email (for reply alerts)" value="${escapeHtml(options.savedAuthorEmail)}" />
+                  </div>
+                  <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button class="nyuzi-action-btn cancel-reply" style="padding: 0.5rem 0.75rem;">Cancel</button>
+                    <button class="nyuzi-submit-btn submit-reply" data-parent-id="${c.id}" ${options.isSubmitting ? "disabled" : ""}>
+                      ${options.isSubmitting ? "Posting..." : "Post Reply"}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              `
+              }
             </div>
           `
             : ""
