@@ -30,7 +30,7 @@ export const FALLBACK_AUTHOR_ROSTER: Record<string, string> = {
   "lorret trizah mong'ina": "readingcircle254@gmail.com",
   "lorret trizah mongina": "readingcircle254@gmail.com",
   "nekesa": "readingcircle254@gmail.com",
-  "pith": "readingcircle254@gmail.com",
+  "pith": "khakaliedwin@gmail.com",
   "prudence mukiri": "readingcircle254@gmail.com",
   "purity migwi": "readingcircle254@gmail.com",
   "roney mwavua": "readingcircle254@gmail.com",
