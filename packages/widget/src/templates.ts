@@ -334,6 +334,7 @@ export function renderComment(
     savedAuthorEmail: string;
     allowedFormatting?: string[];
     isLoggedInMember?: boolean;
+    expandedThreads?: Set<string>;
   }
 ): string {
   const replies = allComments.filter((r) => r.parentId === c.id);
@@ -480,7 +481,20 @@ export function renderComment(
               !isCollapsed
                 ? `
               <div class="nyuzi-replies">
-                ${replies.map((r) => renderComment(r, allComments, options)).join("")}
+                ${(options.expandedThreads?.has(c.id) || replies.length <= 3
+                  ? replies
+                  : replies.slice(0, 3)
+                ).map((r) => renderComment(r, allComments, options)).join("")}
+                ${
+                  replies.length > 3
+                    ? `
+                  <button class="nyuzi-show-more-replies-btn ${options.expandedThreads?.has(c.id) ? "expanded" : ""}" data-id="${c.id}">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="${options.expandedThreads?.has(c.id) ? "transform: rotate(180deg);" : ""}"><path d="m6 9 6 6 6-6"/></svg>
+                    <span>${options.expandedThreads?.has(c.id) ? "Show fewer replies" : `View ${replies.length - 3} more ${replies.length - 3 === 1 ? "reply" : "replies"}`}</span>
+                  </button>
+                `
+                    : ""
+                }
               </div>
             `
                 : ""

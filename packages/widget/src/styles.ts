@@ -976,6 +976,38 @@ export function generateWidgetStyles(config: ThemeConfig): string {
       flex-direction: column;
       gap: 1rem;
     }
+    .nyuzi-show-more-replies-btn {
+      align-self: flex-start;
+      background: var(--nyuzi-reaction-bg);
+      border: 1px solid var(--nyuzi-border);
+      color: var(--nyuzi-text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      margin-top: 0.25rem;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .nyuzi-show-more-replies-btn:hover {
+      background: var(--nyuzi-accent-soft);
+      border-color: var(--nyuzi-accent-border);
+      color: var(--nyuzi-accent);
+      transform: translateY(-1px);
+    }
+    .nyuzi-show-more-replies-btn.expanded {
+      color: var(--nyuzi-text-muted);
+    }
+    .nyuzi-show-more-replies-btn.expanded:hover {
+      color: var(--nyuzi-accent);
+    }
+    .nyuzi-show-more-replies-btn svg {
+      transition: transform 0.2s ease;
+    }
 
     /* Reply Form Box */
     .nyuzi-reply-box {

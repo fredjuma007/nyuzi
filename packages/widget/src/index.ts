@@ -359,7 +359,18 @@ import {
   let activeReactionKey: string | null = null;
   const upvotedComments = new Set<string>();
   const collapsedComments = new Set<string>();
+  const expandedReplyThreads = new Set<string>();
   let isTogglingReaction = false;
+
+  function ensureCommentAncestorsExpanded(targetId: string) {
+    if (!targetId || !commentsList || commentsList.length === 0) return;
+    let curr = commentsList.find((item) => item.id === targetId);
+    while (curr && curr.parentId) {
+      collapsedComments.delete(curr.parentId);
+      expandedReplyThreads.add(curr.parentId);
+      curr = commentsList.find((item) => item.id === curr!.parentId);
+    }
+  }
 
   // Persistent Thread Reactions
   const THREAD_REACTION_STORAGE_KEY = `nyuzi_react_${siteId}_${encodeURIComponent(threadUrl)}`;
@@ -506,6 +517,36 @@ import {
         isAuthor: true,
       },
       {
+        id: "mock-4",
+        parentId: "mock-1",
+        authorName: "Ken Mwangi",
+        authorEmail: "ken@example.com",
+        content: "Totally agree Brenda! The worldbuilding is exceptional.",
+        status: "approved",
+        upvotes: 4,
+        createdAt: new Date(Date.now() - 2800000).toISOString(),
+      },
+      {
+        id: "mock-5",
+        parentId: "mock-1",
+        authorName: "Sarah Koech",
+        authorEmail: "sarah@example.com",
+        content: "Adding this book to our upcoming monthly reading list right away.",
+        status: "approved",
+        upvotes: 3,
+        createdAt: new Date(Date.now() - 2100000).toISOString(),
+      },
+      {
+        id: "mock-6",
+        parentId: "mock-1",
+        authorName: "David Ochieng",
+        authorEmail: "david@example.com",
+        content: "The conclusion was mind-bending. Can't wait for the sequel!",
+        status: "approved",
+        upvotes: 6,
+        createdAt: new Date(Date.now() - 1200000).toISOString(),
+      },
+      {
         id: "mock-3",
         parentId: null,
         authorName: "Amina Odhiambo",
@@ -523,6 +564,9 @@ import {
   function scrollToHashComment() {
     const hash = window.location.hash;
     if (hash && hash.startsWith("#comment-")) {
+      const targetId = hash.replace("#comment-", "");
+      ensureCommentAncestorsExpanded(targetId);
+      render();
       setTimeout(() => {
         const target = shadow.querySelector(hash);
         if (target) {
@@ -538,10 +582,16 @@ import {
   async function loadComments() {
     if (isMockMode) {
       commentsList = seedMockComments();
+      const hash = window.location.hash;
+      const highlight = hash && hash.startsWith("#comment-") ? hash.replace("#comment-", "") : "";
+      if (highlight) {
+        ensureCommentAncestorsExpanded(highlight);
+      }
       totalComments = commentsList.length;
       totalTopLevel = commentsList.filter((c) => !c.parentId).length;
       isLoading = false;
       render();
+      scrollToHashComment();
       return;
     }
 
@@ -563,6 +613,9 @@ import {
       );
 
       commentsList = data.comments || [];
+      if (highlight) {
+        ensureCommentAncestorsExpanded(highlight);
+      }
       totalComments = data.total || (data.pagination?.totalComments ?? commentsList.length);
       totalTopLevel = data.pagination?.totalTopLevel ?? commentsList.filter((c) => !c.parentId).length;
       hasMoreComments = data.pagination?.hasMore ?? false;
@@ -715,6 +768,8 @@ import {
           totalTopLevel += 1;
         } else {
           commentsList.push(mockNew);
+          collapsedComments.delete(parentId);
+          expandedReplyThreads.add(parentId);
         }
         totalComments += 1;
         activeReplyId = null;
@@ -742,6 +797,8 @@ import {
           totalTopLevel += 1;
         } else {
           commentsList.push(data.comment);
+          collapsedComments.delete(parentId);
+          expandedReplyThreads.add(parentId);
         }
         totalComments += 1;
         activeReplyId = null;
@@ -1026,6 +1083,7 @@ import {
                        savedAuthorEmail,
                        allowedFormatting: themeConfig.allowedFormatting,
                        isLoggedInMember: Boolean(initialUserName),
+                       expandedThreads: expandedReplyThreads,
                      })
                    )
                    .join("")}
@@ -1807,6 +1865,20 @@ import {
           collapsedComments.delete(id);
         } else {
           collapsedComments.add(id);
+        }
+        render();
+      });
+    });
+
+    // Progressive replies disclosure toggle
+    shadow.querySelectorAll(".nyuzi-show-more-replies-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const id = (e.currentTarget as HTMLElement).getAttribute("data-id");
+        if (!id) return;
+        if (expandedReplyThreads.has(id)) {
+          expandedReplyThreads.delete(id);
+        } else {
+          expandedReplyThreads.add(id);
         }
         render();
       });
