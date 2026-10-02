@@ -333,6 +333,16 @@ import {
     container.getAttribute("data-author-name") ||
     "";
 
+  const initialUserName =
+    currentScript?.getAttribute("data-user-name") ||
+    container.getAttribute("data-user-name") ||
+    "";
+
+  const initialUserEmail =
+    currentScript?.getAttribute("data-user-email") ||
+    container.getAttribute("data-user-email") ||
+    "";
+
   let commentsList: NyuziComment[] = [];
   let totalComments = 0;
   let totalTopLevel = 0;
@@ -430,12 +440,16 @@ import {
     if (saved) JSON.parse(saved).forEach((id: string) => upvotedComments.add(id));
   } catch {}
 
-  // Author Persistence in LocalStorage
-  let savedAuthorName = "";
-  let savedAuthorEmail = "";
+  // Author Persistence in LocalStorage (Prioritizing host site user identity)
+  let savedAuthorName = initialUserName || "";
+  let savedAuthorEmail = initialUserEmail || "";
   try {
-    savedAuthorName = localStorage.getItem("nyuzi_author_name") || "";
-    savedAuthorEmail = localStorage.getItem("nyuzi_author_email") || "";
+    if (!savedAuthorName) {
+      savedAuthorName = localStorage.getItem("nyuzi_author_name") || "";
+    }
+    if (!savedAuthorEmail) {
+      savedAuthorEmail = localStorage.getItem("nyuzi_author_email") || "";
+    }
   } catch {}
 
   function saveAuthorInfo(name: string, email: string | null) {
@@ -907,7 +921,14 @@ import {
           ${renderFormatToolbar("nyuzi-main-content", themeConfig.allowedFormatting)}
           <textarea class="nyuzi-textarea" id="nyuzi-main-content" maxlength="2000" placeholder="Share your thoughts or leave a question..." required></textarea>
           <div class="nyuzi-attached-gif-preview" id="nyuzi-main-content-gif-preview" style="display: none;"></div>
-          ${renderBottomToolbar("nyuzi-main-content", themeConfig.allowedFormatting, "nyuzi-char-count")}
+          ${
+            initialUserName
+              ? `<div class="nyuzi-member-chip" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:9999px;background:var(--nyuzi-accent-soft);color:var(--nyuzi-accent);font-size:0.75rem;font-weight:700;margin-bottom:8px;border:1px solid var(--nyuzi-accent-border);">
+                   <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                   <span>Logged in as <strong>${escapeHtml(savedAuthorName)}</strong>${savedAuthorEmail ? ` &bull; ${escapeHtml(savedAuthorEmail)}` : ""}</span>
+                 </div>`
+              : ""
+          }
 
           <div class="nyuzi-form-row">
             <div class="nyuzi-inputs">
