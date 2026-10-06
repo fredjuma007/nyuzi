@@ -161,19 +161,10 @@ export function PlaygroundStudio({
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-[var(--brand-orange)]/15 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-2xl mx-auto space-y-4 sm:space-y-6">
-          {/* Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--brand-orange)]/10 border border-[var(--brand-orange)]/25 text-[var(--brand-orange)] text-xs font-bold shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Dedicated Sandbox Studio</span>
-          </div>
 
           <h3 className="font-serif-title text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[var(--text-main)]">
             Experience Nyuzi live in your browser.
           </h3>
-
-          <p className="text-xs sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto">
-            Test real-time commenting, toggle light & dark themes, try sentiment reactions, and generate your custom embed code in a focused, distraction-free pop-up studio.
-          </p>
 
           {/* Feature Highlights Pills */}
           <div className="flex flex-wrap items-center justify-center gap-2 pt-1 text-xs text-[var(--text-muted)]">
@@ -257,16 +248,6 @@ export function PlaygroundStudio({
               }}
               className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 lg:p-6 animate-in fade-in duration-200"
             >
-              {/* Floating quick-exit button in the top-right corner of the viewport */}
-              <button
-                onClick={onCloseModal}
-                className="fixed top-3 right-3 sm:top-5 sm:right-5 z-[10000] p-2.5 rounded-full bg-neutral-900/90 hover:bg-rose-600 text-white border border-white/20 hover:border-rose-500 shadow-2xl flex items-center justify-center transition-all cursor-pointer group"
-                aria-label="Close Studio"
-                title="Close Studio (ESC)"
-              >
-                <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" />
-              </button>
-
               <div className="w-full max-w-7xl h-[96vh] sm:h-[94vh] bg-[var(--bg-card)] rounded-2xl border border-[var(--border-card)] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Modal Header Bar (Strictly Above Everything) */}
                 <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[var(--border-card)] bg-[var(--bg-card)] select-none">
