@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { Sun, Moon } from "lucide-react";
 import { Logo } from "./Logo";
 
 export function Navbar() {
@@ -65,12 +66,15 @@ export function Navbar() {
           {mounted && (
             <button
               onClick={toggleTheme}
-              className="h-8 px-2 sm:h-9 sm:px-3 rounded-lg border ember-border text-xs sm:text-sm hover:text-[var(--brand-orange)] hover:border-[var(--brand-orange)] transition-all bg-[var(--bg-card)] cursor-pointer flex items-center justify-center gap-1.5"
+              className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer flex items-center justify-center shadow-xs"
               title={isDark ? "Switch to Light mode" : "Switch to Dark mode"}
               aria-label="Toggle theme"
             >
-              <span>{isDark ? "☀️" : "🌙"}</span>
-              <span className="hidden sm:inline">{isDark ? "Light" : "Dark"}</span>
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-[var(--text-secondary)]" />
+              )}
             </button>
           )}
 
