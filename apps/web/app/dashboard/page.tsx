@@ -68,7 +68,7 @@ export default function DashboardOverviewPage() {
           </div>
           <div className="text-[11px] text-emerald-500 font-medium flex items-center gap-1">
             <span>●</span>
-            <span>Recorded in D1</span>
+            <span>Active & Synced</span>
           </div>
         </div>
 
@@ -104,10 +104,10 @@ export default function DashboardOverviewPage() {
           </div>
         </div>
 
-        {/* Edge API Latency */}
+        {/* Global Delivery Speed */}
         <div className="p-4 sm:p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-2">
           <div className="flex items-center justify-between text-[var(--text-muted)] text-xs">
-            <span className="font-medium">Global Edge Speed</span>
+            <span className="font-medium">Global Response Time</span>
             <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
               <Zap className="w-3.5 h-3.5" />
             </div>
@@ -116,7 +116,7 @@ export default function DashboardOverviewPage() {
             ~14ms
           </div>
           <div className="text-[11px] text-emerald-500 font-medium">
-            Cloudflare D1 Worker
+            Sub-20ms edge latency
           </div>
         </div>
       </div>

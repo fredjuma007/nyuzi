@@ -39,7 +39,7 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
         </div>
 
         <div className="space-y-1.5">
-          <label className="font-bold">Verified Notification Subdomain (Resend)</label>
+          <label className="font-bold">Verified Notification Subdomain</label>
           <div className="flex items-center justify-between p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400">
             <div className="flex items-center gap-2 text-xs">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />

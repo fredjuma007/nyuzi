@@ -157,7 +157,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   Nyuzi<span className="text-[var(--brand-orange)]">Yap</span>
                 </span>
                 <span className="block text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)] -mt-1">
-                  Edge Comments
+                  Discussion Engine
                 </span>
               </div>
             </Link>
@@ -313,10 +313,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Edge Health Pill */}
+            {/* System Status Pill */}
             <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Edge API Live</span>
+              <span>System Operational</span>
             </div>
 
             {/* Refresh Button */}
@@ -324,7 +324,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               onClick={fetchLiveDashboard}
               disabled={isRefreshing}
               className="p-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-              title="Sync latest comments from Cloudflare D1"
+              title="Sync latest discussions"
             >
               <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[var(--brand-orange)]" : ""}`} />
               <span className="hidden md:inline">Sync</span>

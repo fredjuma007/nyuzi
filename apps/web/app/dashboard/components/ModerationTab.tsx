@@ -117,7 +117,7 @@ export function ModerationTab({
         {loading ? (
           <div className="p-10 text-center border border-[var(--border-card)] rounded-2xl bg-[var(--bg-card)] text-[var(--text-muted)] text-sm space-y-2">
             <div className="w-8 h-8 rounded-full border-2 border-[var(--brand-orange)] border-t-transparent animate-spin mx-auto mb-2" />
-            <p>Syncing moderation queue with Cloudflare D1...</p>
+            <p>Syncing moderation queue...</p>
           </div>
         ) : filteredComments.length === 0 ? (
           <div className="p-12 text-center border border-[var(--border-card)] rounded-2xl bg-[var(--bg-card)] space-y-3">

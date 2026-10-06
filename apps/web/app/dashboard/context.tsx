@@ -163,10 +163,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(updates),
       });
       if (res.ok) {
-        showToast("Author preferences updated in D1 database");
+        showToast("Author preferences updated successfully");
       }
     } catch {
-      showToast("Failed to sync author update with database");
+      showToast("Failed to save author update");
     }
   };
 

@@ -114,12 +114,12 @@ export function OverviewTab({
                 <span className="font-semibold text-[var(--text-main)]">readingcircle254.com</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-[var(--border-card)]">
-                <span className="text-[var(--text-muted)]">Edge API Endpoint:</span>
-                <span className="font-mono text-[11px] text-[var(--brand-orange)]">nyuzi-api</span>
+                <span className="text-[var(--text-muted)]">API Service:</span>
+                <span className="font-semibold text-emerald-500">Connected</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-[var(--border-card)]">
-                <span className="text-[var(--text-muted)]">Email Dispatcher:</span>
-                <span className="font-semibold text-emerald-500">Resend (verified)</span>
+                <span className="text-[var(--text-muted)]">Email Delivery:</span>
+                <span className="font-semibold text-emerald-500">Verified & Active</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-[var(--border-card)]">
                 <span className="text-[var(--text-muted)]">Target Site ID:</span>
@@ -144,7 +144,7 @@ export function OverviewTab({
               <span>Multi-Author Notifications Active</span>
             </div>
             <p className="text-[var(--text-secondary)] text-[11px] leading-relaxed">
-              Comments on TRC articles automatically parse the author roster and email the matching writer directly via Resend.
+              Comments on publication articles automatically match author bylines and dispatch instant email alerts directly to the writer.
             </p>
           </div>
         </div>
