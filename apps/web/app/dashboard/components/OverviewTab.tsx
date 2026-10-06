@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { MessageSquare, Heart, ArrowRight, Zap } from "lucide-react";
 import { CommentItem } from "./types";
+import { CommentContent } from "./CommentContent";
 
 interface OverviewTabProps {
   loading: boolean;
@@ -22,7 +23,7 @@ export function OverviewTab({
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Recent Discussions Stream */}
-        <div className="lg:col-span-8 p-5 sm:p-6 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-4">
+        <div className="lg:col-span-8 min-w-0 p-5 sm:p-6 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-[var(--border-card)] pb-3">
             <h3 className="font-serif-title text-base sm:text-lg font-bold">Recent Activity Stream</h3>
             <Link
@@ -72,28 +73,26 @@ export function OverviewTab({
               </div>
             ) : (
               visibleComments.map((comment) => (
-                <div key={comment.id} className="pt-3 first:pt-0 space-y-1.5">
+                <div key={comment.id} className="pt-3 first:pt-0 space-y-2 min-w-0 overflow-hidden">
                   <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-[var(--text-main)]">{comment.authorName}</span>
-                      <span className="text-[var(--text-muted)]">&bull;</span>
-                      <span className="text-[var(--text-muted)]">{comment.createdAt}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-bold text-[var(--text-main)] truncate">{comment.authorName}</span>
+                      <span className="text-[var(--text-muted)] shrink-0">&bull;</span>
+                      <span className="text-[var(--text-muted)] shrink-0">{comment.createdAt}</span>
                     </div>
-                    <span className="text-[11px] font-semibold text-rose-500 flex items-center gap-1">
+                    <span className="text-[11px] font-semibold text-rose-500 flex items-center gap-1 shrink-0 ml-2">
                       <Heart className="w-3 h-3 fill-rose-500/20" />
                       <span>{comment.upvotes}</span>
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-                    {comment.content}
-                  </p>
-                  <div className="text-[11px] text-[var(--brand-orange)] flex items-center gap-1">
-                    <span className="text-[var(--text-muted)]">on</span>
+                  <CommentContent content={comment.content} compact />
+                  <div className="text-[11px] text-[var(--brand-orange)] flex items-center gap-1 min-w-0 pt-0.5">
+                    <span className="text-[var(--text-muted)] shrink-0">on</span>
                     <a
                       href={comment.threadUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-medium underline truncate hover:text-[var(--brand-orange-hover)]"
+                      className="font-medium underline truncate hover:text-[var(--brand-orange-hover)] min-w-0"
                     >
                       {comment.threadTitle} ↗
                     </a>
@@ -105,7 +104,7 @@ export function OverviewTab({
         </div>
 
         {/* Right Column: Publication & Edge Health Status */}
-        <div className="lg:col-span-4 space-y-4">
+        <div className="lg:col-span-4 min-w-0 space-y-4">
           <div className="p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-3.5">
             <h3 className="font-serif-title text-base font-bold">Publication Status</h3>
 

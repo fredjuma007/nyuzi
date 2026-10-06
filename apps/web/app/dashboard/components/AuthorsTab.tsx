@@ -147,19 +147,19 @@ export function AuthorsTab({
             {discoveredAuthors.map((author) => (
               <div
                 key={author.id}
-                className="p-3.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] flex flex-col justify-between gap-3 shadow-xs"
+                className="p-3.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] flex flex-col justify-between gap-3 shadow-xs min-w-0"
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-[var(--text-main)]">
+                <div className="flex items-start justify-between gap-2 min-w-0">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-bold text-sm text-[var(--text-main)] truncate">
                         {author.name}
                       </span>
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
                         Discovered
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
                       {author.discussionsCount} discussion{author.discussionsCount === 1 ? "" : "s"} on publication articles
                     </p>
                   </div>

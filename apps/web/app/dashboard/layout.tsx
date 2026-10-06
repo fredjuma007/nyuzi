@@ -345,7 +345,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
         {/* Viewport Content */}
         <main
-          className={`flex-1 w-full mx-auto ${
+          className={`flex-1 w-full mx-auto min-w-0 ${
             pathname === "/dashboard/studio"
               ? "p-3 sm:p-5 max-w-[1600px] overflow-y-auto lg:overflow-hidden flex flex-col min-h-0"
               : "p-4 sm:p-8 max-w-7xl space-y-6"

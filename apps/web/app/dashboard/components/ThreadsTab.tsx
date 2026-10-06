@@ -58,10 +58,10 @@ export function ThreadsTab({
           </div>
         ) : (
           threadsList.map((thread) => (
-            <div key={thread.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <h4 className="font-bold text-sm sm:text-base text-[var(--text-main)]">{thread.title}</h4>
-                <span className="text-[11px] text-[var(--text-muted)] font-mono block truncate max-w-md">
+            <div key={thread.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+              <div className="space-y-1 min-w-0 flex-1">
+                <h4 className="font-bold text-sm sm:text-base text-[var(--text-main)] break-words">{thread.title}</h4>
+                <span className="text-[11px] text-[var(--text-muted)] font-mono block truncate max-w-full">
                   {thread.url}
                 </span>
               </div>

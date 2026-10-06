@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { CommentItem } from "./types";
+import { CommentContent } from "./CommentContent";
 
 interface ModerationTabProps {
   searchQuery: string;
@@ -121,26 +122,26 @@ export function ModerationTab({
           filteredComments.map((comment) => (
             <div
               key={comment.id}
-              className="p-4 sm:p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-3 transition-all hover:border-[var(--brand-orange)]/40"
+              className="p-4 sm:p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-3 transition-all hover:border-[var(--brand-orange)]/40 min-w-0 overflow-hidden"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-card)] pb-2.5">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <div className="w-7 h-7 rounded-full bg-[var(--brand-orange)]/15 text-[var(--brand-orange)] font-bold text-xs flex items-center justify-center shrink-0">
                     {comment.authorName.charAt(0).toUpperCase()}
                   </div>
-                  <div>
+                  <div className="min-w-0 truncate">
                     <span className="font-bold text-xs sm:text-sm text-[var(--text-main)]">
                       {comment.authorName}
                     </span>
                     {comment.authorEmail && (
-                      <span className="text-[11px] text-[var(--text-muted)] ml-2">
+                      <span className="text-[11px] text-[var(--text-muted)] ml-2 truncate">
                         &bull; {comment.authorEmail}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center gap-2 text-xs shrink-0">
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                       comment.status === "approved"
@@ -157,12 +158,12 @@ export function ModerationTab({
               </div>
 
               {editingId === comment.id ? (
-                <div className="space-y-2 pt-1">
+                <div className="space-y-2 pt-1 min-w-0">
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     rows={3}
-                    className="w-full p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-page)] text-xs sm:text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--brand-orange)]"
+                    className="w-full min-w-0 p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-page)] text-xs sm:text-sm text-[var(--text-main)] focus:outline-none focus:border-[var(--brand-orange)] break-words [overflow-wrap:anywhere]"
                     placeholder="Edit comment content..."
                   />
                   <div className="flex items-center justify-end gap-2">
@@ -183,21 +184,19 @@ export function ModerationTab({
                   </div>
                 </div>
               ) : (
-                <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-                  {comment.content}
-                </p>
+                <CommentContent content={comment.content} />
               )}
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 text-xs text-[var(--text-muted)]">
-                <div className="flex items-center gap-1.5">
-                  <span>On:</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 text-xs text-[var(--text-muted)] min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  <span className="shrink-0">On:</span>
                   <a
                     href={comment.threadUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-medium text-[var(--brand-orange)] hover:underline truncate max-w-xs flex items-center gap-1"
+                    className="font-medium text-[var(--brand-orange)] hover:underline truncate min-w-0 flex items-center gap-1"
                   >
-                    <span>{comment.threadTitle}</span>
+                    <span className="truncate">{comment.threadTitle}</span>
                     <ExternalLink className="w-3 h-3 shrink-0" />
                   </a>
                 </div>
