@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { HeroIllustration } from "@/components/HeroIllustration";
 
 export default function LandingPage() {
   const [playgroundAccent, setPlaygroundAccent] = useState("#f56220");
@@ -62,34 +63,62 @@ export default function LandingPage() {
       {/* Main Content with top padding to offset the fixed navbar */}
       <main className="flex-1 z-10 w-full max-w-full pt-16 sm:pt-20">
         {/* Hero Section */}
-        <section className="pt-8 sm:pt-16 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-12 text-center max-w-5xl mx-auto w-full">
-          {/* Main Headline */}
-          <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-7xl font-bold tracking-tight leading-[1.15] mb-4 sm:mb-6 break-words px-1">
-            Turn reader attention into{" "}
-            <span className="text-gradient-orange italic block sm:inline">a thriving community.</span>
-          </h1>
+        <section className="pt-8 sm:pt-14 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-12 max-w-6xl mx-auto w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center text-center lg:text-left mb-12 sm:mb-16">
+            {/* Left Content Column */}
+            <div className="lg:col-span-7 space-y-5 sm:space-y-6">
+              {/* Feature Kicker (Hyvor Style: Comments • Replies • Reactions) */}
+              <div className="inline-flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 rounded-full border border-[var(--border-card)] bg-[var(--bg-card)]/80 backdrop-blur-xs text-xs sm:text-sm font-serif-title text-[var(--text-secondary)] shadow-xs mx-auto lg:mx-0">
+                <span className="flex items-center gap-1.5 font-medium text-[var(--text-main)]">
+                  <span>💬</span> Comments
+                </span>
+                <span className="text-[var(--text-muted)]">&bull;</span>
+                <span className="flex items-center gap-1.5 font-medium text-[var(--text-main)]">
+                  <span>↩️</span> Replies
+                </span>
+                <span className="text-[var(--text-muted)]">&bull;</span>
+                <span className="flex items-center gap-1.5 font-medium text-[var(--text-main)]">
+                  <span>❤️</span> Reactions
+                </span>
+              </div>
 
-          {/* Subtitle */}
-          <p className="max-w-2xl mx-auto text-sm sm:text-lg text-[var(--text-secondary)] leading-relaxed mb-8 sm:mb-10 px-2 sm:px-0">
-            A fast, beautiful comment system designed for independent publications and blogs. Delight your readers with instant discussions and automatic reply alerts—without tracking cookies or bloated scripts.
-          </p>
+              {/* Main Headline with Editorial Marker Highlight */}
+              <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.14] break-words text-[var(--text-main)]">
+                Turn reader attention into{" "}
+                <span className="relative inline-block text-[var(--brand-orange)]">
+                  <span className="relative z-10 italic">a thriving community.</span>
+                  <span className="absolute left-0 bottom-1 sm:bottom-2 w-full h-3 sm:h-4 bg-amber-400/25 dark:bg-amber-500/20 rounded-sm -rotate-1 z-0" />
+                </span>
+              </h1>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10 sm:mb-16 w-full max-w-xs sm:max-w-none mx-auto">
-            <a
-              href="#playground"
-              className="w-full sm:w-auto px-6 py-3 sm:px-7 sm:py-3.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#f56220]/25 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
-            >
-              <span>Try Live Playground</span>
-              <span>&darr;</span>
-            </a>
-            <a
-              href="#snippet"
-              className="w-full sm:w-auto px-6 py-3 sm:px-7 sm:py-3.5 rounded-xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] text-[var(--text-main)] font-semibold text-sm sm:text-base transition-all hover:scale-[1.02] flex items-center justify-center gap-2"
-            >
-              <span>Get 2-Line Embed</span>
-              <span>&rarr;</span>
-            </a>
+              {/* Subtitle */}
+              <p className="text-sm sm:text-base lg:text-lg text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto lg:mx-0">
+                A fast, beautiful comment system designed for independent publications and blogs. Delight your readers with instant discussions and automatic reply alerts—without tracking cookies or bloated scripts.
+              </p>
+
+              {/* CTAs */}
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-1 w-full max-w-xs sm:max-w-none mx-auto lg:mx-0">
+                <a
+                  href="#playground"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#f56220]/25 transition-all hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Try Live Playground</span>
+                  <span>&darr;</span>
+                </a>
+                <a
+                  href="#snippet"
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] text-[var(--text-main)] font-semibold text-sm sm:text-base transition-all hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Get 2-Line Embed</span>
+                  <span>&rarr;</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Right Illustration Column */}
+            <div className="lg:col-span-5 w-full">
+              <HeroIllustration />
+            </div>
           </div>
 
           {/* Metric Cards */}
