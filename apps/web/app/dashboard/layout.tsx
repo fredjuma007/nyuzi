@@ -130,7 +130,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] text-[var(--text-main)] flex">
+    <div className="h-screen w-full bg-[var(--bg-page)] text-[var(--text-main)] flex overflow-hidden">
       {/* Mobile Drawer Overlay */}
       {mobileMenuOpen && (
         <div
@@ -141,11 +141,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Persistent Left Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 border-r border-[var(--border-card)] bg-[var(--bg-card)] flex flex-col justify-between transition-transform duration-200 ease-in-out shrink-0 ${
+        className={`fixed lg:static top-0 left-0 z-50 h-full w-64 border-r border-[var(--border-card)] bg-[var(--bg-card)] flex flex-col justify-between transition-transform duration-200 ease-in-out shrink-0 ${
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="p-5 space-y-6 overflow-y-auto">
+        <div className="p-5 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Logo & Brand Header */}
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5 group">
@@ -293,9 +293,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content Viewport */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 h-16 border-b border-[var(--border-card)] bg-[var(--bg-page)]/85 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between">
+        <header className="shrink-0 h-16 border-b border-[var(--border-card)] bg-[var(--bg-page)]/85 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between z-30">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -345,9 +345,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
         {/* Viewport Content */}
         <main
-          className={`flex-1 w-full mx-auto min-w-0 ${
+          className={`flex-1 w-full mx-auto min-w-0 overflow-y-auto ${
             pathname === "/dashboard/studio"
-              ? "p-3 sm:p-5 max-w-[1600px] overflow-y-auto lg:overflow-hidden flex flex-col min-h-0"
+              ? "p-3 sm:p-5 max-w-[1600px] flex flex-col min-h-0"
               : "p-4 sm:p-8 max-w-7xl space-y-6"
           }`}
         >

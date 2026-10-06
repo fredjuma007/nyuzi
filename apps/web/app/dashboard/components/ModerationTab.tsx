@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { CommentItem } from "./types";
 import { CommentContent } from "./CommentContent";
+import { DashboardPagination } from "./DashboardPagination";
 
 interface ModerationTabProps {
   searchQuery: string;
@@ -43,6 +44,8 @@ export function ModerationTab({
 }: ModerationTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const startEditing = (comment: CommentItem) => {
     setEditingId(comment.id);
@@ -61,16 +64,32 @@ export function ModerationTab({
     setEditContent("");
   };
 
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  };
+
+  const handleStatusFilterChange = (status: "all" | "approved" | "pending" | "spam") => {
+    setStatusFilter(status);
+    setPage(1);
+  };
+
+  const totalItems = filteredComments.length;
+  const paginatedComments = filteredComments.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
   return (
     <div className="space-y-4">
       {/* Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)]">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-xs">
         <div className="w-full sm:w-72 relative">
           <input
             type="text"
             placeholder="Search comments or authors..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-page)] text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-orange)]"
           />
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[var(--text-muted)]" />
@@ -80,7 +99,7 @@ export function ModerationTab({
           {(["all", "approved", "pending", "spam"] as const).map((status) => (
             <button
               key={status}
-              onClick={() => setStatusFilter(status)}
+              onClick={() => handleStatusFilterChange(status)}
               className={`px-3 py-1.5 rounded-lg capitalize transition-colors cursor-pointer font-medium ${
                 statusFilter === status
                   ? "bg-[var(--brand-orange)] text-white font-bold"
@@ -119,7 +138,7 @@ export function ModerationTab({
             </div>
           </div>
         ) : (
-          filteredComments.map((comment) => (
+          paginatedComments.map((comment) => (
             <div
               key={comment.id}
               className="p-4 sm:p-5 rounded-2xl border border-[var(--border-card)] bg-[var(--bg-card)] shadow-sm space-y-3 transition-all hover:border-[var(--brand-orange)]/40 min-w-0 overflow-hidden"
@@ -244,6 +263,21 @@ export function ModerationTab({
           ))
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {!loading && totalItems > 0 && (
+        <DashboardPagination
+          currentPage={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          onPageChange={(p) => setPage(p)}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+          itemLabel="comments"
+        />
+      )}
     </div>
   );
 }

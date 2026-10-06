@@ -1,9 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { BookOpen, MessageSquare, Heart, ExternalLink, ArrowRight } from "lucide-react";
 import { ThreadItem } from "./types";
+import { DashboardPagination } from "./DashboardPagination";
 
 interface ThreadsTabProps {
   loading: boolean;
@@ -18,6 +19,15 @@ export function ThreadsTab({
   selectedSite,
   setActiveTab,
 }: ThreadsTabProps) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const totalItems = threadsList.length;
+  const paginatedThreads = threadsList.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -57,7 +67,7 @@ export function ThreadsTab({
             </Link>
           </div>
         ) : (
-          threadsList.map((thread) => (
+          paginatedThreads.map((thread) => (
             <div key={thread.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
               <div className="space-y-1 min-w-0 flex-1">
                 <h4 className="font-bold text-sm sm:text-base text-[var(--text-main)] break-words">{thread.title}</h4>
@@ -95,6 +105,21 @@ export function ThreadsTab({
           ))
         )}
       </div>
+
+      {/* Pagination Footer */}
+      {!loading && totalItems > 0 && (
+        <DashboardPagination
+          currentPage={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          onPageChange={(p) => setPage(p)}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+          itemLabel="threads"
+        />
+      )}
     </div>
   );
 }

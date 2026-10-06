@@ -16,6 +16,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { AuthorEntry } from "./types";
+import { DashboardPagination } from "./DashboardPagination";
 
 interface AuthorsTabProps {
   authors: AuthorEntry[];
@@ -64,6 +65,8 @@ export function AuthorsTab({
 }: AuthorsTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [authorToDelete, setAuthorToDelete] = useState<AuthorEntry | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Filter discovered contributors that need attention (no email set yet)
   const discoveredAuthors = authors.filter(
@@ -79,6 +82,11 @@ export function AuthorsTab({
       (a.email && a.email.toLowerCase().includes(q))
     );
   });
+
+  const paginatedAuthors = filteredAuthors.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
 
   const publicationDefaultEmail =
     selectedSite === "trc254"
@@ -273,7 +281,10 @@ export function AuthorsTab({
             type="text"
             placeholder="Search authors or emails..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
             className="w-full pl-9 pr-3 py-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] text-xs focus:outline-none focus:border-[var(--brand-orange)] transition-colors"
           />
         </div>
@@ -302,7 +313,7 @@ export function AuthorsTab({
                 </td>
               </tr>
             ) : (
-              filteredAuthors.map((author) => (
+              paginatedAuthors.map((author) => (
                 <tr key={author.id} className="hover:bg-[var(--bg-card-subtle)]/50 transition-colors">
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-2">
@@ -392,6 +403,21 @@ export function AuthorsTab({
           </tbody>
         </table>
       </div>
+
+      {/* Authors Table Pagination */}
+      {filteredAuthors.length > 0 && (
+        <DashboardPagination
+          currentPage={page}
+          pageSize={pageSize}
+          totalItems={filteredAuthors.length}
+          onPageChange={(p) => setPage(p)}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setPage(1);
+          }}
+          itemLabel="authors"
+        />
+      )}
 
       {/* Edit Author Modal */}
       {editingAuthor && (
