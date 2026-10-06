@@ -16,35 +16,16 @@ import {
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { HeroIllustration } from "@/components/HeroIllustration";
+import { PlaygroundStudio } from "@/components/PlaygroundStudio";
 
 export default function LandingPage() {
-  const [playgroundAccent, setPlaygroundAccent] = useState("#f56220");
-  const [playgroundReaction, setPlaygroundReaction] = useState<"like" | "heart" | "upvote">("like");
+  const [isStudioModalOpen, setIsStudioModalOpen] = useState(false);
+  const [snippetAccent, setSnippetAccent] = useState("#f56220");
+  const [snippetReaction, setSnippetReaction] = useState<"like" | "heart" | "upvote">("heart");
   const [snippetSiteId, setSnippetSiteId] = useState("my-publication");
   const [copied, setCopied] = useState(false);
 
-  // Load the live Nyuzi embed script into the playground container
-  useEffect(() => {
-    const existing = document.getElementById("nyuzi-playground-script");
-    if (existing) existing.remove();
-
-    const script = document.createElement("script");
-    script.id = "nyuzi-playground-script";
-    script.src = "/embed.js";
-    script.async = true;
-    script.setAttribute("data-site-id", "demo");
-    script.setAttribute("data-thread-url", "https://nyuzi-yap.vercel.app/demo");
-    script.setAttribute("data-accent-color", playgroundAccent);
-    script.setAttribute("data-reaction", playgroundReaction);
-    document.body.appendChild(script);
-
-    return () => {
-      const active = document.getElementById("nyuzi-playground-script");
-      if (active) active.remove();
-    };
-  }, [playgroundAccent, playgroundReaction]);
-
-  const embedCode = `<div id="nyuzi-comments" data-site-id="${snippetSiteId}" data-accent-color="${playgroundAccent}" data-reaction="${playgroundReaction}"></div>\n<script src="https://nyuzi-yap.vercel.app/embed.js" async></script>`;
+  const embedCode = `<div id="nyuzi-comments" data-site-id="${snippetSiteId}" data-accent-color="${snippetAccent}" data-reaction="${snippetReaction}"></div>\n<script src="https://nyuzi-yap.vercel.app/embed.js" async></script>`;
 
   const copySnippet = async () => {
     try {
@@ -56,14 +37,6 @@ export default function LandingPage() {
     }
   };
 
-  const accentColors = [
-    { name: "Nyuzi Orange", hex: "#f56220" },
-    { name: "Forest Green", hex: "#15803d" },
-    { name: "Electric Indigo", hex: "#6366f1" },
-    { name: "Midnight Cyan", hex: "#06b6d4" },
-    { name: "Ruby Rose", hex: "#f43f5e" },
-  ];
-
   return (
     <div className="min-h-screen flex flex-col relative selection:bg-[#f56220] selection:text-white w-full max-w-full overflow-x-hidden">
       {/* Background Atmospheric Stage Glow (100% Full-Bleed with No Side Cuts) */}
@@ -74,7 +47,7 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Main Content with top padding to offset the fixed navbar */}
-      <main className="flex-1 z-10 w-full max-w-full pt-16 sm:pt-20">
+      <main className="flex-1 w-full max-w-full pt-16 sm:pt-20">
         {/* Hero Section */}
         <section className="pt-6 sm:pt-10 lg:pt-14 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 xl:px-12 max-w-7xl mx-auto w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center text-center lg:text-left mb-8 sm:mb-12">
@@ -114,13 +87,13 @@ export default function LandingPage() {
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 pt-1 w-full max-w-xs sm:max-w-none mx-auto lg:mx-0">
-                <a
-                  href="#playground"
+                <button
+                  onClick={() => setIsStudioModalOpen(true)}
                   className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-sm sm:text-base shadow-lg shadow-[#f56220]/25 transition-all hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Try Live Playground</span>
-                  <span>&darr;</span>
-                </a>
+                  <span>&rarr;</span>
+                </button>
                 <a
                   href="#snippet"
                   className="w-full sm:w-auto px-6 py-3.5 rounded-xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] text-[var(--text-main)] font-semibold text-sm sm:text-base transition-all hover:scale-[1.02] flex items-center justify-center gap-2 cursor-pointer"
@@ -212,144 +185,14 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Live Playground Studio Section */}
+        {/* Interactive Studio Sandbox Section */}
         <section id="playground" className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 xl:px-12 border-t ember-border bg-[var(--bg-card-subtle)] w-full">
           <div className="max-w-7xl mx-auto w-full">
-            <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Interactive Sandbox</span>
-              <h2 className="font-serif-title text-2xl sm:text-4xl font-bold mt-1.5 sm:mt-2 mb-2 sm:mb-3">
-                Experience the widget live
-              </h2>
-              <p className="text-xs sm:text-base text-[var(--text-secondary)] px-2">
-                Customize colors and reactions below, then leave a test comment right inside the preview.
-              </p>
-            </div>
-
-            {/* Playground Box */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 items-start w-full">
-              {/* Left Controls Column */}
-              <div className="lg:col-span-4 p-4 sm:p-6 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] space-y-5 shadow-sm w-full">
-                <div>
-                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2.5">
-                    Accent Color
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {accentColors.map((color) => (
-                      <button
-                        key={color.hex}
-                        onClick={() => setPlaygroundAccent(color.hex)}
-                        className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                          playgroundAccent === color.hex
-                            ? "ring-2 ring-offset-2 ring-[var(--brand-orange)] scale-110 shadow-md"
-                            : "opacity-80 hover:opacity-100 hover:scale-105"
-                        }`}
-                        style={{ backgroundColor: color.hex }}
-                        title={color.name}
-                      >
-                        {playgroundAccent === color.hex && (
-                          <span className="text-white text-[10px] sm:text-xs font-bold">✓</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  <span className="text-[11px] sm:text-xs text-[var(--text-muted)] mt-2 block">
-                    Selected: <strong style={{ color: playgroundAccent }}>{playgroundAccent}</strong>
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2.5">
-                    Reaction Style
-                  </h3>
-                  <div className="grid grid-cols-3 gap-2">
-                    <button
-                      onClick={() => setPlaygroundReaction("like")}
-                      className={`px-2 py-2 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 cursor-pointer transition-all ${
-                        playgroundReaction === "like"
-                          ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold"
-                          : "ember-border bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]"
-                      }`}
-                    >
-                      <span>👍</span>
-                      <span>Like</span>
-                    </button>
-                    <button
-                      onClick={() => setPlaygroundReaction("heart")}
-                      className={`px-2 py-2 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 cursor-pointer transition-all ${
-                        playgroundReaction === "heart"
-                          ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold"
-                          : "ember-border bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]"
-                      }`}
-                    >
-                      <span>❤️</span>
-                      <span>Heart</span>
-                    </button>
-                    <button
-                      onClick={() => setPlaygroundReaction("upvote")}
-                      className={`px-2 py-2 rounded-lg sm:rounded-xl border text-xs sm:text-sm font-semibold flex items-center justify-center gap-1 cursor-pointer transition-all ${
-                        playgroundReaction === "upvote"
-                          ? "border-[var(--brand-orange)] bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold"
-                          : "ember-border bg-[var(--bg-card-subtle)] text-[var(--text-secondary)] hover:border-[var(--brand-orange)]"
-                      }`}
-                    >
-                      <span>▲</span>
-                      <span>Upvote</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Feature highlights */}
-                <div className="p-3.5 sm:p-4 rounded-xl bg-[var(--bg-card-subtle)] border ember-border text-[11px] sm:text-xs space-y-2.5">
-                  <div className="flex items-start gap-2 text-[var(--text-secondary)]">
-                    <Palette className="w-4 h-4 text-[var(--brand-orange)] shrink-0 mt-0.5" />
-                    <span><strong>Theme Adaptive:</strong> Seamlessly matches your light and dark styling.</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-[var(--text-secondary)]">
-                    <Link2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                    <span><strong>Deep Linking:</strong> Direct URL anchors for sharing specific comments.</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-[var(--text-secondary)]">
-                    <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                    <span><strong>Spam Protected:</strong> Built-in rate limiting and honeypot guards.</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Preview Column */}
-              <div className="lg:col-span-8 p-3.5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] shadow-lg w-full overflow-hidden">
-                {/* Clean Demo Article Heading */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 sm:pb-4 mb-4 sm:mb-6 border-b border-[var(--border-card)] gap-2 sm:gap-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--brand-orange)]">
-                        Sample Article
-                      </span>
-                      <span className="text-[var(--text-muted)] text-xs">&bull;</span>
-                      <span className="text-[10px] sm:text-xs text-[var(--text-muted)]">4 min read</span>
-                    </div>
-                    <h4 className="text-sm sm:text-base font-bold text-[var(--text-main)] truncate">
-                      The Art of Thoughtful Reading
-                    </h4>
-                  </div>
-                  <div className="self-start sm:self-center shrink-0">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Live Demo
-                    </span>
-                  </div>
-                </div>
-
-                {/* Target widget mount point */}
-                <div
-                  id="nyuzi-comments"
-                  data-site-id="demo"
-                  data-thread-url="https://nyuzi-yap.vercel.app/demo"
-                  data-thread-title="The Art of Thoughtful Reading"
-                  data-accent-color={playgroundAccent}
-                  data-reaction={playgroundReaction}
-                />
-              </div>
-            </div>
+            <PlaygroundStudio
+              isModalOpen={isStudioModalOpen}
+              onOpenModal={() => setIsStudioModalOpen(true)}
+              onCloseModal={() => setIsStudioModalOpen(false)}
+            />
           </div>
         </section>
 
@@ -432,8 +275,8 @@ export default function LandingPage() {
                   </label>
                   <input
                     type="text"
-                    value={playgroundAccent}
-                    onChange={(e) => setPlaygroundAccent(e.target.value)}
+                    value={snippetAccent}
+                    onChange={(e) => setSnippetAccent(e.target.value)}
                     className="w-full px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl border ember-border bg-[var(--bg-input)] text-xs sm:text-sm font-medium focus:outline-none focus:border-[var(--brand-orange)] font-mono"
                     placeholder="#f56220"
                   />
