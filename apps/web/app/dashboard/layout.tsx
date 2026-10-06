@@ -255,7 +255,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           <a
             href={
               selectedSite === "trc254"
-                ? "https://www.readingcircle254.com/blog/art-of-thoughtful-reading"
+                ? "https://www.readingcircle254.com/blog"
                 : "/demo"
             }
             target="_blank"

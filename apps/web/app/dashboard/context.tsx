@@ -213,8 +213,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
             authorName: c.authorName,
             authorEmail: c.authorEmail || undefined,
             content: c.content,
-            threadTitle: c.threadTitle || "The Art of Thoughtful Reading",
-            threadUrl: c.threadUrl || "https://www.readingcircle254.com/blog/art-of-thoughtful-reading",
+            threadTitle: c.threadTitle || "Blog Discussion",
+            threadUrl:
+              c.threadUrl ||
+              (selectedSite === "trc254"
+                ? "https://www.readingcircle254.com/blog"
+                : "/demo"),
             upvotes: Number(c.upvotes) || 0,
             createdAt: formatRelativeTime(c.createdAt),
             status: c.status || "approved",
@@ -225,7 +229,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           setThreadsList(
             data.threads.map((t: any) => ({
               id: t.id,
-              title: t.title || "The Art of Thoughtful Reading",
+              title: t.title || "Blog Discussion",
               url: t.url,
               commentCount: t.commentCount || 0,
               reactionsCount: t.reactionsCount || 0,
@@ -240,7 +244,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       const fallbackUrl =
         selectedSite === "demo"
           ? "https://nyuzi-yap.vercel.app/demo"
-          : "https://www.readingcircle254.com/blog/art-of-thoughtful-reading";
+          : "https://www.readingcircle254.com/blog";
 
       const fallbackRes = await fetch(
         `${API_BASE}/api/v1/comments?siteId=${selectedSite}&threadUrl=${encodeURIComponent(fallbackUrl)}`
