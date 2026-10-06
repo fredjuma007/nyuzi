@@ -11,6 +11,7 @@ import {
   Zap,
   PenTool,
   Lock,
+  ChevronDown,
 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -65,8 +66,9 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen flex flex-col relative selection:bg-[#f56220] selection:text-white w-full max-w-full overflow-x-hidden">
-      {/* Background Radial Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[450px] sm:h-[600px] bg-radial-glow pointer-events-none opacity-80 z-0 overflow-hidden" />
+      {/* Background Atmospheric Stage Glow (100% Full-Bleed with No Side Cuts) */}
+      <div className="absolute top-0 inset-x-0 w-full h-[650px] sm:h-[800px] bg-radial-glow pointer-events-none opacity-85 z-0" />
+      <div className="absolute top-0 inset-x-0 h-[500px] bg-gradient-to-b from-[#f56220]/5 via-transparent to-transparent pointer-events-none z-0" />
 
       {/* Top Reusable Fixed Navbar */}
       <Navbar />
@@ -74,10 +76,10 @@ export default function LandingPage() {
       {/* Main Content with top padding to offset the fixed navbar */}
       <main className="flex-1 z-10 w-full max-w-full pt-16 sm:pt-20">
         {/* Hero Section */}
-        <section className="pt-8 sm:pt-14 pb-12 sm:pb-20 px-4 sm:px-6 lg:px-12 max-w-6xl mx-auto w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center text-center lg:text-left mb-12 sm:mb-16">
+        <section className="pt-6 sm:pt-10 lg:pt-14 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 xl:px-12 max-w-7xl mx-auto w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center text-center lg:text-left mb-8 sm:mb-12">
             {/* Left Content Column */}
-            <div className="lg:col-span-7 space-y-5 sm:space-y-6">
+            <div className="lg:col-span-7 xl:col-span-7 space-y-5 sm:space-y-6">
               {/* Feature Kicker (Hyvor Style: Comments • Replies • Reactions) */}
               <div className="inline-flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 rounded-full border border-[var(--border-card)] bg-[var(--bg-card)]/80 backdrop-blur-xs text-xs sm:text-sm font-serif-title text-[var(--text-secondary)] shadow-xs mx-auto lg:mx-0">
                 <span className="flex items-center gap-1.5 font-medium text-[var(--text-main)]">
@@ -97,11 +99,11 @@ export default function LandingPage() {
               </div>
 
               {/* Main Headline with Editorial Marker Highlight */}
-              <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.14] break-words text-[var(--text-main)]">
+              <h1 className="font-serif-title text-3xl sm:text-5xl lg:text-6xl xl:text-[4.25rem] font-bold tracking-tight leading-[1.12] text-[var(--text-main)]">
                 Turn reader attention into{" "}
-                <span className="relative inline-block text-[var(--brand-orange)]">
-                  <span className="relative z-10 italic">a thriving community.</span>
-                  <span className="absolute left-0 bottom-1 sm:bottom-2 w-full h-3 sm:h-4 bg-amber-400/25 dark:bg-amber-500/20 rounded-sm -rotate-1 z-0" />
+                <span className="relative inline-block text-[var(--brand-orange)] whitespace-nowrap">
+                  <span className="relative z-10 italic">a thriving community!</span>
+                  <span className="absolute left-0 bottom-1 sm:bottom-2 w-full h-3 sm:h-4 bg-amber-400/25 dark:bg-amber-500/20 rounded-sm -rotate-1 z-0 pointer-events-none" />
                 </span>
               </h1>
 
@@ -130,42 +132,89 @@ export default function LandingPage() {
             </div>
 
             {/* Right Illustration Column */}
-            <div className="lg:col-span-5 w-full">
+            <div className="lg:col-span-5 xl:col-span-5 w-full">
               <HeroIllustration />
             </div>
           </div>
 
-          {/* Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto w-full">
-            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[var(--brand-orange)] mb-0.5 sm:mb-1">&lt; 15 KB</div>
-              <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Featherweight</div>
-              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">Minimal footprint on your site</div>
-            </div>
+          {/* Hyvor-Style Centered Scroll Indicator */}
+          <div className="pt-2 sm:pt-4 flex justify-center">
+            <a
+              href="#metrics"
+              className="inline-flex flex-col items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--brand-orange)] transition-colors cursor-pointer group select-none"
+              aria-label="Scroll to capabilities"
+            >
+              {/* Minimalist Mouse Pill */}
+              <div className="w-5 h-8 rounded-full border-2 border-[var(--border-card)] group-hover:border-[var(--brand-orange)] flex items-start justify-center p-1 transition-colors">
+                <span className="w-1 h-2 rounded-full bg-[var(--brand-orange)] animate-bounce" />
+              </div>
+              {/* Subtle Animated Chevron */}
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--brand-orange)] transition-colors animate-pulse" />
+            </a>
+          </div>
+        </section>
 
-            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#facc15] mb-0.5 sm:mb-1">Instant</div>
-              <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Zero Lag</div>
-              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">Loads immediately without slowing down your site</div>
-            </div>
+        {/* Dedicated Full-Width Architectural Metrics Ribbon */}
+        <section
+          id="metrics"
+          className="border-y border-[var(--border-card)] bg-[var(--bg-card)]/30 backdrop-blur-xs py-10 sm:py-14 w-full scroll-mt-20"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full">
+              <div className="p-5 sm:p-6 rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm transition-all hover:border-[var(--brand-orange)]/50 hover:-translate-y-1">
+                <div className="text-2xl sm:text-3xl xl:text-4xl font-extrabold text-[var(--brand-orange)] mb-1.5">
+                  &lt; 15 KB
+                </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                  Featherweight
+                </div>
+                <div className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  Ultra-lightweight script bundle that downloads in milliseconds.
+                </div>
+              </div>
 
-            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[var(--brand-orange)] mb-0.5 sm:mb-1">100%</div>
-              <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Privacy First</div>
-              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">Zero ad cookies, zero cross-site trackers</div>
-            </div>
+              <div className="p-5 sm:p-6 rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm transition-all hover:border-[var(--brand-orange)]/50 hover:-translate-y-1">
+                <div className="text-2xl sm:text-3xl xl:text-4xl font-extrabold text-[#facc15] mb-1.5">
+                  Instant
+                </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                  Zero Lag
+                </div>
+                <div className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  Loads asynchronously without blocking your publication&apos;s rendering.
+                </div>
+              </div>
 
-            <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#facc15] mb-0.5 sm:mb-1">Smart</div>
-              <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Notifications</div>
-              <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">Automatic email updates that bring readers back</div>
+              <div className="p-5 sm:p-6 rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm transition-all hover:border-[var(--brand-orange)]/50 hover:-translate-y-1">
+                <div className="text-2xl sm:text-3xl xl:text-4xl font-extrabold text-[var(--brand-orange)] mb-1.5">
+                  100%
+                </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                  Privacy First
+                </div>
+                <div className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  Zero ad cookies, zero cross-site tracking, 100% reader respectful.
+                </div>
+              </div>
+
+              <div className="p-5 sm:p-6 rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm transition-all hover:border-[var(--brand-orange)]/50 hover:-translate-y-1">
+                <div className="text-2xl sm:text-3xl xl:text-4xl font-extrabold text-[#facc15] mb-1.5">
+                  Smart
+                </div>
+                <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1">
+                  Notifications
+                </div>
+                <div className="text-xs text-[var(--text-muted)] leading-relaxed">
+                  Instant branded alerts that bring readers and writers back into the loop.
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         {/* Live Playground Studio Section */}
-        <section id="playground" className="py-12 sm:py-20 px-4 sm:px-6 lg:px-12 border-t ember-border bg-[var(--bg-card-subtle)] w-full">
-          <div className="max-w-6xl mx-auto w-full">
+        <section id="playground" className="py-12 sm:py-20 px-4 sm:px-6 lg:px-8 xl:px-12 border-t ember-border bg-[var(--bg-card-subtle)] w-full">
+          <div className="max-w-7xl mx-auto w-full">
             <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
               <span className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Interactive Sandbox</span>
               <h2 className="font-serif-title text-2xl sm:text-4xl font-bold mt-1.5 sm:mt-2 mb-2 sm:mb-3">
@@ -305,7 +354,7 @@ export default function LandingPage() {
         </section>
 
         {/* Feature Grid Section */}
-        <section id="features" className="py-14 sm:py-24 px-4 sm:px-6 lg:px-12 max-w-6xl mx-auto w-full">
+        <section id="features" className="py-14 sm:py-24 px-4 sm:px-6 lg:px-8 xl:px-12 max-w-7xl mx-auto w-full">
           <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-16">
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Built For Publications</span>
             <h2 className="font-serif-title text-2xl sm:text-4xl lg:text-5xl font-bold mt-1.5 sm:mt-2 mb-3 sm:mb-4">
@@ -412,8 +461,8 @@ export default function LandingPage() {
         </section>
 
         {/* Real-World Showcase Banner */}
-        <section id="showcase" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-12 border-t ember-border w-full">
-          <div className="max-w-4xl mx-auto p-5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-card-subtle)] flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6 shadow-sm w-full">
+        <section id="showcase" className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 xl:px-12 border-t ember-border w-full">
+          <div className="max-w-7xl mx-auto p-5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-gradient-to-r from-[var(--bg-card)] to-[var(--bg-card-subtle)] flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6 shadow-sm w-full">
             <div className="space-y-1.5 sm:space-y-2 text-center md:text-left">
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[var(--brand-orange)]">Production Showcase</span>
               <h3 className="text-xl sm:text-2xl font-bold font-serif-title text-[var(--text-main)]">
