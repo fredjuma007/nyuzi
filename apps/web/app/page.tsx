@@ -1,6 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import {
+  MessageSquare,
+  CornerDownRight,
+  Heart,
+  Palette,
+  Link2,
+  ShieldCheck,
+  Zap,
+  PenTool,
+  Lock,
+} from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { HeroIllustration } from "@/components/HeroIllustration";
@@ -70,15 +81,18 @@ export default function LandingPage() {
               {/* Feature Kicker (Hyvor Style: Comments • Replies • Reactions) */}
               <div className="inline-flex items-center gap-2 sm:gap-3 px-3.5 py-1.5 rounded-full border border-[var(--border-card)] bg-[var(--bg-card)]/80 backdrop-blur-xs text-xs sm:text-sm font-serif-title text-[var(--text-secondary)] shadow-xs mx-auto lg:mx-0">
                 <span className="flex items-center gap-1.5 font-medium text-[var(--text-main)]">
-                  <span>💬</span> Comments
+                  <MessageSquare className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
+                  <span>Comments</span>
                 </span>
                 <span className="text-[var(--text-muted)]">&bull;</span>
                 <span className="flex items-center gap-1.5 font-medium text-[var(--text-main)]">
-                  <span>↩️</span> Replies
+                  <CornerDownRight className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Replies</span>
                 </span>
                 <span className="text-[var(--text-muted)]">&bull;</span>
                 <span className="flex items-center gap-1.5 font-medium text-[var(--text-main)]">
-                  <span>❤️</span> Reactions
+                  <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+                  <span>Reactions</span>
                 </span>
               </div>
 
@@ -91,9 +105,9 @@ export default function LandingPage() {
                 </span>
               </h1>
 
-              {/* Subtitle */}
-              <p className="text-sm sm:text-base lg:text-lg text-[var(--text-secondary)] leading-relaxed max-w-xl mx-auto lg:mx-0">
-                A fast, beautiful comment system designed for independent publications and blogs. Delight your readers with instant discussions and automatic reply alerts—without tracking cookies or bloated scripts.
+              {/* Killer Line */}
+              <p className="text-base sm:text-lg text-[var(--text-secondary)] leading-relaxed max-w-lg mx-auto lg:mx-0 font-normal">
+                Fast, privacy-first discussions built for modern publications.
               </p>
 
               {/* CTAs */}
@@ -142,7 +156,7 @@ export default function LandingPage() {
             </div>
 
             <div className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] text-left shadow-sm">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#facc15] mb-0.5 sm:mb-1">Smart ⚡</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-[#facc15] mb-0.5 sm:mb-1">Smart</div>
               <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-0.5">Notifications</div>
               <div className="text-[10px] sm:text-xs text-[var(--text-muted)] leading-tight">Automatic email updates that bring readers back</div>
             </div>
@@ -236,17 +250,17 @@ export default function LandingPage() {
                 </div>
 
                 {/* Feature highlights */}
-                <div className="p-3.5 sm:p-4 rounded-xl bg-[var(--bg-card-subtle)] border ember-border text-[11px] sm:text-xs space-y-2">
+                <div className="p-3.5 sm:p-4 rounded-xl bg-[var(--bg-card-subtle)] border ember-border text-[11px] sm:text-xs space-y-2.5">
                   <div className="flex items-start gap-2 text-[var(--text-secondary)]">
-                    <span className="text-sm">🎨</span>
+                    <Palette className="w-4 h-4 text-[var(--brand-orange)] shrink-0 mt-0.5" />
                     <span><strong>Theme Adaptive:</strong> Seamlessly matches your light and dark styling.</span>
                   </div>
                   <div className="flex items-start gap-2 text-[var(--text-secondary)]">
-                    <span className="text-sm">🔗</span>
+                    <Link2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                     <span><strong>Deep Linking:</strong> Direct URL anchors for sharing specific comments.</span>
                   </div>
                   <div className="flex items-start gap-2 text-[var(--text-secondary)]">
-                    <span className="text-sm">🛡️</span>
+                    <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                     <span><strong>Spam Protected:</strong> Built-in rate limiting and honeypot guards.</span>
                   </div>
                 </div>
@@ -304,8 +318,8 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8 w-full">
             <div className="p-5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] transition-all group shadow-sm">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center text-xl sm:text-2xl mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
-                ⚡
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <h3 className="text-lg sm:text-xl font-bold mb-2">Automated Reply Loops</h3>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -314,8 +328,8 @@ export default function LandingPage() {
             </div>
 
             <div className="p-5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] transition-all group shadow-sm">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center text-xl sm:text-2xl mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
-                ✍️
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
+                <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <h3 className="text-lg sm:text-xl font-bold mb-2">Author Notifications</h3>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
@@ -324,8 +338,8 @@ export default function LandingPage() {
             </div>
 
             <div className="p-5 sm:p-8 rounded-xl sm:rounded-2xl border ember-border bg-[var(--bg-card)] hover:border-[var(--brand-orange)] transition-all group shadow-sm">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center text-xl sm:text-2xl mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
-                🔒
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] flex items-center justify-center mb-4 sm:mb-5 group-hover:scale-110 transition-transform">
+                <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <h3 className="text-lg sm:text-xl font-bold mb-2">100% Private & Ad-Free</h3>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
