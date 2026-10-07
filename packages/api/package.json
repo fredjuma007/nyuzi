@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@nyuzi/db": "*",
-    "drizzle-orm": "^0.38.4",
+    "drizzle-orm": "^0.45.3",
     "hono": "^4.7.2"
   },
   "devDependencies": {

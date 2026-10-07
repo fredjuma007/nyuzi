@@ -20,11 +20,14 @@ import {
   Code2,
   ChevronDown,
   Sparkles,
+  LogOut,
 } from "lucide-react";
 import { DashboardProvider, useDashboard } from "./context";
+import { useSession, signOut } from "@/lib/auth-client";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
   const {
     selectedSite,
     setSelectedSite,
@@ -271,23 +274,36 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
           {/* Theme & User Profile Bar */}
           <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-[var(--brand-orange)]/15 text-[var(--brand-orange)] font-bold text-xs flex items-center justify-center">
-                FJ
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-[var(--brand-orange)]/15 text-[var(--brand-orange)] font-bold text-xs flex items-center justify-center shrink-0">
+                {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "U"}
               </div>
-              <div className="leading-tight">
-                <span className="block text-xs font-bold text-[var(--text-main)]">Fred Juma</span>
-                <span className="block text-[10px] text-[var(--text-muted)]">Admin / Publisher</span>
+              <div className="leading-tight truncate">
+                <span className="block text-xs font-bold text-[var(--text-main)] truncate">
+                  {session?.user?.name || "Publisher"}
+                </span>
+                <span className="block text-[10px] text-[var(--text-muted)] truncate">
+                  {session?.user?.email || "Admin"}
+                </span>
               </div>
             </div>
 
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
-              title="Toggle Dark / Light theme"
-            >
-              {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                onClick={toggleTheme}
+                className="p-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors cursor-pointer"
+                title="Toggle Dark / Light theme"
+              >
+                {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+              </button>
+              <button
+                onClick={() => signOut()}
+                className="p-1.5 rounded-lg border border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-rose-500 hover:border-rose-500/30 transition-colors cursor-pointer"
+                title="Sign Out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>
