@@ -21,13 +21,31 @@ export interface SiteItem {
   createdAt?: string | Date;
 }
 
+export interface TeamItem {
+  id: string;
+  name: string;
+  slug: string;
+  logo?: string | null;
+  role?: string;
+  createdAt?: string | Date;
+}
+
 export interface DashboardContextType {
+  teams: TeamItem[];
+  setTeams: React.Dispatch<React.SetStateAction<TeamItem[]>>;
+  activeTeam: TeamItem | undefined;
+  activeTeamSlug: string;
+  setActiveTeamSlug: (slug: string) => void;
+  fetchTeams: () => Promise<void>;
+  isCreateTeamModalOpen: boolean;
+  setIsCreateTeamModalOpen: (open: boolean) => void;
+  createNewTeam: (name: string) => Promise<TeamItem | null>;
   sites: SiteItem[];
   setSites: React.Dispatch<React.SetStateAction<SiteItem[]>>;
   selectedSite: string;
   setSelectedSite: (site: string) => void;
   selectedSiteData: SiteItem | undefined;
-  fetchUserSites: () => Promise<void>;
+  fetchUserSites: (teamSlug?: string) => Promise<void>;
   isCreateSiteModalOpen: boolean;
   setIsCreateSiteModalOpen: (open: boolean) => void;
   createNewSite: (name: string, domain: string, accentColor?: string) => Promise<SiteItem | null>;
@@ -74,6 +92,53 @@ function formatRelativeTime(dateInput: any): string {
 }
 
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
+  const [teams, setTeams] = useState<TeamItem[]>([]);
+  const [activeTeamSlug, setActiveTeamSlugState] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("nyuzi-active-team") || "freds-projects";
+    }
+    return "freds-projects";
+  });
+  const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
+
+  const setActiveTeamSlug = (slug: string) => {
+    setActiveTeamSlugState(slug);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("nyuzi-active-team", slug);
+    }
+  };
+
+  const activeTeam = teams.find((t) => t.slug === activeTeamSlug) || teams[0];
+
+  const fetchTeams = useCallback(async () => {
+    try {
+      const res = await fetch("/api/teams");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.teams) && data.teams.length > 0) {
+          setTeams(data.teams);
+          setActiveTeamSlugState((prev) => {
+            const exists = data.teams.some((t: TeamItem) => t.slug === prev);
+            if (!exists) {
+              const firstSlug = data.teams[0].slug;
+              if (typeof window !== "undefined") {
+                localStorage.setItem("nyuzi-active-team", firstSlug);
+              }
+              return firstSlug;
+            }
+            return prev;
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch teams:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTeams();
+  }, [fetchTeams]);
+
   const [sites, setSites] = useState<SiteItem[]>([]);
   const [selectedSite, setSelectedSiteState] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -92,9 +157,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
   const selectedSiteData = sites.find((s) => s.id === selectedSite);
 
-  const fetchUserSites = useCallback(async () => {
+  const fetchUserSites = useCallback(async (teamSlug?: string) => {
     try {
-      const res = await fetch("/api/sites");
+      const slug = teamSlug || activeTeamSlug;
+      const res = await fetch(`/api/sites?teamSlug=${slug}`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.sites)) {
@@ -117,7 +183,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn("Failed to fetch user sites:", err);
     }
-  }, []);
+  }, [activeTeamSlug]);
 
   useEffect(() => {
     fetchUserSites();
@@ -457,7 +523,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/sites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, domain, accentColor }),
+        body: JSON.stringify({ name, domain, accentColor, teamSlug: activeTeamSlug }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -474,9 +540,40 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const createNewTeam = async (name: string): Promise<TeamItem | null> => {
+    try {
+      const res = await fetch("/api/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create team");
+      }
+      const newTeam: TeamItem = data.team;
+      setTeams((prev) => [...prev, newTeam]);
+      setActiveTeamSlug(newTeam.slug);
+      showToast(`Team "${name}" created successfully!`);
+      return newTeam;
+    } catch (err: any) {
+      showToast(err.message || "Failed to create team");
+      return null;
+    }
+  };
+
   return (
     <DashboardContext.Provider
       value={{
+        teams,
+        setTeams,
+        activeTeam,
+        activeTeamSlug,
+        setActiveTeamSlug,
+        fetchTeams,
+        isCreateTeamModalOpen,
+        setIsCreateTeamModalOpen,
+        createNewTeam,
         sites,
         setSites,
         selectedSite,

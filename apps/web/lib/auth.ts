@@ -31,6 +31,13 @@ export const auth = betterAuth({
   },
   secret: process.env.BETTER_AUTH_SECRET || "nyuzi-secret-key-development-min-32-characters-entropy",
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+  trustedOrigins: [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3001",
+    "http://localhost:3002",
+  ],
 });
 
 export type Auth = typeof auth;

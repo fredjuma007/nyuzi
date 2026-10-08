@@ -35,6 +35,7 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
     commentsList,
     threadsList,
     metrics,
+    activeTeamSlug,
   } = useDashboard();
   const { data: session } = useSession();
 
@@ -378,7 +379,7 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
                     <div className="pt-2 flex items-center justify-between border-t border-[var(--border-card)] text-xs">
                       <div className="flex items-center gap-1">
                         <Link
-                          href={`/dashboard/${site.id}/moderation`}
+                          href={`/dashboard/${activeTeamSlug || "freds-projects"}/${site.id}/moderation`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectSite(site.id);
@@ -391,7 +392,7 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
                         </Link>
 
                         <Link
-                          href={`/dashboard/${site.id}/studio`}
+                          href={`/dashboard/${activeTeamSlug || "freds-projects"}/${site.id}/studio`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectSite(site.id);

@@ -51,6 +51,27 @@ export const verification = sqliteTable("verification", {
 });
 
 // ==========================================
+// 1b. Organization & Multi-Tenant Team Tables
+// ==========================================
+
+export const organization = sqliteTable("organization", {
+  id: text("id").primaryKey(), // org_xxx
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(), // e.g. "freds-projects-45a"
+  logo: text("logo"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  metadata: text("metadata").default("{}"),
+});
+
+export const member = sqliteTable("member", {
+  id: text("id").primaryKey(), // mem_xxx
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  role: text("role").notNull().default("owner"), // owner | admin | editor | moderator
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
+// ==========================================
 // 2. Nyuzi Core Domain Tables
 // ==========================================
 
@@ -60,6 +81,7 @@ export const sites = sqliteTable("sites", {
   domain: text("domain").notNull(), // allowed origin e.g. "thereservedcircle.com" or "*"
   ownerId: text("owner_id").references(() => user.id),
   ownerEmail: text("owner_email"),
+  organizationId: text("organization_id").references(() => organization.id),
   turnstileEnabled: integer("turnstile_enabled", { mode: "boolean" }).notNull().default(false),
   moderationRequired: integer("moderation_required", { mode: "boolean" }).notNull().default(false),
   settings: text("settings").default("{}"),
@@ -113,6 +135,11 @@ export type NewUser = typeof user.$inferInsert;
 export type Session = typeof session.$inferSelect;
 export type Account = typeof account.$inferSelect;
 export type Verification = typeof verification.$inferSelect;
+
+export type Organization = typeof organization.$inferSelect;
+export type NewOrganization = typeof organization.$inferInsert;
+export type Member = typeof member.$inferSelect;
+export type NewMember = typeof member.$inferInsert;
 
 export type Site = typeof sites.$inferSelect;
 export type Thread = typeof threads.$inferSelect;

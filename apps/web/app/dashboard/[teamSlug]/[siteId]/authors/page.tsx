@@ -2,18 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { useDashboard } from "../../context";
-import { AuthorsTab } from "../../components/AuthorsTab";
-import { AuthorEntry } from "../../components/types";
+import { useDashboard } from "../../../context";
+import { AuthorsTab } from "../../../components/AuthorsTab";
+import { AuthorEntry } from "../../../components/types";
 
 export default function PublicationAuthorsPage() {
-  const params = useParams<{ siteId: string }>();
+  const params = useParams<{ teamSlug: string; siteId: string }>();
+  const teamSlug = params?.teamSlug || "freds-projects";
   const siteId = params?.siteId || "trc254";
 
   const {
     authors,
     selectedSite,
     setSelectedSite,
+    activeTeamSlug,
+    setActiveTeamSlug,
     handleAddAuthor: addAuthorToDb,
     handleUpdateAuthor: updateAuthorInDb,
     handleDeleteAuthor: deleteAuthorFromDb,
@@ -23,7 +26,10 @@ export default function PublicationAuthorsPage() {
     if (siteId && siteId !== selectedSite) {
       setSelectedSite(siteId);
     }
-  }, [siteId, selectedSite, setSelectedSite]);
+    if (teamSlug && teamSlug !== activeTeamSlug) {
+      setActiveTeamSlug(teamSlug);
+    }
+  }, [siteId, teamSlug, selectedSite, activeTeamSlug, setSelectedSite, setActiveTeamSlug]);
 
   // Local Author Modal & Form State
   const [showAddAuthor, setShowAddAuthor] = useState(false);

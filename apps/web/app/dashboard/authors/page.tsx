@@ -6,11 +6,12 @@ import { useDashboard } from "../context";
 
 export default function LegacyAuthorsRedirect() {
   const router = useRouter();
-  const { selectedSite } = useDashboard();
+  const { selectedSite, activeTeamSlug } = useDashboard();
 
   useEffect(() => {
-    router.replace(`/dashboard/${selectedSite || "trc254"}/authors`);
-  }, [router, selectedSite]);
+    const team = activeTeamSlug || "freds-projects";
+    router.replace(`/dashboard/${team}/${selectedSite || "trc254"}/authors`);
+  }, [router, selectedSite, activeTeamSlug]);
 
   return null;
 }

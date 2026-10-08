@@ -6,11 +6,12 @@ import { useDashboard } from "../context";
 
 export default function LegacyStudioRedirect() {
   const router = useRouter();
-  const { selectedSite } = useDashboard();
+  const { selectedSite, activeTeamSlug } = useDashboard();
 
   useEffect(() => {
-    router.replace(`/dashboard/${selectedSite || "trc254"}/studio`);
-  }, [router, selectedSite]);
+    const team = activeTeamSlug || "freds-projects";
+    router.replace(`/dashboard/${team}/${selectedSite || "trc254"}/studio`);
+  }, [router, selectedSite, activeTeamSlug]);
 
   return null;
 }

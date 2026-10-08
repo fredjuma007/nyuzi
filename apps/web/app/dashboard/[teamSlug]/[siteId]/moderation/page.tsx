@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
-import { useDashboard } from "../../context";
-import { ModerationTab } from "../../components/ModerationTab";
+import { useDashboard } from "../../../context";
+import { ModerationTab } from "../../../components/ModerationTab";
 
 export default function PublicationModerationPage() {
-  const params = useParams<{ siteId: string }>();
+  const params = useParams<{ teamSlug: string; siteId: string }>();
+  const teamSlug = params?.teamSlug || "freds-projects";
   const siteId = params?.siteId || "trc254";
 
   const {
@@ -16,6 +17,8 @@ export default function PublicationModerationPage() {
     selectedSite,
     setSelectedSite,
     selectedSiteData,
+    activeTeamSlug,
+    setActiveTeamSlug,
     handleApprove,
     handleFlagSpam,
     handleDelete,
@@ -26,7 +29,10 @@ export default function PublicationModerationPage() {
     if (siteId && siteId !== selectedSite) {
       setSelectedSite(siteId);
     }
-  }, [siteId, selectedSite, setSelectedSite]);
+    if (teamSlug && teamSlug !== activeTeamSlug) {
+      setActiveTeamSlug(teamSlug);
+    }
+  }, [siteId, teamSlug, selectedSite, activeTeamSlug, setSelectedSite, setActiveTeamSlug]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "approved" | "pending" | "spam">("all");

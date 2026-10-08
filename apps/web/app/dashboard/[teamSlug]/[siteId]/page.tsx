@@ -12,12 +12,13 @@ import {
   ShieldAlert,
   ArrowLeft,
 } from "lucide-react";
-import { useDashboard } from "../context";
-import { OverviewTab } from "../components/OverviewTab";
+import { useDashboard } from "../../context";
+import { OverviewTab } from "../../components/OverviewTab";
 import { useSession } from "@/lib/auth-client";
 
 export default function PublicationOverviewPage() {
-  const params = useParams<{ siteId: string }>();
+  const params = useParams<{ teamSlug: string; siteId: string }>();
+  const teamSlug = params?.teamSlug || "freds-projects";
   const siteId = params?.siteId || "trc254";
 
   const {
@@ -27,16 +28,20 @@ export default function PublicationOverviewPage() {
     setSelectedSite,
     selectedSiteData,
     metrics,
-    fetchLiveDashboard,
+    activeTeamSlug,
+    setActiveTeamSlug,
   } = useDashboard();
   const { data: session } = useSession();
 
-  // Sync route param with context state
+  // Sync route params with context state
   useEffect(() => {
     if (siteId && siteId !== selectedSite) {
       setSelectedSite(siteId);
     }
-  }, [siteId, selectedSite, setSelectedSite]);
+    if (teamSlug && teamSlug !== activeTeamSlug) {
+      setActiveTeamSlug(teamSlug);
+    }
+  }, [siteId, teamSlug, selectedSite, activeTeamSlug, setSelectedSite, setActiveTeamSlug]);
 
   const siteDisplayName =
     selectedSiteData?.name || (siteId === "trc254" ? "The Reading Circle" : siteId);
@@ -48,7 +53,7 @@ export default function PublicationOverviewPage() {
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <Link
-              href="/dashboard"
+              href={`/dashboard/${teamSlug}`}
               className="text-xs text-[var(--text-muted)] hover:text-[var(--brand-orange)] flex items-center gap-1 transition-colors font-medium"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -75,14 +80,14 @@ export default function PublicationOverviewPage() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
-            href={`/dashboard/${siteId}/studio`}
+            href={`/dashboard/${teamSlug}/${siteId}/studio`}
             className="px-4 py-2 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white font-bold text-xs shadow transition-all cursor-pointer flex items-center gap-1.5"
           >
             <Code2 className="w-3.5 h-3.5" />
             <span>Widget Studio</span>
           </Link>
           <Link
-            href={`/dashboard/${siteId}/moderation`}
+            href={`/dashboard/${teamSlug}/${siteId}/moderation`}
             className="px-4 py-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)] hover:text-[var(--text-main)] font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />

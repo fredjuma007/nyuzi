@@ -65,12 +65,30 @@ export async function ensureTables() {
         "updated_at" INTEGER
       );
 
+      CREATE TABLE IF NOT EXISTS "organization" (
+        "id" TEXT PRIMARY KEY,
+        "name" TEXT NOT NULL,
+        "slug" TEXT NOT NULL UNIQUE,
+        "logo" TEXT,
+        "created_at" INTEGER NOT NULL,
+        "metadata" TEXT DEFAULT '{}'
+      );
+
+      CREATE TABLE IF NOT EXISTS "member" (
+        "id" TEXT PRIMARY KEY,
+        "organization_id" TEXT NOT NULL REFERENCES "organization"("id") ON DELETE CASCADE,
+        "user_id" TEXT NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+        "role" TEXT NOT NULL DEFAULT 'owner',
+        "created_at" INTEGER NOT NULL
+      );
+
       CREATE TABLE IF NOT EXISTS "sites" (
         "id" TEXT PRIMARY KEY,
         "name" TEXT NOT NULL,
         "domain" TEXT NOT NULL,
         "owner_id" TEXT REFERENCES "user"("id"),
         "owner_email" TEXT,
+        "organization_id" TEXT REFERENCES "organization"("id"),
         "turnstile_enabled" INTEGER NOT NULL DEFAULT 0,
         "moderation_required" INTEGER NOT NULL DEFAULT 0,
         "settings" TEXT DEFAULT '{}',
@@ -111,9 +129,19 @@ export async function ensureTables() {
         "created_at" INTEGER NOT NULL
       );
 
-      INSERT OR IGNORE INTO "sites" ("id", "name", "domain", "owner_email", "settings", "created_at")
-      VALUES ('trc254', 'The Reading Circle', 'readingcircle254.com', 'fredjuma8@gmail.com', '{"accentColor":"#f56220"}', unixepoch() * 1000);
+      INSERT OR IGNORE INTO "organization" ("id", "name", "slug", "created_at")
+      VALUES ('org_fred_personal', 'Fred''s Projects', 'freds-projects', unixepoch() * 1000);
+
+      INSERT OR IGNORE INTO "sites" ("id", "name", "domain", "owner_email", "organization_id", "settings", "created_at")
+      VALUES ('trc254', 'The Reading Circle', 'readingcircle254.com', 'fredjuma8@gmail.com', 'org_fred_personal', '{"accentColor":"#f56220"}', unixepoch() * 1000);
     `);
+
+    try {
+      await client.execute('ALTER TABLE sites ADD COLUMN organization_id TEXT REFERENCES organization(id)');
+    } catch {
+      // Column already exists
+    }
+
     isInitialized = true;
   } catch (err) {
     console.error("Failed to ensure database tables:", err);

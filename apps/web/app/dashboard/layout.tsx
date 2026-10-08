@@ -27,15 +27,23 @@ import {
 import { DashboardProvider, useDashboard } from "./context";
 import { useSession, signOut } from "@/lib/auth-client";
 import { CreatePublicationModal } from "./components/CreatePublicationModal";
+import { CreateTeamModal } from "./components/CreateTeamModal";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const params = useParams<{ siteId?: string }>();
+  const params = useParams<{ teamSlug?: string; siteId?: string }>();
+  const routeTeamSlug = params?.teamSlug;
   const routeSiteId = params?.siteId;
 
   const { data: session } = useSession();
   const {
+    teams,
+    activeTeam,
+    activeTeamSlug,
+    setActiveTeamSlug,
+    isCreateTeamModalOpen,
+    setIsCreateTeamModalOpen,
     sites,
     selectedSite,
     setSelectedSite,
@@ -49,7 +57,15 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     toast,
   } = useDashboard();
 
+  const currentTeamSlug = routeTeamSlug || activeTeamSlug || "freds-projects";
   const currentSiteId = routeSiteId || selectedSite || "trc254";
+
+  // Sync route teamSlug with context
+  useEffect(() => {
+    if (routeTeamSlug && routeTeamSlug !== activeTeamSlug) {
+      setActiveTeamSlug(routeTeamSlug);
+    }
+  }, [routeTeamSlug, activeTeamSlug, setActiveTeamSlug]);
 
   // Sync route param with selected site in context
   useEffect(() => {
@@ -93,7 +109,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       items: [
         {
           label: "All Projects",
-          href: "/dashboard",
+          href: `/dashboard/${currentTeamSlug}`,
           icon: Layers,
           badge: sites.length > 0 ? `${sites.length}` : null,
           exact: true,
@@ -105,28 +121,28 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       items: [
         {
           label: "Overview",
-          href: `/dashboard/${currentSiteId}`,
+          href: `/dashboard/${currentTeamSlug}/${currentSiteId}`,
           icon: LayoutDashboard,
           badge: null,
           exact: true,
         },
         {
           label: "Moderation",
-          href: `/dashboard/${currentSiteId}/moderation`,
+          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/moderation`,
           icon: ShieldAlert,
           badge: pendingCommentsCount > 0 ? `${pendingCommentsCount} Alert` : null,
           exact: false,
         },
         {
           label: "Discussions",
-          href: `/dashboard/${currentSiteId}/threads`,
+          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/threads`,
           icon: MessageSquare,
           badge: null,
           exact: false,
         },
         {
           label: "Author Roster",
-          href: `/dashboard/${currentSiteId}/authors`,
+          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/authors`,
           icon: Users,
           badge: pendingDiscoveredCount > 0 ? `${pendingDiscoveredCount} New` : null,
           exact: false,
@@ -138,14 +154,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       items: [
         {
           label: "Widget Studio",
-          href: `/dashboard/${currentSiteId}/studio`,
+          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/studio`,
           icon: Palette,
           badge: "Customizer",
           exact: false,
         },
         {
           label: "Site Settings",
-          href: `/dashboard/${currentSiteId}/settings`,
+          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/settings`,
           icon: Settings,
           badge: null,
           exact: false,
@@ -205,19 +221,53 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          {/* Vercel-Style Account Scope */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-lg bg-[var(--brand-orange)]/15 text-[var(--brand-orange)] font-bold text-xs flex items-center justify-center shrink-0">
-                {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "F"}
-              </div>
-              <div className="truncate text-xs font-bold text-[var(--text-main)]">
-                {session?.user?.name ? `${session.user.name}'s projects` : "Fred's projects"}
-              </div>
+          {/* Vercel-Style Workspace / Team Scope Switcher */}
+          <div className="p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)] block">
+                Workspace / Team
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsCreateTeamModalOpen(true)}
+                className="text-[10px] font-bold text-[var(--brand-orange)] hover:underline flex items-center gap-0.5 cursor-pointer"
+                title="Create new team workspace"
+              >
+                <Plus className="w-3 h-3" />
+                <span>New Team</span>
+              </button>
             </div>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-[var(--border-card)] bg-[var(--bg-card)] text-[var(--text-muted)]">
-              Hobby
-            </span>
+            <div className="relative">
+              <select
+                value={currentTeamSlug}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "__NEW_TEAM__") {
+                    setIsCreateTeamModalOpen(true);
+                  } else {
+                    setActiveTeamSlug(val);
+                    router.push(`/dashboard/${val}`);
+                  }
+                }}
+                className="w-full appearance-none bg-transparent font-semibold text-xs text-[var(--text-main)] focus:outline-none cursor-pointer pr-6 truncate"
+              >
+                {teams.length > 0 ? (
+                  teams.map((t) => (
+                    <option key={t.id} value={t.slug} className="bg-[var(--bg-card)] text-[var(--text-main)]">
+                      {t.name}
+                    </option>
+                  ))
+                ) : (
+                  <option value={currentTeamSlug} className="bg-[var(--bg-card)] text-[var(--text-main)]">
+                    {session?.user?.name ? `${session.user.name}'s Projects` : "Fred's Projects"}
+                  </option>
+                )}
+                <option value="__NEW_TEAM__" className="bg-[var(--bg-card)] text-[var(--brand-orange)] font-bold">
+                  + Create New Team...
+                </option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 absolute right-0 top-0.5 text-[var(--text-muted)] pointer-events-none" />
+            </div>
           </div>
 
           {/* Publication Selector Dropdown */}
@@ -246,10 +296,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   } else {
                     setSelectedSite(val);
                     if (routeSiteId) {
-                      const subPath = pathname.split(`/dashboard/${routeSiteId}`)[1] || "";
-                      router.push(`/dashboard/${val}${subPath}`);
+                      const subPath = pathname.split(`/${routeSiteId}`)[1] || "";
+                      router.push(`/dashboard/${currentTeamSlug}/${val}${subPath}`);
                     } else {
-                      router.push(`/dashboard/${val}`);
+                      router.push(`/dashboard/${currentTeamSlug}/${val}`);
                     }
                   }
                 }}
@@ -406,22 +456,31 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             {/* Breadcrumb Path */}
             <div className="flex items-center gap-2 text-xs">
               <Link
-                href="/dashboard"
+                href={`/dashboard/${currentTeamSlug}`}
                 className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
               >
                 Dashboard
               </Link>
               <span className="text-[var(--text-muted)]">/</span>
-              {pathname === "/dashboard" ? (
-                <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
-              ) : (
+              <Link
+                href={`/dashboard/${currentTeamSlug}`}
+                className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
+              >
+                {activeTeam?.name || currentTeamSlug}
+              </Link>
+              {routeSiteId && (
                 <>
+                  <span className="text-[var(--text-muted)]">/</span>
                   <Link
-                    href={`/dashboard/${currentSiteId}`}
+                    href={`/dashboard/${currentTeamSlug}/${currentSiteId}`}
                     className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
                   >
                     {selectedSiteData?.name || (currentSiteId === "trc254" ? "The Reading Circle" : currentSiteId)}
                   </Link>
+                </>
+              )}
+              {routeSiteId && pathname.includes(`/${currentSiteId}/`) && (
+                <>
                   <span className="text-[var(--text-muted)]">/</span>
                   <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
                 </>
@@ -450,7 +509,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             {/* Direct Studio CTA */}
             {!pathname.includes("/studio") && (
               <Link
-                href={`/dashboard/${currentSiteId}/studio`}
+                href={`/dashboard/${currentTeamSlug}/${currentSiteId}/studio`}
                 className="px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Code2 className="w-3.5 h-3.5" />
@@ -472,8 +531,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* Create Publication Modal Dialog */}
+      {/* Create Publication & Team Modals */}
       <CreatePublicationModal />
+      <CreateTeamModal />
 
       {/* Floating Toast Notification */}
       {toast && (

@@ -1,18 +1,22 @@
 "use client";
 
-import React from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ProjectsHub } from "./components/ProjectsHub";
 import { useDashboard } from "./context";
+import { Loader2 } from "lucide-react";
 
-export default function DashboardRootPage() {
+export default function DashboardRootRedirect() {
   const router = useRouter();
-  const { setSelectedSite } = useDashboard();
+  const { activeTeamSlug, teams } = useDashboard();
 
-  const handleSelectSite = (siteId: string) => {
-    setSelectedSite(siteId);
-    router.push(`/dashboard/${siteId}`);
-  };
+  useEffect(() => {
+    const slug = activeTeamSlug || (teams.length > 0 ? teams[0].slug : "freds-projects");
+    router.replace(`/dashboard/${slug}`);
+  }, [router, activeTeamSlug, teams]);
 
-  return <ProjectsHub onSelectSite={handleSelectSite} />;
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center text-[var(--text-muted)]">
+      <Loader2 className="w-6 h-6 animate-spin text-[var(--brand-orange)]" />
+    </div>
+  );
 }
