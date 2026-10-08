@@ -21,16 +21,22 @@ import {
   ChevronDown,
   Sparkles,
   LogOut,
+  Layers,
+  Plus,
 } from "lucide-react";
 import { DashboardProvider, useDashboard } from "./context";
 import { useSession, signOut } from "@/lib/auth-client";
+import { CreatePublicationModal } from "./components/CreatePublicationModal";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const {
+    sites,
     selectedSite,
     setSelectedSite,
+    selectedSiteData,
+    setIsCreateSiteModalOpen,
     commentsList,
     authors,
     isRefreshing,
@@ -70,14 +76,26 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     {
-      group: "SALON MANAGEMENT",
+      group: "PUBLICATIONS HUB",
+      items: [
+        {
+          label: "All Projects",
+          href: "/dashboard",
+          icon: Layers,
+          badge: sites.length > 0 ? `${sites.length}` : null,
+          exact: true,
+        },
+      ],
+    },
+    {
+      group: "ACTIVE PUBLICATION",
       items: [
         {
           label: "Overview",
-          href: "/dashboard",
+          href: "/dashboard?view=overview",
           icon: LayoutDashboard,
           badge: null,
-          exact: true,
+          exact: false,
         },
         {
           label: "Moderation",
@@ -129,7 +147,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     if (pathname === "/dashboard/threads") return "Active Discussions";
     if (pathname === "/dashboard/authors") return "Author Roster";
     if (pathname === "/dashboard/settings") return "Site Settings";
-    return "Overview";
+    return "Projects";
   };
 
   return (
@@ -173,22 +191,62 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
+          {/* Vercel-Style Account Scope */}
+          <div className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)]">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 rounded-lg bg-[var(--brand-orange)]/15 text-[var(--brand-orange)] font-bold text-xs flex items-center justify-center shrink-0">
+                {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "F"}
+              </div>
+              <div className="truncate text-xs font-bold text-[var(--text-main)]">
+                {session?.user?.name ? `${session.user.name}'s projects` : "Fred's projects"}
+              </div>
+            </div>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-[var(--border-card)] bg-[var(--bg-card)] text-[var(--text-muted)]">
+              Hobby
+            </span>
+          </div>
+
           {/* Publication Selector Dropdown */}
-          <div className="p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)] block">
-              Active Publication
-            </label>
+          <div className="p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)] block">
+                Active Publication
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsCreateSiteModalOpen(true)}
+                className="text-[10px] font-bold text-[var(--brand-orange)] hover:underline flex items-center gap-0.5 cursor-pointer"
+                title="Add new publication"
+              >
+                <Plus className="w-3 h-3" />
+                <span>New</span>
+              </button>
+            </div>
             <div className="relative">
               <select
                 value={selectedSite}
-                onChange={(e) => setSelectedSite(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value === "__NEW__") {
+                    setIsCreateSiteModalOpen(true);
+                  } else {
+                    setSelectedSite(e.target.value);
+                  }
+                }}
                 className="w-full appearance-none bg-transparent font-semibold text-xs text-[var(--text-main)] focus:outline-none cursor-pointer pr-6 truncate"
               >
-                <option value="trc254" className="bg-[var(--bg-card)] text-[var(--text-main)]">
-                  The Reading Circle (trc254)
-                </option>
-                <option value="demo" className="bg-[var(--bg-card)] text-[var(--text-main)]">
-                  Demo Sandbox (demo)
+                {sites.length > 0 ? (
+                  sites.map((s) => (
+                    <option key={s.id} value={s.id} className="bg-[var(--bg-card)] text-[var(--text-main)]">
+                      {s.name} ({s.id})
+                    </option>
+                  ))
+                ) : (
+                  <option value="trc254" className="bg-[var(--bg-card)] text-[var(--text-main)]">
+                    The Reading Circle (trc254)
+                  </option>
+                )}
+                <option value="__NEW__" className="bg-[var(--bg-card)] text-[var(--brand-orange)] font-bold">
+                  + Add New Publication...
                 </option>
               </select>
               <ChevronDown className="w-3.5 h-3.5 absolute right-0 top-0.5 text-[var(--text-muted)] pointer-events-none" />
@@ -322,9 +380,24 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
             {/* Breadcrumb Path */}
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-[var(--text-muted)]">Dashboard</span>
+              <Link
+                href="/dashboard"
+                className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+              >
+                Dashboard
+              </Link>
               <span className="text-[var(--text-muted)]">/</span>
-              <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
+              {pathname === "/dashboard" ? (
+                <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
+              ) : (
+                <>
+                  <span className="text-[var(--text-secondary)] font-medium">
+                    {selectedSiteData?.name || (selectedSite === "trc254" ? "The Reading Circle" : selectedSite)}
+                  </span>
+                  <span className="text-[var(--text-muted)]">/</span>
+                  <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
+                </>
+              )}
             </div>
           </div>
 
@@ -370,6 +443,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
+
+      {/* Create Publication Modal Dialog */}
+      <CreatePublicationModal />
 
       {/* Floating Toast Notification */}
       {toast && (

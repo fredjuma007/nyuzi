@@ -9,9 +9,28 @@ export interface MetricsData {
   totalUpvotes: number;
 }
 
+export interface SiteItem {
+  id: string;
+  name: string;
+  domain: string;
+  ownerId?: string | null;
+  ownerEmail?: string | null;
+  turnstileEnabled?: boolean | null;
+  moderationRequired?: boolean | null;
+  settings?: string | null;
+  createdAt?: string | Date;
+}
+
 export interface DashboardContextType {
+  sites: SiteItem[];
+  setSites: React.Dispatch<React.SetStateAction<SiteItem[]>>;
   selectedSite: string;
   setSelectedSite: (site: string) => void;
+  selectedSiteData: SiteItem | undefined;
+  fetchUserSites: () => Promise<void>;
+  isCreateSiteModalOpen: boolean;
+  setIsCreateSiteModalOpen: (open: boolean) => void;
+  createNewSite: (name: string, domain: string, accentColor?: string) => Promise<SiteItem | null>;
   metrics: MetricsData;
   commentsList: CommentItem[];
   setCommentsList: React.Dispatch<React.SetStateAction<CommentItem[]>>;
@@ -55,7 +74,55 @@ function formatRelativeTime(dateInput: any): string {
 }
 
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
-  const [selectedSite, setSelectedSite] = useState<string>("trc254");
+  const [sites, setSites] = useState<SiteItem[]>([]);
+  const [selectedSite, setSelectedSiteState] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("nyuzi-selected-site") || "trc254";
+    }
+    return "trc254";
+  });
+  const [isCreateSiteModalOpen, setIsCreateSiteModalOpen] = useState(false);
+
+  const setSelectedSite = (siteId: string) => {
+    setSelectedSiteState(siteId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("nyuzi-selected-site", siteId);
+    }
+  };
+
+  const selectedSiteData = sites.find((s) => s.id === selectedSite);
+
+  const fetchUserSites = useCallback(async () => {
+    try {
+      const res = await fetch("/api/sites");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.sites)) {
+          setSites(data.sites);
+          if (data.sites.length > 0) {
+            setSelectedSiteState((prev) => {
+              const exists = data.sites.some((s: SiteItem) => s.id === prev);
+              if (!exists) {
+                const firstId = data.sites[0].id;
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("nyuzi-selected-site", firstId);
+                }
+                return firstId;
+              }
+              return prev;
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch user sites:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserSites();
+  }, [fetchUserSites]);
+
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [apiStatus, setApiStatus] = useState<"live" | "fallback" | "error">("live");
@@ -381,11 +448,44 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const createNewSite = async (
+    name: string,
+    domain: string,
+    accentColor?: string
+  ): Promise<SiteItem | null> => {
+    try {
+      const res = await fetch("/api/sites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, domain, accentColor }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create publication");
+      }
+      const newSite: SiteItem = data.site;
+      setSites((prev) => [newSite, ...prev]);
+      setSelectedSite(newSite.id);
+      showToast(`Publication "${name}" created successfully!`);
+      return newSite;
+    } catch (err: any) {
+      showToast(err.message || "Failed to create publication");
+      return null;
+    }
+  };
+
   return (
     <DashboardContext.Provider
       value={{
+        sites,
+        setSites,
         selectedSite,
         setSelectedSite,
+        selectedSiteData,
+        fetchUserSites,
+        isCreateSiteModalOpen,
+        setIsCreateSiteModalOpen,
+        createNewSite,
         metrics,
         commentsList,
         setCommentsList,

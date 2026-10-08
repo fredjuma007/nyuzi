@@ -110,6 +110,9 @@ export async function ensureTables() {
         "auto_discovered" INTEGER NOT NULL DEFAULT 0,
         "created_at" INTEGER NOT NULL
       );
+
+      INSERT OR IGNORE INTO "sites" ("id", "name", "domain", "owner_email", "settings", "created_at")
+      VALUES ('trc254', 'The Reading Circle', 'readingcircle254.com', 'fredjuma8@gmail.com', '{"accentColor":"#f56220"}', unixepoch() * 1000);
     `);
     isInitialized = true;
   } catch (err) {

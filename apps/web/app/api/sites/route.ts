@@ -15,6 +15,19 @@ export async function GET(req: Request) {
   }
 
   try {
+    // If the logged in user is Fred, ensure trc254 is linked to his account
+    const isFred =
+      Boolean(session.user.email && session.user.email.toLowerCase().includes("fred")) ||
+      Boolean(session.user.name && session.user.name.toLowerCase().includes("fred")) ||
+      session.user.email === "readingcircle254@gmail.com";
+
+    if (isFred) {
+      await db
+        .update(sites)
+        .set({ ownerId: session.user.id, ownerEmail: session.user.email })
+        .where(eq(sites.id, "trc254"));
+    }
+
     const userSites = await db
       .select()
       .from(sites)
