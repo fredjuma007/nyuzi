@@ -378,7 +378,7 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
                     <div className="pt-2 flex items-center justify-between border-t border-[var(--border-card)] text-xs">
                       <div className="flex items-center gap-1">
                         <Link
-                          href="/dashboard/moderation"
+                          href={`/dashboard/${site.id}/moderation`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectSite(site.id);
@@ -391,7 +391,7 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
                         </Link>
 
                         <Link
-                          href="/dashboard/studio"
+                          href={`/dashboard/${site.id}/studio`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectSite(site.id);
@@ -399,7 +399,7 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
                           className="px-2.5 py-1 rounded-lg border border-[var(--border-card)] bg-[var(--bg-card)] hover:border-[var(--brand-orange)]/40 hover:text-[var(--brand-orange)] text-[var(--text-secondary)] text-[11px] font-semibold transition-colors flex items-center gap-1"
                           title="Widget Studio"
                         >
-                          <Code2 className="w-3 h-3" />
+                          <Code2 className="w-3.5 h-3.5" />
                           <span>Studio</span>
                         </Link>
                       </div>

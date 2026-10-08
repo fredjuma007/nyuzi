@@ -1,15 +1,16 @@
 "use client";
 
-import React from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useDashboard } from "../context";
-import { SettingsTab } from "../components/SettingsTab";
 
-export default function SettingsPage() {
+export default function LegacySettingsRedirect() {
+  const router = useRouter();
   const { selectedSite } = useDashboard();
 
-  return (
-    <div className="space-y-6">
-      <SettingsTab selectedSite={selectedSite} />
-    </div>
-  );
+  useEffect(() => {
+    router.replace(`/dashboard/${selectedSite || "trc254"}/settings`);
+  }, [router, selectedSite]);
+
+  return null;
 }

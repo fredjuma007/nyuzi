@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useParams } from "next/navigation";
 import {
   LayoutDashboard,
   ShieldAlert,
@@ -30,6 +30,10 @@ import { CreatePublicationModal } from "./components/CreatePublicationModal";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const params = useParams<{ siteId?: string }>();
+  const routeSiteId = params?.siteId;
+
   const { data: session } = useSession();
   const {
     sites,
@@ -44,6 +48,15 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     fetchLiveDashboard,
     toast,
   } = useDashboard();
+
+  const currentSiteId = routeSiteId || selectedSite || "trc254";
+
+  // Sync route param with selected site in context
+  useEffect(() => {
+    if (routeSiteId && routeSiteId !== selectedSite) {
+      setSelectedSite(routeSiteId);
+    }
+  }, [routeSiteId, selectedSite, setSelectedSite]);
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -92,28 +105,28 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       items: [
         {
           label: "Overview",
-          href: "/dashboard?view=overview",
+          href: `/dashboard/${currentSiteId}`,
           icon: LayoutDashboard,
           badge: null,
-          exact: false,
+          exact: true,
         },
         {
           label: "Moderation",
-          href: "/dashboard/moderation",
+          href: `/dashboard/${currentSiteId}/moderation`,
           icon: ShieldAlert,
           badge: pendingCommentsCount > 0 ? `${pendingCommentsCount} Alert` : null,
           exact: false,
         },
         {
           label: "Discussions",
-          href: "/dashboard/threads",
+          href: `/dashboard/${currentSiteId}/threads`,
           icon: MessageSquare,
           badge: null,
           exact: false,
         },
         {
           label: "Author Roster",
-          href: "/dashboard/authors",
+          href: `/dashboard/${currentSiteId}/authors`,
           icon: Users,
           badge: pendingDiscoveredCount > 0 ? `${pendingDiscoveredCount} New` : null,
           exact: false,
@@ -125,14 +138,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       items: [
         {
           label: "Widget Studio",
-          href: "/dashboard/studio",
+          href: `/dashboard/${currentSiteId}/studio`,
           icon: Palette,
           badge: "Customizer",
           exact: false,
         },
         {
           label: "Site Settings",
-          href: "/dashboard/settings",
+          href: `/dashboard/${currentSiteId}/settings`,
           icon: Settings,
           badge: null,
           exact: false,
@@ -142,11 +155,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   ];
 
   const getPageTitle = () => {
-    if (pathname === "/dashboard/moderation") return "Moderation Queue";
-    if (pathname === "/dashboard/studio") return "Widget Embed Studio";
-    if (pathname === "/dashboard/threads") return "Active Discussions";
-    if (pathname === "/dashboard/authors") return "Author Roster";
-    if (pathname === "/dashboard/settings") return "Site Settings";
+    if (pathname.includes("/moderation")) return "Moderation Queue";
+    if (pathname.includes("/studio")) return "Widget Embed Studio";
+    if (pathname.includes("/threads")) return "Active Discussions";
+    if (pathname.includes("/authors")) return "Author Roster";
+    if (pathname.includes("/settings")) return "Site Settings";
+    if (routeSiteId) return "Overview";
     return "Projects";
   };
 
@@ -224,12 +238,19 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
             <div className="relative">
               <select
-                value={selectedSite}
+                value={currentSiteId}
                 onChange={(e) => {
-                  if (e.target.value === "__NEW__") {
+                  const val = e.target.value;
+                  if (val === "__NEW__") {
                     setIsCreateSiteModalOpen(true);
                   } else {
-                    setSelectedSite(e.target.value);
+                    setSelectedSite(val);
+                    if (routeSiteId) {
+                      const subPath = pathname.split(`/dashboard/${routeSiteId}`)[1] || "";
+                      router.push(`/dashboard/${val}${subPath}`);
+                    } else {
+                      router.push(`/dashboard/${val}`);
+                    }
                   }
                 }}
                 className="w-full appearance-none bg-transparent font-semibold text-xs text-[var(--text-main)] focus:outline-none cursor-pointer pr-6 truncate"
@@ -315,8 +336,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           {/* Back to Live Website Link */}
           <a
             href={
-              selectedSite === "trc254"
+              currentSiteId === "trc254"
                 ? "https://www.readingcircle254.com/blog"
+                : selectedSiteData?.domain
+                ? selectedSiteData.domain.startsWith("http")
+                  ? selectedSiteData.domain
+                  : `https://${selectedSiteData.domain}`
                 : "/demo"
             }
             target="_blank"
@@ -391,9 +416,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
               ) : (
                 <>
-                  <span className="text-[var(--text-secondary)] font-medium">
-                    {selectedSiteData?.name || (selectedSite === "trc254" ? "The Reading Circle" : selectedSite)}
-                  </span>
+                  <Link
+                    href={`/dashboard/${currentSiteId}`}
+                    className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
+                  >
+                    {selectedSiteData?.name || (currentSiteId === "trc254" ? "The Reading Circle" : currentSiteId)}
+                  </Link>
                   <span className="text-[var(--text-muted)]">/</span>
                   <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
                 </>
@@ -420,9 +448,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </button>
 
             {/* Direct Studio CTA */}
-            {pathname !== "/dashboard/studio" && (
+            {!pathname.includes("/studio") && (
               <Link
-                href="/dashboard/studio"
+                href={`/dashboard/${currentSiteId}/studio`}
                 className="px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Code2 className="w-3.5 h-3.5" />

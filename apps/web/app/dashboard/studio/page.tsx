@@ -1,15 +1,16 @@
 "use client";
 
-import React from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useDashboard } from "../context";
-import { EmbedStudioTab } from "../components/EmbedStudioTab";
 
-export default function WidgetStudioPage() {
-  const { selectedSite, showToast } = useDashboard();
+export default function LegacyStudioRedirect() {
+  const router = useRouter();
+  const { selectedSite } = useDashboard();
 
-  return (
-    <div className="flex-1 flex flex-col min-h-0 h-full">
-      <EmbedStudioTab selectedSite={selectedSite} showToast={showToast} />
-    </div>
-  );
+  useEffect(() => {
+    router.replace(`/dashboard/${selectedSite || "trc254"}/studio`);
+  }, [router, selectedSite]);
+
+  return null;
 }

@@ -1,19 +1,16 @@
 "use client";
 
-import React from "react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useDashboard } from "../context";
-import { ThreadsTab } from "../components/ThreadsTab";
 
-export default function ThreadsPage() {
-  const { loading, threadsList, selectedSite } = useDashboard();
+export default function LegacyThreadsRedirect() {
+  const router = useRouter();
+  const { selectedSite } = useDashboard();
 
-  return (
-    <div className="space-y-6">
-      <ThreadsTab
-        loading={loading}
-        threadsList={threadsList}
-        selectedSite={selectedSite}
-      />
-    </div>
-  );
+  useEffect(() => {
+    router.replace(`/dashboard/${selectedSite || "trc254"}/threads`);
+  }, [router, selectedSite]);
+
+  return null;
 }
