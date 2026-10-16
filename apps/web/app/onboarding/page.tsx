@@ -24,10 +24,28 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If session finishes loading and there is no user, redirect to homepage
+  // If session finishes loading and there is no user, redirect to homepage; if user already has a team, redirect to dashboard
   useEffect(() => {
-    if (!isPending && !session?.user) {
-      router.push("/");
+    async function checkExistingUser() {
+      if (session?.user) {
+        try {
+          const res = await fetch("/api/teams");
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.teams) && data.teams.length > 0) {
+              router.replace(`/dashboard/${data.teams[0].slug}`);
+            }
+          }
+        } catch {}
+      }
+    }
+
+    if (!isPending) {
+      if (!session?.user) {
+        router.push("/");
+      } else {
+        checkExistingUser();
+      }
     }
   }, [session, isPending, router]);
 
@@ -57,13 +75,20 @@ export default function OnboardingPage() {
         throw new Error(data.error || "Failed to create publication");
       }
 
-      // Store newly created site in localStorage for dashboard context
+      // Store newly created site and team in localStorage
       if (typeof window !== "undefined") {
         localStorage.setItem("nyuzi-selected-site", data.site.id);
+        if (data.teamSlug) {
+          localStorage.setItem("nyuzi-active-team", data.teamSlug);
+        }
       }
 
-      // Route to dashboard install page
-      router.push("/dashboard");
+      // Route directly to the new publication overview
+      if (data.teamSlug) {
+        router.push(`/dashboard/${data.teamSlug}/${data.site.id}`);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setError(err?.message || "An error occurred");
     } finally {

@@ -6,12 +6,22 @@ import { useDashboard } from "../context";
 
 export default function LegacyModerationRedirect() {
   const router = useRouter();
-  const { selectedSite, activeTeamSlug } = useDashboard();
+  const { selectedSite, activeTeamSlug, teams, sites, loading } = useDashboard();
 
   useEffect(() => {
-    const team = activeTeamSlug || "freds-projects";
-    router.replace(`/dashboard/${team}/${selectedSite || "trc254"}/moderation`);
-  }, [router, selectedSite, activeTeamSlug]);
+    if (loading) return;
+    if (teams.length === 0) {
+      router.replace("/onboarding");
+      return;
+    }
+    const team = activeTeamSlug || teams[0].slug;
+    const site = selectedSite || (sites.length > 0 ? sites[0].id : "");
+    if (site) {
+      router.replace(`/dashboard/${team}/${site}/moderation`);
+    } else {
+      router.replace(`/dashboard/${team}`);
+    }
+  }, [router, selectedSite, activeTeamSlug, teams, sites, loading]);
 
   return null;
 }

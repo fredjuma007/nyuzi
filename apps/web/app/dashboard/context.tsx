@@ -95,11 +95,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [teams, setTeams] = useState<TeamItem[]>([]);
   const [activeTeamSlug, setActiveTeamSlugState] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("nyuzi-active-team") || "freds-projects";
+      return localStorage.getItem("nyuzi-active-team") || "";
     }
-    return "freds-projects";
+    return "";
   });
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const setActiveTeamSlug = (slug: string) => {
     setActiveTeamSlugState(slug);
@@ -115,23 +116,29 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/teams");
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data.teams) && data.teams.length > 0) {
+        if (Array.isArray(data.teams)) {
           setTeams(data.teams);
-          setActiveTeamSlugState((prev) => {
-            const exists = data.teams.some((t: TeamItem) => t.slug === prev);
-            if (!exists) {
-              const firstSlug = data.teams[0].slug;
-              if (typeof window !== "undefined") {
-                localStorage.setItem("nyuzi-active-team", firstSlug);
+          if (data.teams.length > 0) {
+            setActiveTeamSlugState((prev) => {
+              const exists = data.teams.some((t: TeamItem) => t.slug === prev);
+              if (!exists || !prev) {
+                const firstSlug = data.teams[0].slug;
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("nyuzi-active-team", firstSlug);
+                }
+                return firstSlug;
               }
-              return firstSlug;
-            }
-            return prev;
-          });
+              return prev;
+            });
+          } else {
+            setActiveTeamSlugState("");
+          }
         }
       }
     } catch (err) {
       console.warn("Failed to fetch teams:", err);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -142,9 +149,9 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [sites, setSites] = useState<SiteItem[]>([]);
   const [selectedSite, setSelectedSiteState] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("nyuzi-selected-site") || "trc254";
+      return localStorage.getItem("nyuzi-selected-site") || "";
     }
-    return "trc254";
+    return "";
   });
   const [isCreateSiteModalOpen, setIsCreateSiteModalOpen] = useState(false);
 
@@ -158,8 +165,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const selectedSiteData = sites.find((s) => s.id === selectedSite);
 
   const fetchUserSites = useCallback(async (teamSlug?: string) => {
+    const slug = teamSlug || activeTeamSlug;
+    if (!slug) {
+      setSites([]);
+      return;
+    }
     try {
-      const slug = teamSlug || activeTeamSlug;
       const res = await fetch(`/api/sites?teamSlug=${slug}`);
       if (res.ok) {
         const data = await res.json();
@@ -168,7 +179,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
           if (data.sites.length > 0) {
             setSelectedSiteState((prev) => {
               const exists = data.sites.some((s: SiteItem) => s.id === prev);
-              if (!exists) {
+              if (!exists || !prev) {
                 const firstId = data.sites[0].id;
                 if (typeof window !== "undefined") {
                   localStorage.setItem("nyuzi-selected-site", firstId);
@@ -177,8 +188,13 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
               }
               return prev;
             });
+          } else {
+            setSelectedSiteState("");
           }
         }
+      } else if (res.status === 403 || res.status === 401) {
+        setSites([]);
+        setSelectedSiteState("");
       }
     } catch (err) {
       console.warn("Failed to fetch user sites:", err);
@@ -186,10 +202,11 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   }, [activeTeamSlug]);
 
   useEffect(() => {
-    fetchUserSites();
-  }, [fetchUserSites]);
+    if (activeTeamSlug) {
+      fetchUserSites();
+    }
+  }, [fetchUserSites, activeTeamSlug]);
 
-  const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [apiStatus, setApiStatus] = useState<"live" | "fallback" | "error">("live");
   const [toast, setToast] = useState<string | null>(null);
@@ -234,7 +251,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     ],
   };
 
-  const [authors, setAuthors] = useState<AuthorEntry[]>(defaultAuthors.trc254);
+  const [authors, setAuthors] = useState<AuthorEntry[]>([]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -243,6 +260,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
 
   // Fetch Authors dynamically from Cloudflare D1
   const fetchAuthors = useCallback(async () => {
+    if (!selectedSite) {
+      setAuthors([]);
+      return;
+    }
     try {
       const res = await fetch(`${API_BASE}/api/v1/authors?siteId=${selectedSite}`);
       if (res.ok) {
@@ -255,8 +276,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn("[Authors Sync] Failed to fetch authors from API:", err);
     }
-    // Fallback to defaults if no authors yet in D1
-    setAuthors(defaultAuthors[selectedSite] || defaultAuthors.trc254);
+    // Fallback to defaults only if defined for this specific site
+    setAuthors(defaultAuthors[selectedSite] || []);
   }, [selectedSite]);
 
   const handleAddAuthor = async (
@@ -316,6 +337,20 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   };
 
   const fetchLiveDashboard = useCallback(async () => {
+    if (!selectedSite) {
+      setMetrics({
+        totalComments: 0,
+        totalThreads: 0,
+        totalUpvotes: 0,
+      });
+      setCommentsList([]);
+      setThreadsList([]);
+      setAuthors([]);
+      setLoading(false);
+      setIsRefreshing(false);
+      return;
+    }
+
     setLoading(true);
     setIsRefreshing(true);
     try {

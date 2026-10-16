@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db, ensureTables } from "@/lib/db";
 import { organization, member, sites } from "@nyuzi/db";
 import { eq, and } from "drizzle-orm";
+import { isPlatformAdmin } from "@/lib/admin";
 
 export async function GET(req: Request) {
   await ensureTables();
@@ -15,12 +16,9 @@ export async function GET(req: Request) {
   }
 
   try {
-    const isFred =
-      Boolean(session.user.email && session.user.email.toLowerCase().includes("fred")) ||
-      Boolean(session.user.name && session.user.name.toLowerCase().includes("fred")) ||
-      session.user.email === "readingcircle254@gmail.com";
+    const isFred = isPlatformAdmin(session.user.email);
 
-    // If Fred, make sure he is registered as owner of org_fred_personal
+    // If Fred/platform admin, make sure he is registered as owner of org_fred_personal
     if (isFred) {
       const existingMem = await db
         .select()
@@ -53,39 +51,10 @@ export async function GET(req: Request) {
       .innerJoin(organization, eq(member.organizationId, organization.id))
       .where(eq(member.userId, session.user.id));
 
-    let teamsList = userMemberships.map((m) => ({
+    const teamsList = userMemberships.map((m) => ({
       ...m.org,
       role: m.role,
     }));
-
-    // If a new user has zero teams yet, automatically bootstrap their personal workspace
-    if (teamsList.length === 0) {
-      const cleanName = session.user.name || "Publisher";
-      const slugPrefix = cleanName.toLowerCase().replace(/[^a-z0-9]/g, "-").slice(0, 14);
-      const randomSuffix = Math.random().toString(36).substring(2, 6);
-      const teamSlug = `${slugPrefix}-projects-${randomSuffix}`;
-      const newOrgId = `org_${session.user.id.slice(0, 8)}_${randomSuffix}`;
-
-      const newOrg = {
-        id: newOrgId,
-        name: `${cleanName}'s Projects`,
-        slug: teamSlug,
-        logo: null,
-        createdAt: new Date(),
-        metadata: JSON.stringify({ type: "personal" }),
-      };
-
-      await db.insert(organization).values(newOrg);
-      await db.insert(member).values({
-        id: `mem_${newOrgId}_${session.user.id}`,
-        organizationId: newOrgId,
-        userId: session.user.id,
-        role: "owner",
-        createdAt: new Date(),
-      });
-
-      teamsList = [{ ...newOrg, role: "owner" }];
-    }
 
     return NextResponse.json({ teams: teamsList });
   } catch (err: any) {

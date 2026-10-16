@@ -8,8 +8,8 @@ import { ModerationTab } from "../../../components/ModerationTab";
 
 export default function PublicationModerationPage() {
   const params = useParams<{ teamSlug: string; siteId: string }>();
-  const teamSlug = params?.teamSlug || "freds-projects";
-  const siteId = params?.siteId || "trc254";
+  const teamSlug = params?.teamSlug || "";
+  const siteId = params?.siteId || "";
 
   const {
     loading,

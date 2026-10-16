@@ -36,6 +36,7 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
     threadsList,
     metrics,
     activeTeamSlug,
+    teams,
   } = useDashboard();
   const { data: session } = useSession();
 
@@ -379,7 +380,7 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
                     <div className="pt-2 flex items-center justify-between border-t border-[var(--border-card)] text-xs">
                       <div className="flex items-center gap-1">
                         <Link
-                          href={`/dashboard/${activeTeamSlug || "freds-projects"}/${site.id}/moderation`}
+                          href={`/dashboard/${activeTeamSlug || (teams.length > 0 ? teams[0].slug : "")}/${site.id}/moderation`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectSite(site.id);
@@ -392,7 +393,7 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
                         </Link>
 
                         <Link
-                          href={`/dashboard/${activeTeamSlug || "freds-projects"}/${site.id}/studio`}
+                          href={`/dashboard/${activeTeamSlug || (teams.length > 0 ? teams[0].slug : "")}/${site.id}/studio`}
                           onClick={(e) => {
                             e.stopPropagation();
                             onSelectSite(site.id);

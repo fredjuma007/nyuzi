@@ -7,8 +7,8 @@ import { EmbedStudioTab } from "../../../components/EmbedStudioTab";
 
 export default function PublicationWidgetStudioPage() {
   const params = useParams<{ teamSlug: string; siteId: string }>();
-  const teamSlug = params?.teamSlug || "freds-projects";
-  const siteId = params?.siteId || "trc254";
+  const teamSlug = params?.teamSlug || "";
+  const siteId = params?.siteId || "";
   const {
     selectedSite,
     setSelectedSite,

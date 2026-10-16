@@ -8,8 +8,8 @@ import { AuthorEntry } from "../../../components/types";
 
 export default function PublicationAuthorsPage() {
   const params = useParams<{ teamSlug: string; siteId: string }>();
-  const teamSlug = params?.teamSlug || "freds-projects";
-  const siteId = params?.siteId || "trc254";
+  const teamSlug = params?.teamSlug || "";
+  const siteId = params?.siteId || "";
 
   const {
     authors,

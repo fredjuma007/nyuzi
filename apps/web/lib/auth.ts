@@ -4,6 +4,19 @@ import { db } from "./db";
 import * as schema from "@nyuzi/db";
 
 import nodemailer from "nodemailer";
+import { setGlobalDispatcher, Agent } from "undici";
+
+// Configure Undici with Happy Eyeballs to prevent IPv6 connect timeouts on mobile/local networks
+try {
+  setGlobalDispatcher(
+    new Agent({
+      connect: {
+        autoSelectFamily: true,
+        autoSelectFamilyAttemptTimeout: 250,
+      },
+    })
+  );
+} catch {}
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -23,6 +36,13 @@ export const auth = betterAuth({
       verification: schema.verification,
     },
   }),
+  trustedProviders: ["google", "github"],
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google", "github"],
+    },
+  },
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
@@ -89,6 +109,7 @@ export const auth = betterAuth({
     "http://localhost:3001",
     "http://127.0.0.1:3001",
     "http://localhost:3002",
+    "https://nyuzi-yap.vercel.app",
   ],
 });
 

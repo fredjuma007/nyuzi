@@ -62,7 +62,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
     try {
       await authClient.signIn.social({
         provider,
-        callbackURL: "/onboarding",
+        callbackURL: "/dashboard",
       });
     } catch (err: any) {
       setError(err?.message || `Failed to sign in with ${provider}`);
@@ -96,7 +96,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
           name: name.trim(),
           email: email.trim(),
           password,
-          callbackURL: "/onboarding",
+          callbackURL: "/dashboard",
         });
         if (res.error) {
           setError(res.error.message || "Failed to create account");
@@ -116,7 +116,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = "signin" }: AuthModal
         }
       }
       onClose();
-      router.push("/onboarding");
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err?.message || "An unexpected error occurred");
     } finally {

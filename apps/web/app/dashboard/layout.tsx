@@ -36,7 +36,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const routeTeamSlug = params?.teamSlug;
   const routeSiteId = params?.siteId;
 
-  const { data: session } = useSession();
+  const { data: session, isPending: sessionPending } = useSession();
   const {
     teams,
     activeTeam,
@@ -51,14 +51,37 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     setIsCreateSiteModalOpen,
     commentsList,
     authors,
+    loading,
     isRefreshing,
     apiStatus,
     fetchLiveDashboard,
     toast,
   } = useDashboard();
 
-  const currentTeamSlug = routeTeamSlug || activeTeamSlug || "freds-projects";
-  const currentSiteId = routeSiteId || selectedSite || "trc254";
+  // Auth Protection: If session resolves and there is no user, redirect to homepage
+  useEffect(() => {
+    if (!sessionPending && !session?.user) {
+      router.replace("/");
+    }
+  }, [session, sessionPending, router]);
+
+  // Route & Tenant Guard: Verify user has teams, otherwise route to onboarding
+  useEffect(() => {
+    if (sessionPending || loading) return;
+
+    if (teams.length === 0) {
+      router.replace("/onboarding");
+      return;
+    }
+
+    // If attempting to access a team workspace the user doesn't belong to
+    if (routeTeamSlug && !teams.some((t) => t.slug === routeTeamSlug)) {
+      router.replace(`/dashboard/${teams[0].slug}`);
+    }
+  }, [sessionPending, loading, teams, routeTeamSlug, router]);
+
+  const currentTeamSlug = routeTeamSlug || activeTeamSlug || (teams.length > 0 ? teams[0].slug : "");
+  const currentSiteId = routeSiteId || selectedSite || (sites.length > 0 ? sites[0].id : "");
 
   // Sync route teamSlug with context
   useEffect(() => {
@@ -312,8 +335,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                     </option>
                   ))
                 ) : (
-                  <option value="trc254" className="bg-[var(--bg-card)] text-[var(--text-main)]">
-                    The Reading Circle (trc254)
+                  <option value="" disabled className="bg-[var(--bg-card)] text-[var(--text-muted)]">
+                    No publications yet
                   </option>
                 )}
                 <option value="__NEW__" className="bg-[var(--bg-card)] text-[var(--brand-orange)] font-bold">

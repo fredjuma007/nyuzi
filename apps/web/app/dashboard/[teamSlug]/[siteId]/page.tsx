@@ -18,8 +18,8 @@ import { useSession } from "@/lib/auth-client";
 
 export default function PublicationOverviewPage() {
   const params = useParams<{ teamSlug: string; siteId: string }>();
-  const teamSlug = params?.teamSlug || "freds-projects";
-  const siteId = params?.siteId || "trc254";
+  const teamSlug = params?.teamSlug || "";
+  const siteId = params?.siteId || "";
 
   const {
     loading,
@@ -68,7 +68,7 @@ export default function PublicationOverviewPage() {
           <h2 className="font-serif-title text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-main)]">
             Good Morning,{" "}
             <span className="text-[var(--brand-orange)]">
-              {session?.user?.name || (siteId === "trc254" ? "Fred Juma" : "Publisher")}
+              {session?.user?.name || "Publisher"}
             </span>
           </h2>
           <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">

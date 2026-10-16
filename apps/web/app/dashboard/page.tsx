@@ -3,16 +3,32 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useDashboard } from "./context";
+import { useSession } from "@/lib/auth-client";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardRootRedirect() {
   const router = useRouter();
-  const { activeTeamSlug, teams } = useDashboard();
+  const { data: session, isPending: sessionPending } = useSession();
+  const { activeTeamSlug, teams, loading } = useDashboard();
 
   useEffect(() => {
-    const slug = activeTeamSlug || (teams.length > 0 ? teams[0].slug : "freds-projects");
-    router.replace(`/dashboard/${slug}`);
-  }, [router, activeTeamSlug, teams]);
+    if (sessionPending) return;
+
+    if (!session?.user) {
+      router.replace("/");
+      return;
+    }
+
+    if (loading) return;
+
+    if (teams.length === 0) {
+      router.replace("/onboarding");
+      return;
+    }
+
+    const targetTeam = teams.find((t) => t.slug === activeTeamSlug) || teams[0];
+    router.replace(`/dashboard/${targetTeam.slug}`);
+  }, [router, session, sessionPending, activeTeamSlug, teams, loading]);
 
   return (
     <div className="min-h-[50vh] flex items-center justify-center text-[var(--text-muted)]">
