@@ -93,14 +93,19 @@ function formatRelativeTime(dateInput: any): string {
 
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [teams, setTeams] = useState<TeamItem[]>([]);
-  const [activeTeamSlug, setActiveTeamSlugState] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("nyuzi-active-team") || "";
-    }
-    return "";
-  });
+  const [activeTeamSlug, setActiveTeamSlugState] = useState<string>("");
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Sync saved team/site from localStorage only after client mounts
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedTeam = localStorage.getItem("nyuzi-active-team");
+      if (storedTeam) setActiveTeamSlugState(storedTeam);
+      const storedSite = localStorage.getItem("nyuzi-selected-site");
+      if (storedSite) setSelectedSiteState(storedSite);
+    }
+  }, []);
 
   const setActiveTeamSlug = (slug: string) => {
     setActiveTeamSlugState(slug);
@@ -147,12 +152,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   }, [fetchTeams]);
 
   const [sites, setSites] = useState<SiteItem[]>([]);
-  const [selectedSite, setSelectedSiteState] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("nyuzi-selected-site") || "";
-    }
-    return "";
-  });
+  const [selectedSite, setSelectedSiteState] = useState<string>("");
   const [isCreateSiteModalOpen, setIsCreateSiteModalOpen] = useState(false);
 
   const setSelectedSite = (siteId: string) => {

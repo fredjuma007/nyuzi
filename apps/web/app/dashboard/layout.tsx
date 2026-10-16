@@ -126,13 +126,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     (a) => a.status === "discovered" || (!a.email && a.status !== "muted")
   ).length;
 
+  const teamBase = currentTeamSlug ? `/dashboard/${currentTeamSlug}` : "/dashboard";
+  const siteBase = currentTeamSlug && currentSiteId ? `/dashboard/${currentTeamSlug}/${currentSiteId}` : teamBase;
+
   const navItems = [
     {
       group: "PUBLICATIONS HUB",
       items: [
         {
           label: "All Projects",
-          href: `/dashboard/${currentTeamSlug}`,
+          href: teamBase,
           icon: Layers,
           badge: sites.length > 0 ? `${sites.length}` : null,
           exact: true,
@@ -144,28 +147,28 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       items: [
         {
           label: "Overview",
-          href: `/dashboard/${currentTeamSlug}/${currentSiteId}`,
+          href: siteBase,
           icon: LayoutDashboard,
           badge: null,
           exact: true,
         },
         {
           label: "Moderation",
-          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/moderation`,
+          href: currentTeamSlug && currentSiteId ? `${siteBase}/moderation` : teamBase,
           icon: ShieldAlert,
           badge: pendingCommentsCount > 0 ? `${pendingCommentsCount} Alert` : null,
           exact: false,
         },
         {
           label: "Discussions",
-          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/threads`,
+          href: currentTeamSlug && currentSiteId ? `${siteBase}/threads` : teamBase,
           icon: MessageSquare,
           badge: null,
           exact: false,
         },
         {
           label: "Author Roster",
-          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/authors`,
+          href: currentTeamSlug && currentSiteId ? `${siteBase}/authors` : teamBase,
           icon: Users,
           badge: pendingDiscoveredCount > 0 ? `${pendingDiscoveredCount} New` : null,
           exact: false,
@@ -177,14 +180,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       items: [
         {
           label: "Widget Studio",
-          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/studio`,
+          href: currentTeamSlug && currentSiteId ? `${siteBase}/studio` : teamBase,
           icon: Palette,
           badge: "Customizer",
           exact: false,
         },
         {
           label: "Site Settings",
-          href: `/dashboard/${currentTeamSlug}/${currentSiteId}/settings`,
+          href: currentTeamSlug && currentSiteId ? `${siteBase}/settings` : teamBase,
           icon: Settings,
           badge: null,
           exact: false,
@@ -479,30 +482,34 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             {/* Breadcrumb Path */}
             <div className="flex items-center gap-2 text-xs">
               <Link
-                href={`/dashboard/${currentTeamSlug}`}
+                href={teamBase}
                 className="text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
               >
                 Dashboard
               </Link>
-              <span className="text-[var(--text-muted)]">/</span>
-              <Link
-                href={`/dashboard/${currentTeamSlug}`}
-                className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
-              >
-                {activeTeam?.name || currentTeamSlug}
-              </Link>
-              {routeSiteId && (
+              {currentTeamSlug && (
                 <>
                   <span className="text-[var(--text-muted)]">/</span>
                   <Link
-                    href={`/dashboard/${currentTeamSlug}/${currentSiteId}`}
+                    href={teamBase}
+                    className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
+                  >
+                    {activeTeam?.name || currentTeamSlug}
+                  </Link>
+                </>
+              )}
+              {routeSiteId && currentSiteId && (
+                <>
+                  <span className="text-[var(--text-muted)]">/</span>
+                  <Link
+                    href={siteBase}
                     className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
                   >
                     {selectedSiteData?.name || (currentSiteId === "trc254" ? "The Reading Circle" : currentSiteId)}
                   </Link>
                 </>
               )}
-              {routeSiteId && pathname.includes(`/${currentSiteId}/`) && (
+              {routeSiteId && currentSiteId && pathname.includes(`/${currentSiteId}/`) && (
                 <>
                   <span className="text-[var(--text-muted)]">/</span>
                   <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
