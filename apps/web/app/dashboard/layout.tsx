@@ -366,7 +366,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
                     return (
                       <Link
-                        key={item.href}
+                        key={`${group.group}-${item.label}`}
                         href={item.href}
                         className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all group ${
                           isActive
