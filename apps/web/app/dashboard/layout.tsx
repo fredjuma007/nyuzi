@@ -51,6 +51,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     setIsCreateSiteModalOpen,
     commentsList,
     authors,
+    teamsLoading,
     loading,
     isRefreshing,
     apiStatus,
@@ -65,20 +66,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     }
   }, [session, sessionPending, router]);
 
-  // Route & Tenant Guard: Verify user has teams, otherwise route to onboarding
+  // Tenant Workspace Guard: If user belongs to teams but tries to access an unauthorized team slug
   useEffect(() => {
-    if (sessionPending || loading) return;
+    if (sessionPending || teamsLoading) return;
 
-    if (teams.length === 0) {
-      router.replace("/onboarding");
-      return;
-    }
-
-    // If attempting to access a team workspace the user doesn't belong to
-    if (routeTeamSlug && !teams.some((t) => t.slug === routeTeamSlug)) {
+    if (routeTeamSlug && teams.length > 0 && !teams.some((t) => t.slug === routeTeamSlug)) {
       router.replace(`/dashboard/${teams[0].slug}`);
     }
-  }, [sessionPending, loading, teams, routeTeamSlug, router]);
+  }, [sessionPending, teamsLoading, teams, routeTeamSlug, router]);
 
   const currentTeamSlug = routeTeamSlug || activeTeamSlug || (teams.length > 0 ? teams[0].slug : "");
   const currentSiteId = routeSiteId || selectedSite || (sites.length > 0 ? sites[0].id : "");

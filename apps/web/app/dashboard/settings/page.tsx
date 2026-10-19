@@ -6,10 +6,10 @@ import { useDashboard } from "../context";
 
 export default function LegacySettingsRedirect() {
   const router = useRouter();
-  const { selectedSite, activeTeamSlug, teams, sites, loading } = useDashboard();
+  const { selectedSite, activeTeamSlug, teams, sites, teamsLoading } = useDashboard();
 
   useEffect(() => {
-    if (loading) return;
+    if (teamsLoading) return;
     if (teams.length === 0) {
       router.replace("/onboarding");
       return;
@@ -21,7 +21,7 @@ export default function LegacySettingsRedirect() {
     } else {
       router.replace(`/dashboard/${team}`);
     }
-  }, [router, selectedSite, activeTeamSlug, teams, sites, loading]);
+  }, [router, selectedSite, activeTeamSlug, teams, sites, teamsLoading]);
 
   return null;
 }

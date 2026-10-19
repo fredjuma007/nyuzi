@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react";
 export default function DashboardRootRedirect() {
   const router = useRouter();
   const { data: session, isPending: sessionPending } = useSession();
-  const { activeTeamSlug, teams, loading } = useDashboard();
+  const { activeTeamSlug, teams, teamsLoading } = useDashboard();
 
   useEffect(() => {
     if (sessionPending) return;
@@ -19,7 +19,7 @@ export default function DashboardRootRedirect() {
       return;
     }
 
-    if (loading) return;
+    if (teamsLoading) return;
 
     if (teams.length === 0) {
       router.replace("/onboarding");
@@ -28,7 +28,7 @@ export default function DashboardRootRedirect() {
 
     const targetTeam = teams.find((t) => t.slug === activeTeamSlug) || teams[0];
     router.replace(`/dashboard/${targetTeam.slug}`);
-  }, [router, session, sessionPending, activeTeamSlug, teams, loading]);
+  }, [router, session, sessionPending, activeTeamSlug, teams, teamsLoading]);
 
   return (
     <div className="min-h-[50vh] flex items-center justify-center text-[var(--text-muted)]">

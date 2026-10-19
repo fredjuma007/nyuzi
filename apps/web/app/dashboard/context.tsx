@@ -55,6 +55,7 @@ export interface DashboardContextType {
   threadsList: ThreadItem[];
   authors: AuthorEntry[];
   setAuthors: React.Dispatch<React.SetStateAction<AuthorEntry[]>>;
+  teamsLoading: boolean;
   loading: boolean;
   isRefreshing: boolean;
   apiStatus: "live" | "fallback" | "error";
@@ -93,6 +94,7 @@ function formatRelativeTime(dateInput: any): string {
 
 export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [teams, setTeams] = useState<TeamItem[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
   const [activeTeamSlug, setActiveTeamSlugState] = useState<string>("");
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -117,6 +119,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const activeTeam = teams.find((t) => t.slug === activeTeamSlug) || teams[0];
 
   const fetchTeams = useCallback(async () => {
+    setTeamsLoading(true);
     try {
       const res = await fetch("/api/teams");
       if (res.ok) {
@@ -143,7 +146,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.warn("Failed to fetch teams:", err);
     } finally {
-      setLoading(false);
+      setTeamsLoading(false);
     }
   }, []);
 
@@ -624,6 +627,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         threadsList,
         authors,
         setAuthors,
+        teamsLoading,
         loading,
         isRefreshing,
         apiStatus,

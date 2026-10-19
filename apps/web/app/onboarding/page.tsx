@@ -24,28 +24,10 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // If session finishes loading and there is no user, redirect to homepage; if user already has a team, redirect to dashboard
+  // If session finishes loading and there is no user, redirect to homepage
   useEffect(() => {
-    async function checkExistingUser() {
-      if (session?.user) {
-        try {
-          const res = await fetch("/api/teams");
-          if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data.teams) && data.teams.length > 0) {
-              router.replace(`/dashboard/${data.teams[0].slug}`);
-            }
-          }
-        } catch {}
-      }
-    }
-
-    if (!isPending) {
-      if (!session?.user) {
-        router.push("/");
-      } else {
-        checkExistingUser();
-      }
+    if (!isPending && !session?.user) {
+      router.push("/");
     }
   }, [session, isPending, router]);
 
@@ -83,12 +65,11 @@ export default function OnboardingPage() {
         }
       }
 
-      // Route directly to the new publication overview
-      if (data.teamSlug) {
-        router.push(`/dashboard/${data.teamSlug}/${data.site.id}`);
-      } else {
-        router.push("/dashboard");
-      }
+      // Hard redirect to clear any in-memory cached state and load the workspace cleanly
+      const targetUrl = data.teamSlug
+        ? `/dashboard/${data.teamSlug}/${data.site.id}`
+        : "/dashboard";
+      window.location.href = targetUrl;
     } catch (err: any) {
       setError(err?.message || "An error occurred");
     } finally {
@@ -220,12 +201,30 @@ export default function OnboardingPage() {
           {/* Skip option */}
           <div className="mt-5 pt-4 border-t border-[var(--border-card)] flex items-center justify-between text-xs text-[var(--text-muted)]">
             <span>Already have sites configured?</span>
-            <Link
-              href="/dashboard"
-              className="font-bold text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors"
+            <button
+              type="button"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  const res = await fetch("/api/teams");
+                  if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data.teams) && data.teams.length > 0) {
+                      window.location.href = `/dashboard/${data.teams[0].slug}`;
+                      return;
+                    }
+                  }
+                  setError("No existing publications found. Please create your first publication to continue.");
+                } catch {
+                  setError("Unable to verify publications. Please try again.");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="font-bold text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors cursor-pointer bg-transparent border-none p-0"
             >
               Skip to Dashboard &rarr;
-            </Link>
+            </button>
           </div>
         </div>
       </div>
