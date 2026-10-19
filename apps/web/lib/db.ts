@@ -4,30 +4,47 @@ import { drizzle as drizzleD1 } from "drizzle-orm/d1";
 import * as schema from "@nyuzi/db";
 import { createD1HttpClient, type D1DatabaseLike } from "./d1-http";
 
-const isCloudflareD1 = Boolean(
-  process.env.CLOUDFLARE_D1_API_TOKEN &&
-  process.env.CLOUDFLARE_ACCOUNT_ID
-);
+const accountId =
+  process.env.CLOUDFLARE_ACCOUNT_ID ||
+  process.env.CF_ACCOUNT_ID ||
+  process.env.ACCOUNT_ID;
+
+const token =
+  process.env.CLOUDFLARE_D1_API_TOKEN ||
+  process.env.CLOUDFLARE_API_TOKEN ||
+  process.env.CF_D1_API_TOKEN ||
+  process.env.CF_API_TOKEN ||
+  process.env.D1_API_TOKEN;
+
+const databaseId =
+  process.env.CLOUDFLARE_DATABASE_ID ||
+  process.env.CF_DATABASE_ID ||
+  process.env.D1_DATABASE_ID ||
+  "8364d114-958c-4c1d-9875-b6e0781287da";
+
+const isCloudflareD1 = Boolean(token && accountId);
 
 let dbInstance: any;
 let d1Client: D1DatabaseLike | null = null;
 let libsqlClient: ReturnType<typeof createClient> | null = null;
 
 if (isCloudflareD1) {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID!;
-  const databaseId =
-    process.env.CLOUDFLARE_DATABASE_ID ||
-    "8364d114-958c-4c1d-9875-b6e0781287da";
-  const token = process.env.CLOUDFLARE_D1_API_TOKEN!;
-
+  console.log(`🚀 [Database] Initializing Cloudflare D1 (DB: ${databaseId})`);
   d1Client = createD1HttpClient({
-    accountId,
+    accountId: accountId!,
     databaseId,
-    token,
+    token: token!,
   });
 
   dbInstance = drizzleD1(d1Client as any, { schema });
 } else {
+  if (process.env.VERCEL) {
+    console.error(
+      "❌ [Database Alert] Running on Vercel without Cloudflare D1 credentials! Missing CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_D1_API_TOKEN."
+    );
+  } else {
+    console.log("ℹ️ [Database] Running locally with file:./nyuzi.db");
+  }
   const url = process.env.DATABASE_URL || "file:./nyuzi.db";
   const authToken = process.env.DATABASE_AUTH_TOKEN;
 
