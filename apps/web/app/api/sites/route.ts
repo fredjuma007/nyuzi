@@ -79,7 +79,7 @@ export async function GET(req: Request) {
       .from(member)
       .where(eq(member.userId, session.user.id));
 
-    const orgIds = userMemberships.map((m) => m.organizationId);
+    const orgIds = userMemberships.map((m: any) => m.organizationId);
 
     let userSites = [];
     if (orgIds.length > 0) {

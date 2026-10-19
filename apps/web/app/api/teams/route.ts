@@ -51,7 +51,7 @@ export async function GET(req: Request) {
       .innerJoin(organization, eq(member.organizationId, organization.id))
       .where(eq(member.userId, session.user.id));
 
-    const teamsList = userMemberships.map((m) => ({
+    const teamsList = userMemberships.map((m: any) => ({
       ...m.org,
       role: m.role,
     }));
