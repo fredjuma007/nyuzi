@@ -157,14 +157,46 @@ export function getReactionLabel(c: NyuziComment, reactionType: string): string 
 }
 
 export function isVerifiedAuthor(name: string, postAuthor: string): boolean {
-  if (!name) return false;
-  const clean = name.trim().toLowerCase();
-  if (postAuthor && clean === postAuthor.trim().toLowerCase()) return true;
-  return (
-    clean.includes("fred juma") ||
-    clean.includes("brenda frenjo") ||
-    clean.includes("sumeiya juma")
-  );
+  if (!name || !postAuthor) return false;
+
+  const normalize = (str: string) =>
+    str
+      .toLowerCase()
+      .replace(/^by[\s:]+/i, "")
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .trim()
+      .replace(/\s+/g, " ");
+
+  const cleanName = normalize(name);
+  if (!cleanName) return false;
+
+  // Split multiple authors in postAuthor (e.g. "Author One, Author Two & Author Three")
+  const authorSegments = postAuthor
+    .split(/,|\band\b|&/i)
+    .map((s) => normalize(s))
+    .filter(Boolean);
+
+  const nameTokens = cleanName.split(" ").filter((t) => t.length > 1);
+
+  for (const author of authorSegments) {
+    if (cleanName === author) return true;
+
+    const authorTokens = author.split(" ").filter((t) => t.length > 1);
+
+    // If both have at least 2 name parts (e.g. "Wanyama Enock" vs "Enock Wanyama")
+    if (nameTokens.length >= 2 && authorTokens.length >= 2) {
+      const allMatch = nameTokens.every((token) => authorTokens.includes(token));
+      if (allMatch) return true;
+    }
+
+    // If commenter provided their full name and author field matches multiple tokens
+    if (nameTokens.length >= 2 && authorTokens.length >= 1) {
+      const matchingTokens = nameTokens.filter((token) => authorTokens.includes(token));
+      if (matchingTokens.length >= 2) return true;
+    }
+  }
+
+  return false;
 }
 
 /**
