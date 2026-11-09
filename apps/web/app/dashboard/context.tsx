@@ -40,6 +40,8 @@ export interface DashboardContextType {
   isCreateTeamModalOpen: boolean;
   setIsCreateTeamModalOpen: (open: boolean) => void;
   createNewTeam: (name: string) => Promise<TeamItem | null>;
+  updateTeam: (currentSlug: string, updates: { name?: string; slug?: string }) => Promise<TeamItem | null>;
+  deleteTeam: (teamSlug: string) => Promise<boolean>;
   sites: SiteItem[];
   setSites: React.Dispatch<React.SetStateAction<SiteItem[]>>;
   selectedSite: string;
@@ -49,6 +51,18 @@ export interface DashboardContextType {
   isCreateSiteModalOpen: boolean;
   setIsCreateSiteModalOpen: (open: boolean) => void;
   createNewSite: (name: string, domain: string, accentColor?: string) => Promise<SiteItem | null>;
+  updateSite: (
+    siteId: string,
+    updates: {
+      name?: string;
+      domain?: string;
+      moderationRequired?: boolean;
+      turnstileEnabled?: boolean;
+      accentColor?: string;
+    }
+  ) => Promise<SiteItem | null>;
+  deleteSite: (siteId: string) => Promise<boolean>;
+  purgeSiteDiscussions: (siteId: string) => Promise<boolean>;
   metrics: MetricsData;
   commentsList: CommentItem[];
   setCommentsList: React.Dispatch<React.SetStateAction<CommentItem[]>>;
@@ -600,6 +614,136 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const updateSite = async (
+    siteId: string,
+    updates: {
+      name?: string;
+      domain?: string;
+      moderationRequired?: boolean;
+      turnstileEnabled?: boolean;
+      accentColor?: string;
+    }
+  ): Promise<SiteItem | null> => {
+    try {
+      const res = await fetch("/api/sites", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ siteId, ...updates }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update publication");
+      }
+      const updated: SiteItem = data.site;
+      setSites((prev) => prev.map((s) => (s.id === siteId ? { ...s, ...updated } : s)));
+      showToast("Publication settings saved!");
+      return updated;
+    } catch (err: any) {
+      showToast(err.message || "Failed to update publication");
+      return null;
+    }
+  };
+
+  const deleteSite = async (siteId: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/sites?siteId=${encodeURIComponent(siteId)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete publication");
+      }
+      setSites((prev) => {
+        const remaining = prev.filter((s) => s.id !== siteId);
+        if (selectedSite === siteId) {
+          const nextSite = remaining[0]?.id || "";
+          setSelectedSite(nextSite);
+        }
+        return remaining;
+      });
+      showToast("Publication permanently deleted.");
+      return true;
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete publication");
+      return false;
+    }
+  };
+
+  const purgeSiteDiscussions = async (siteId: string): Promise<boolean> => {
+    try {
+      const res = await fetch(
+        `/api/sites?siteId=${encodeURIComponent(siteId)}&purgeOnly=true`,
+        {
+          method: "DELETE",
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to purge discussions");
+      }
+      setCommentsList([]);
+      setThreadsList([]);
+      setMetrics({ totalComments: 0, totalThreads: 0, totalUpvotes: 0 });
+      showToast("All comments and threads purged for this publication.");
+      return true;
+    } catch (err: any) {
+      showToast(err.message || "Failed to purge discussions");
+      return false;
+    }
+  };
+
+  const updateTeam = async (
+    currentSlug: string,
+    updates: { name?: string; slug?: string }
+  ): Promise<TeamItem | null> => {
+    try {
+      const res = await fetch("/api/teams", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentSlug, ...updates }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update workspace");
+      }
+      const updatedTeam: TeamItem = data.team;
+      setTeams((prev) =>
+        prev.map((t) => (t.slug === currentSlug ? { ...t, ...updatedTeam } : t))
+      );
+      if (updatedTeam.slug && updatedTeam.slug !== currentSlug) {
+        setActiveTeamSlug(updatedTeam.slug);
+      }
+      showToast("Workspace settings saved!");
+      return updatedTeam;
+    } catch (err: any) {
+      showToast(err.message || "Failed to update workspace");
+      return null;
+    }
+  };
+
+  const deleteTeam = async (teamSlug: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`/api/teams?teamSlug=${encodeURIComponent(teamSlug)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete workspace");
+      }
+      setTeams((prev) => {
+        const remaining = prev.filter((t) => t.slug !== teamSlug);
+        const nextSlug = remaining[0]?.slug || "";
+        setActiveTeamSlug(nextSlug);
+        return remaining;
+      });
+      showToast("Workspace deleted.");
+      return true;
+    } catch (err: any) {
+      showToast(err.message || "Failed to delete workspace");
+      return false;
+    }
+  };
+
   return (
     <DashboardContext.Provider
       value={{
@@ -612,6 +756,8 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         isCreateTeamModalOpen,
         setIsCreateTeamModalOpen,
         createNewTeam,
+        updateTeam,
+        deleteTeam,
         sites,
         setSites,
         selectedSite,
@@ -621,6 +767,9 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         isCreateSiteModalOpen,
         setIsCreateSiteModalOpen,
         createNewSite,
+        updateSite,
+        deleteSite,
+        purgeSiteDiscussions,
         metrics,
         commentsList,
         setCommentsList,

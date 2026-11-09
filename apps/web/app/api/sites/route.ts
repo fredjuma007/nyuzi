@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, ensureTables } from "@/lib/db";
-import { organization, member, sites } from "@nyuzi/db";
+import { organization, member, sites, threads, comments, authors } from "@nyuzi/db";
 import { eq, and, or, inArray } from "drizzle-orm";
 import { isPlatformAdmin } from "@/lib/admin";
 
@@ -210,6 +210,199 @@ export async function POST(req: Request) {
     await db.insert(sites).values(newSite);
 
     return NextResponse.json({ site: newSite, teamSlug: resolvedTeamSlug }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  await ensureTables();
+  const session = await auth.api.getSession({
+    headers: req.headers,
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const {
+      siteId,
+      name,
+      domain,
+      moderationRequired,
+      turnstileEnabled,
+      accentColor,
+    } = body;
+
+    if (!siteId) {
+      return NextResponse.json({ error: "Publication ID is required" }, { status: 400 });
+    }
+
+    const existingSites = await db
+      .select()
+      .from(sites)
+      .where(eq(sites.id, siteId))
+      .limit(1);
+
+    if (existingSites.length === 0) {
+      return NextResponse.json({ error: "Publication not found" }, { status: 404 });
+    }
+
+    const site = existingSites[0];
+    const isAdmin = isPlatformAdmin(session.user.email);
+
+    // Check membership / ownership
+    let isAuthorized = isAdmin || site.ownerId === session.user.id;
+    if (!isAuthorized && site.organizationId) {
+      const mem = await db
+        .select()
+        .from(member)
+        .where(
+          and(
+            eq(member.organizationId, site.organizationId),
+            eq(member.userId, session.user.id)
+          )
+        )
+        .limit(1);
+      if (mem.length > 0 && (mem[0].role === "owner" || mem[0].role === "admin")) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: "Forbidden: You do not have permission to edit this publication" },
+        { status: 403 }
+      );
+    }
+
+    let parsedSettings: Record<string, any> = {};
+    try {
+      parsedSettings = site.settings ? JSON.parse(site.settings) : {};
+    } catch {
+      parsedSettings = {};
+    }
+
+    if (accentColor !== undefined) {
+      parsedSettings.accentColor = accentColor;
+    }
+
+    const updatedFields: Record<string, any> = {
+      settings: JSON.stringify(parsedSettings),
+    };
+
+    if (typeof name === "string" && name.trim()) {
+      updatedFields.name = name.trim();
+    }
+    if (typeof domain === "string" && domain.trim()) {
+      updatedFields.domain = domain.trim().toLowerCase().replace(/^https?:\/\//, "");
+    }
+    if (typeof moderationRequired === "boolean") {
+      updatedFields.moderationRequired = moderationRequired;
+    }
+    if (typeof turnstileEnabled === "boolean") {
+      updatedFields.turnstileEnabled = turnstileEnabled;
+    }
+
+    await db.update(sites).set(updatedFields).where(eq(sites.id, siteId));
+
+    const updatedSite = {
+      ...site,
+      ...updatedFields,
+    };
+
+    return NextResponse.json({ site: updatedSite });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  await ensureTables();
+  const session = await auth.api.getSession({
+    headers: req.headers,
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const url = new URL(req.url);
+    let siteId = url.searchParams.get("siteId");
+    let purgeOnly = url.searchParams.get("purgeOnly") === "true";
+
+    if (!siteId) {
+      try {
+        const body = await req.json();
+        siteId = body.siteId;
+        if (body.purgeOnly !== undefined) purgeOnly = Boolean(body.purgeOnly);
+      } catch {
+        // No JSON body
+      }
+    }
+
+    if (!siteId) {
+      return NextResponse.json({ error: "Publication ID is required" }, { status: 400 });
+    }
+
+    const existingSites = await db
+      .select()
+      .from(sites)
+      .where(eq(sites.id, siteId))
+      .limit(1);
+
+    if (existingSites.length === 0) {
+      return NextResponse.json({ error: "Publication not found" }, { status: 404 });
+    }
+
+    const site = existingSites[0];
+    const isAdmin = isPlatformAdmin(session.user.email);
+
+    let isAuthorized = isAdmin || site.ownerId === session.user.id;
+    if (!isAuthorized && site.organizationId) {
+      const mem = await db
+        .select()
+        .from(member)
+        .where(
+          and(
+            eq(member.organizationId, site.organizationId),
+            eq(member.userId, session.user.id)
+          )
+        )
+        .limit(1);
+      if (mem.length > 0 && (mem[0].role === "owner" || mem[0].role === "admin")) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { error: "Forbidden: Only workspace owners or admins can delete this publication" },
+        { status: 403 }
+      );
+    }
+
+    // Cascade delete dependent records for this site
+    await db.delete(comments).where(eq(comments.siteId, siteId));
+    await db.delete(threads).where(eq(threads.siteId, siteId));
+
+    if (purgeOnly) {
+      return NextResponse.json({
+        success: true,
+        purgedSiteId: siteId,
+      });
+    }
+
+    await db.delete(authors).where(eq(authors.siteId, siteId));
+    await db.delete(sites).where(eq(sites.id, siteId));
+
+    return NextResponse.json({
+      success: true,
+      deletedSiteId: siteId,
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

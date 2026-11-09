@@ -23,6 +23,9 @@ import {
   LogOut,
   Layers,
   Plus,
+  ArrowLeft,
+  UserCog,
+  Globe,
 } from "lucide-react";
 import { DashboardProvider, useDashboard } from "./context";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -123,20 +126,50 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const teamBase = currentTeamSlug ? `/dashboard/${currentTeamSlug}` : "/dashboard";
   const siteBase = currentTeamSlug && currentSiteId ? `/dashboard/${currentTeamSlug}/${currentSiteId}` : teamBase;
+  const isPublicationView = Boolean(routeSiteId);
 
-  const navItems = [
+  const workspaceNavItems = [
     {
-      group: "PUBLICATIONS HUB",
+      group: "WORKSPACE",
       items: [
         {
-          label: "All Projects",
+          label: "All Publications",
           href: teamBase,
           icon: Layers,
           badge: sites.length > 0 ? `${sites.length}` : null,
           exact: true,
         },
+        {
+          label: "Team Members",
+          href: `${teamBase}/members`,
+          icon: Users,
+          badge: null,
+          exact: false,
+        },
+        {
+          label: "Workspace Settings",
+          href: `${teamBase}/settings`,
+          icon: Settings,
+          badge: null,
+          exact: false,
+        },
       ],
     },
+    {
+      group: "PERSONAL",
+      items: [
+        {
+          label: "Account Settings",
+          href: "/dashboard/account",
+          icon: UserCog,
+          badge: null,
+          exact: true,
+        },
+      ],
+    },
+  ];
+
+  const publicationNavItems = [
     {
       group: "ACTIVE PUBLICATION",
       items: [
@@ -149,21 +182,21 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         },
         {
           label: "Moderation",
-          href: currentTeamSlug && currentSiteId ? `${siteBase}/moderation` : teamBase,
+          href: `${siteBase}/moderation`,
           icon: ShieldAlert,
           badge: pendingCommentsCount > 0 ? `${pendingCommentsCount} Alert` : null,
           exact: false,
         },
         {
           label: "Discussions",
-          href: currentTeamSlug && currentSiteId ? `${siteBase}/threads` : teamBase,
+          href: `${siteBase}/threads`,
           icon: MessageSquare,
           badge: null,
           exact: false,
         },
         {
           label: "Author Roster",
-          href: currentTeamSlug && currentSiteId ? `${siteBase}/authors` : teamBase,
+          href: `${siteBase}/authors`,
           icon: Users,
           badge: pendingDiscoveredCount > 0 ? `${pendingDiscoveredCount} New` : null,
           exact: false,
@@ -175,14 +208,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       items: [
         {
           label: "Widget Studio",
-          href: currentTeamSlug && currentSiteId ? `${siteBase}/studio` : teamBase,
+          href: `${siteBase}/studio`,
           icon: Palette,
           badge: "Customizer",
           exact: false,
         },
         {
-          label: "Site Settings",
-          href: currentTeamSlug && currentSiteId ? `${siteBase}/settings` : teamBase,
+          label: "Publication Settings",
+          href: `${siteBase}/settings`,
           icon: Settings,
           badge: null,
           exact: false,
@@ -191,14 +224,19 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     },
   ];
 
+  const navItems = isPublicationView ? publicationNavItems : workspaceNavItems;
+
   const getPageTitle = () => {
+    if (pathname === "/dashboard/account") return "Account Settings";
+    if (pathname.endsWith("/members")) return "Team Members";
+    if (!isPublicationView && pathname.endsWith("/settings")) return "Workspace Settings";
     if (pathname.includes("/moderation")) return "Moderation Queue";
     if (pathname.includes("/studio")) return "Widget Embed Studio";
     if (pathname.includes("/threads")) return "Active Discussions";
     if (pathname.includes("/authors")) return "Author Roster";
-    if (pathname.includes("/settings")) return "Site Settings";
+    if (pathname.includes("/settings")) return "Publication Settings";
     if (routeSiteId) return "Overview";
-    return "Projects";
+    return "Publications";
   };
 
   return (
@@ -242,108 +280,121 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          {/* Vercel-Style Workspace / Team Scope Switcher */}
-          <div className="p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)] block">
-                Workspace / Team
-              </label>
-              <button
-                type="button"
-                onClick={() => setIsCreateTeamModalOpen(true)}
-                className="text-[10px] font-bold text-[var(--brand-orange)] hover:underline flex items-center gap-0.5 cursor-pointer"
-                title="Create new team workspace"
-              >
-                <Plus className="w-3 h-3" />
-                <span>New Team</span>
-              </button>
-            </div>
-            <div className="relative">
-              <select
-                value={currentTeamSlug}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "__NEW_TEAM__") {
-                    setIsCreateTeamModalOpen(true);
-                  } else {
-                    setActiveTeamSlug(val);
-                    router.push(`/dashboard/${val}`);
-                  }
-                }}
-                className="w-full appearance-none bg-transparent font-semibold text-xs text-[var(--text-main)] focus:outline-none cursor-pointer pr-6 truncate"
-              >
-                {teams.length > 0 ? (
-                  teams.map((t) => (
-                    <option key={t.id} value={t.slug} className="bg-[var(--bg-card)] text-[var(--text-main)]">
-                      {t.name}
-                    </option>
-                  ))
-                ) : (
-                  <option value={currentTeamSlug} className="bg-[var(--bg-card)] text-[var(--text-main)]">
-                    {session?.user?.name ? `${session.user.name}'s Projects` : "Fred's Projects"}
-                  </option>
-                )}
-                <option value="__NEW_TEAM__" className="bg-[var(--bg-card)] text-[var(--brand-orange)] font-bold">
-                  + Create New Team...
-                </option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-0 top-0.5 text-[var(--text-muted)] pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Publication Selector Dropdown */}
-          <div className="p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)] block">
-                Active Publication
-              </label>
-              <button
-                type="button"
-                onClick={() => setIsCreateSiteModalOpen(true)}
-                className="text-[10px] font-bold text-[var(--brand-orange)] hover:underline flex items-center gap-0.5 cursor-pointer"
-                title="Add new publication"
-              >
-                <Plus className="w-3 h-3" />
-                <span>New</span>
-              </button>
-            </div>
-            <div className="relative">
-              <select
-                value={currentSiteId}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === "__NEW__") {
-                    setIsCreateSiteModalOpen(true);
-                  } else {
-                    setSelectedSite(val);
-                    if (routeSiteId) {
-                      const subPath = pathname.split(`/${routeSiteId}`)[1] || "";
-                      router.push(`/dashboard/${currentTeamSlug}/${val}${subPath}`);
+          {/* Context-Aware Scope Switcher */}
+          {!isPublicationView ? (
+            /* WORKSPACE MODE: Show Team Switcher Only */
+            <div className="p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)] block">
+                  Workspace / Team
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateTeamModalOpen(true)}
+                  className="text-[10px] font-bold text-[var(--brand-orange)] hover:underline flex items-center gap-0.5 cursor-pointer"
+                  title="Create new team workspace"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>New Team</span>
+                </button>
+              </div>
+              <div className="relative">
+                <select
+                  value={currentTeamSlug}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "__NEW_TEAM__") {
+                      setIsCreateTeamModalOpen(true);
                     } else {
-                      router.push(`/dashboard/${currentTeamSlug}/${val}`);
+                      setActiveTeamSlug(val);
+                      router.push(`/dashboard/${val}`);
                     }
-                  }
-                }}
-                className="w-full appearance-none bg-transparent font-semibold text-xs text-[var(--text-main)] focus:outline-none cursor-pointer pr-6 truncate"
-              >
-                {sites.length > 0 ? (
-                  sites.map((s) => (
-                    <option key={s.id} value={s.id} className="bg-[var(--bg-card)] text-[var(--text-main)]">
-                      {s.name} ({s.id})
+                  }}
+                  className="w-full appearance-none bg-transparent font-semibold text-xs text-[var(--text-main)] focus:outline-none cursor-pointer pr-6 truncate"
+                >
+                  {teams.length > 0 ? (
+                    teams.map((t) => (
+                      <option key={t.id} value={t.slug} className="bg-[var(--bg-card)] text-[var(--text-main)]">
+                        {t.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value={currentTeamSlug} className="bg-[var(--bg-card)] text-[var(--text-main)]">
+                      {session?.user?.name ? `${session.user.name}'s Projects` : "Fred's Projects"}
                     </option>
-                  ))
-                ) : (
-                  <option value="" disabled className="bg-[var(--bg-card)] text-[var(--text-muted)]">
-                    No publications yet
+                  )}
+                  <option value="__NEW_TEAM__" className="bg-[var(--bg-card)] text-[var(--brand-orange)] font-bold">
+                    + Create New Team...
                   </option>
-                )}
-                <option value="__NEW__" className="bg-[var(--bg-card)] text-[var(--brand-orange)] font-bold">
-                  + Add New Publication...
-                </option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-0 top-0.5 text-[var(--text-muted)] pointer-events-none" />
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 absolute right-0 top-0.5 text-[var(--text-muted)] pointer-events-none" />
+              </div>
             </div>
-          </div>
+          ) : (
+            /* PUBLICATION MODE: Back to Hub + Active Publication Switcher */
+            <div className="space-y-2.5">
+              <Link
+                href={teamBase}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] hover:border-[var(--brand-orange)]/40 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-main)] transition-colors group"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-[var(--brand-orange)] group-hover:-translate-x-0.5 transition-transform" />
+                <span className="truncate">All Publications ({activeTeam?.name || "Team"})</span>
+              </Link>
+
+              <div className="p-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-muted)] block">
+                    Active Publication
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateSiteModalOpen(true)}
+                    className="text-[10px] font-bold text-[var(--brand-orange)] hover:underline flex items-center gap-0.5 cursor-pointer"
+                    title="Add new publication"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>New</span>
+                  </button>
+                </div>
+                <div className="relative">
+                  <select
+                    value={currentSiteId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "__NEW__") {
+                        setIsCreateSiteModalOpen(true);
+                      } else {
+                        setSelectedSite(val);
+                        if (routeSiteId) {
+                          const subPath = pathname.split(`/${routeSiteId}`)[1] || "";
+                          router.push(`/dashboard/${currentTeamSlug}/${val}${subPath}`);
+                        } else {
+                          router.push(`/dashboard/${currentTeamSlug}/${val}`);
+                        }
+                      }
+                    }}
+                    className="w-full appearance-none bg-transparent font-semibold text-xs text-[var(--text-main)] focus:outline-none cursor-pointer pr-6 truncate"
+                  >
+                    {sites.length > 0 ? (
+                      sites.map((s) => (
+                        <option key={s.id} value={s.id} className="bg-[var(--bg-card)] text-[var(--text-main)]">
+                          {s.name} ({s.id})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled className="bg-[var(--bg-card)] text-[var(--text-muted)]">
+                        No publications yet
+                      </option>
+                    )}
+                    <option value="__NEW__" className="bg-[var(--bg-card)] text-[var(--brand-orange)] font-bold">
+                      + Add New Publication...
+                    </option>
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 absolute right-0 top-0.5 text-[var(--text-muted)] pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Navigation Links */}
           <nav className="space-y-5">
@@ -399,48 +450,102 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
             ))}
+
+            {/* Quick-Jump Publications List in Workspace Mode */}
+            {!isPublicationView && currentTeamSlug && (
+              <div className="space-y-1.5">
+                <div className="px-2 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                    PUBLICATIONS
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateSiteModalOpen(true)}
+                    className="text-[10px] font-bold text-[var(--brand-orange)] hover:underline flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Add</span>
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  {sites.length > 0 ? (
+                    sites.map((site) => (
+                      <Link
+                        key={site.id}
+                        href={`/dashboard/${currentTeamSlug}/${site.id}`}
+                        onClick={() => setSelectedSite(site.id)}
+                        className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium border border-transparent text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card-subtle)] transition-colors group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                          <span className="truncate">{site.name}</span>
+                        </div>
+                        <span className="text-[10px] text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity">
+                          →
+                        </span>
+                      </Link>
+                    ))
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateSiteModalOpen(true)}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs text-[var(--text-muted)] hover:text-[var(--brand-orange)] hover:bg-[var(--bg-card-subtle)] transition-colors cursor-pointer flex items-center gap-2"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>+ Connect first publication</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </nav>
         </div>
 
         {/* Sidebar Footer Controls */}
         <div className="p-4 border-t border-[var(--border-card)] space-y-3 bg-[var(--bg-card)]">
-          {/* Back to Live Website Link */}
-          <a
-            href={
-              currentSiteId === "trc254"
-                ? "https://www.readingcircle254.com/blog"
-                : selectedSiteData?.domain
-                ? selectedSiteData.domain.startsWith("http")
-                  ? selectedSiteData.domain
-                  : `https://${selectedSiteData.domain}`
-                : "/demo"
-            }
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-between px-3 py-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs font-medium transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <ExternalLink className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
-              <span>Back to Publication</span>
-            </div>
-            <span className="text-[10px] text-[var(--text-muted)]">↗</span>
-          </a>
+          {/* Back to Live Website Link (Only when inside a publication) */}
+          {isPublicationView && (
+            <a
+              href={
+                currentSiteId === "trc254"
+                  ? "https://www.readingcircle254.com/blog"
+                  : selectedSiteData?.domain
+                  ? selectedSiteData.domain.startsWith("http")
+                    ? selectedSiteData.domain
+                    : `https://${selectedSiteData.domain}`
+                  : "/demo"
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-between px-3 py-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs font-medium transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <ExternalLink className="w-3.5 h-3.5 text-[var(--brand-orange)]" />
+                <span>Back to Publication</span>
+              </div>
+              <span className="text-[10px] text-[var(--text-muted)]">↗</span>
+            </a>
+          )}
 
           {/* Theme & User Profile Bar */}
           <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-2 min-w-0">
+            <Link
+              href="/dashboard/account"
+              className="flex items-center gap-2 min-w-0 group hover:opacity-90 transition-opacity"
+              title="Account Settings"
+            >
               <div className="w-7 h-7 rounded-full bg-[var(--brand-orange)]/15 text-[var(--brand-orange)] font-bold text-xs flex items-center justify-center shrink-0">
                 {session?.user?.name ? session.user.name.charAt(0).toUpperCase() : "U"}
               </div>
               <div className="leading-tight truncate">
-                <span className="block text-xs font-bold text-[var(--text-main)] truncate">
+                <span className="block text-xs font-bold text-[var(--text-main)] group-hover:text-[var(--brand-orange)] transition-colors truncate">
                   {session?.user?.name || "Publisher"}
                 </span>
                 <span className="block text-[10px] text-[var(--text-muted)] truncate">
                   {session?.user?.email || "Admin"}
                 </span>
               </div>
-            </div>
+            </Link>
 
             <div className="flex items-center gap-1 shrink-0">
               <button
@@ -482,32 +587,47 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               >
                 Dashboard
               </Link>
-              {currentTeamSlug && (
+              {pathname === "/dashboard/account" ? (
                 <>
                   <span className="text-[var(--text-muted)]">/</span>
-                  <Link
-                    href={teamBase}
-                    className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
-                  >
-                    {activeTeam?.name || currentTeamSlug}
-                  </Link>
+                  <span className="font-bold text-[var(--text-main)]">Account Settings</span>
                 </>
-              )}
-              {routeSiteId && currentSiteId && (
+              ) : (
                 <>
-                  <span className="text-[var(--text-muted)]">/</span>
-                  <Link
-                    href={siteBase}
-                    className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
-                  >
-                    {selectedSiteData?.name || (currentSiteId === "trc254" ? "The Reading Circle" : currentSiteId)}
-                  </Link>
-                </>
-              )}
-              {routeSiteId && currentSiteId && pathname.includes(`/${currentSiteId}/`) && (
-                <>
-                  <span className="text-[var(--text-muted)]">/</span>
-                  <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
+                  {currentTeamSlug && (
+                    <>
+                      <span className="text-[var(--text-muted)]">/</span>
+                      <Link
+                        href={teamBase}
+                        className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
+                      >
+                        {activeTeam?.name || currentTeamSlug}
+                      </Link>
+                    </>
+                  )}
+                  {!isPublicationView && pathname !== teamBase && (
+                    <>
+                      <span className="text-[var(--text-muted)]">/</span>
+                      <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
+                    </>
+                  )}
+                  {routeSiteId && currentSiteId && (
+                    <>
+                      <span className="text-[var(--text-muted)]">/</span>
+                      <Link
+                        href={siteBase}
+                        className="text-[var(--text-secondary)] hover:text-[var(--brand-orange)] transition-colors font-medium"
+                      >
+                        {selectedSiteData?.name || (currentSiteId === "trc254" ? "The Reading Circle" : currentSiteId)}
+                      </Link>
+                    </>
+                  )}
+                  {routeSiteId && currentSiteId && pathname.includes(`/${currentSiteId}/`) && (
+                    <>
+                      <span className="text-[var(--text-muted)]">/</span>
+                      <span className="font-bold text-[var(--text-main)]">{getPageTitle()}</span>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -520,26 +640,40 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
               <span>System Operational</span>
             </div>
 
-            {/* Refresh Button */}
-            <button
-              onClick={fetchLiveDashboard}
-              disabled={isRefreshing}
-              className="p-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
-              title="Sync latest discussions"
-            >
-              <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[var(--brand-orange)]" : ""}`} />
-              <span className="hidden md:inline">Sync</span>
-            </button>
+            {isPublicationView ? (
+              <>
+                {/* Refresh Button */}
+                <button
+                  onClick={fetchLiveDashboard}
+                  disabled={isRefreshing}
+                  className="p-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)] hover:border-[var(--brand-orange)]/40 text-[var(--text-secondary)] hover:text-[var(--text-main)] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  title="Sync latest discussions"
+                >
+                  <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[var(--brand-orange)]" : ""}`} />
+                  <span className="hidden md:inline">Sync</span>
+                </button>
 
-            {/* Direct Studio CTA */}
-            {!pathname.includes("/studio") && (
-              <Link
-                href={`/dashboard/${currentTeamSlug}/${currentSiteId}/studio`}
-                className="px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                {/* Direct Studio CTA */}
+                {!pathname.includes("/studio") && (
+                  <Link
+                    href={`/dashboard/${currentTeamSlug}/${currentSiteId}/studio`}
+                    className="px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold shadow transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Code2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Embed Studio</span>
+                  </Link>
+                )}
+              </>
+            ) : (
+              /* Workspace Level Header CTA */
+              <button
+                type="button"
+                onClick={() => setIsCreateSiteModalOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold shadow transition-colors flex items-center gap-1.5 cursor-pointer"
               >
-                <Code2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Embed Studio</span>
-              </Link>
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">New Publication</span>
+              </button>
             )}
           </div>
         </header>
@@ -547,7 +681,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Viewport Content */}
         <main
           className={`flex-1 w-full mx-auto min-w-0 overflow-y-auto ${
-            pathname === "/dashboard/studio"
+            pathname.includes("/studio")
               ? "p-3 sm:p-5 max-w-[1600px] flex flex-col min-h-0"
               : "p-4 sm:p-8 max-w-7xl space-y-6"
           }`}
