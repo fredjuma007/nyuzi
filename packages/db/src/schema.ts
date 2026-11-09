@@ -129,6 +129,18 @@ export const authors = sqliteTable(
   }
 );
 
+export const siteCollaborators = sqliteTable("site_collaborators", {
+  id: text("id").primaryKey(), // collab_xxx
+  siteId: text("site_id").notNull().references(() => sites.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  name: text("name"),
+  role: text("role", { enum: ["admin", "moderator", "viewer"] })
+    .notNull()
+    .default("moderator"),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+});
+
 // Type Definitions
 export type User = typeof user.$inferSelect;
 export type NewUser = typeof user.$inferInsert;
@@ -147,3 +159,5 @@ export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
 export type Author = typeof authors.$inferSelect;
 export type NewAuthor = typeof authors.$inferInsert;
+export type SiteCollaborator = typeof siteCollaborators.$inferSelect;
+export type NewSiteCollaborator = typeof siteCollaborators.$inferInsert;

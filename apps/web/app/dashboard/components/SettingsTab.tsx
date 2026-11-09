@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   ShieldCheck,
   Loader2,
-  AlertCircle,
   Copy,
   Check,
   Save,
@@ -33,6 +32,9 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
   } = useDashboard();
 
   const currentSite = sites.find((s) => s.id === selectedSite);
+  const userRole = currentSite?.userRole || "owner";
+  const canManageSite = userRole === "owner" || userRole === "admin";
+  const isSiteOwner = userRole === "owner";
 
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
@@ -79,7 +81,7 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
 
   const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSite) return;
+    if (!selectedSite || !canManageSite) return;
     setSaving(true);
     try {
       await updateSite(selectedSite, {
@@ -98,6 +100,7 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
     field: "moderationRequired" | "turnstileEnabled",
     val: boolean
   ) => {
+    if (!canManageSite) return;
     if (field === "moderationRequired") setModerationRequired(val);
     if (field === "turnstileEnabled") setTurnstileEnabled(val);
     if (selectedSite) {
@@ -136,17 +139,23 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
   return (
     <div className="max-w-3xl space-y-8 pb-12">
       {/* Header */}
-      <div>
-        <h3 className="font-serif-title text-xl font-bold text-[var(--text-main)]">
-          Publication Settings
-        </h3>
-        <p className="text-xs text-[var(--text-secondary)]">
-          Configure domain origins, edge moderation rules, and lifecycle controls for{" "}
-          <span className="font-semibold text-[var(--text-main)]">
-            {currentSite?.name || selectedSite}
-          </span>
-          .
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <h3 className="font-serif-title text-xl font-bold text-[var(--text-main)]">
+            Publication Settings
+          </h3>
+          <p className="text-xs text-[var(--text-secondary)]">
+            Configure domain origins, edge moderation rules, and lifecycle controls for{" "}
+            <span className="font-semibold text-[var(--text-main)]">
+              {currentSite?.name || selectedSite}
+            </span>
+            .
+          </p>
+        </div>
+
+        <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border border-[var(--brand-orange)]/30 bg-[var(--brand-orange)]/10 text-[var(--brand-orange)]">
+          Role: {userRole}
+        </span>
       </div>
 
       {/* General Publication Details */}
@@ -191,10 +200,11 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
             <input
               type="text"
               required
+              disabled={!canManageSite}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. The Reading Circle"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-orange)] transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-orange)] transition-colors disabled:opacity-60"
             />
           </div>
 
@@ -205,10 +215,11 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
             <input
               type="text"
               required
+              disabled={!canManageSite}
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
               placeholder="e.g. readingcircle254.com or *"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[var(--text-main)] font-mono text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-orange)] transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[var(--text-main)] font-mono text-xs sm:text-sm focus:outline-none focus:border-[var(--brand-orange)] transition-colors disabled:opacity-60"
             />
           </div>
         </div>
@@ -221,15 +232,17 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
           <div className="flex items-center gap-3">
             <input
               type="color"
+              disabled={!canManageSite}
               value={accentColor}
               onChange={(e) => setAccentColor(e.target.value)}
-              className="w-10 h-10 rounded-xl border border-[var(--border-card)] bg-transparent cursor-pointer p-0.5"
+              className="w-10 h-10 rounded-xl border border-[var(--border-card)] bg-transparent cursor-pointer p-0.5 disabled:opacity-60"
             />
             <input
               type="text"
+              disabled={!canManageSite}
               value={accentColor}
               onChange={(e) => setAccentColor(e.target.value)}
-              className="w-36 px-3.5 py-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[var(--text-main)] font-mono text-xs focus:outline-none focus:border-[var(--brand-orange)]"
+              className="w-36 px-3.5 py-2 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card-subtle)] text-[var(--text-main)] font-mono text-xs focus:outline-none focus:border-[var(--brand-orange)] disabled:opacity-60"
             />
             <span className="text-xs text-[var(--text-muted)]">
               Used as the default highlight color in the embedded discussion widget.
@@ -237,20 +250,22 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
           </div>
         </div>
 
-        <div className="pt-2 flex justify-end">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-5 py-2.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
-          >
-            {saving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            <span>Save Changes</span>
-          </button>
-        </div>
+        {canManageSite && (
+          <div className="pt-2 flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-5 py-2.5 rounded-xl bg-[var(--brand-orange)] hover:bg-[var(--brand-orange-hover)] text-white text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>Save Changes</span>
+            </button>
+          </div>
+        )}
       </form>
 
       {/* Moderation & Protection Rules */}
@@ -277,9 +292,10 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
             </div>
             <input
               type="checkbox"
+              disabled={!canManageSite}
               checked={moderationRequired}
               onChange={(e) => handleToggleRule("moderationRequired", e.target.checked)}
-              className="w-5 h-5 accent-[var(--brand-orange)] rounded cursor-pointer shrink-0"
+              className="w-5 h-5 accent-[var(--brand-orange)] rounded cursor-pointer shrink-0 disabled:opacity-50"
             />
           </div>
 
@@ -294,9 +310,10 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
             </div>
             <input
               type="checkbox"
+              disabled={!canManageSite}
               checked={turnstileEnabled}
               onChange={(e) => handleToggleRule("turnstileEnabled", e.target.checked)}
-              className="w-5 h-5 accent-[var(--brand-orange)] rounded cursor-pointer shrink-0"
+              className="w-5 h-5 accent-[var(--brand-orange)] rounded cursor-pointer shrink-0 disabled:opacity-50"
             />
           </div>
 
@@ -317,66 +334,68 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
         </div>
       </div>
 
-      {/* Danger Zone */}
-      <div className="p-6 rounded-2xl border border-rose-500/30 bg-rose-500/5 space-y-5 shadow-sm text-xs sm:text-sm">
-        <div>
-          <h4 className="font-bold text-sm text-rose-500 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
-            <span>Danger Zone</span>
-          </h4>
-          <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-            Irreversible actions that affect live discussions and data for this publication.
-          </p>
-        </div>
-
-        <div className="space-y-3 pt-1">
-          {/* Purge All Discussions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)]">
-            <div>
-              <span className="font-bold text-xs sm:text-sm block text-[var(--text-main)]">
-                Purge All Discussions & Comments
-              </span>
-              <span className="text-xs text-[var(--text-muted)]">
-                Permanently remove all threads and comments for this publication while keeping the site and author roster intact.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setPurgeConfirmText("");
-                setShowPurgeModal(true);
-              }}
-              className="px-4 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Purge Data</span>
-            </button>
+      {/* Danger Zone (Owner Only) */}
+      {isSiteOwner && (
+        <div className="p-6 rounded-2xl border border-rose-500/30 bg-rose-500/5 space-y-5 shadow-sm text-xs sm:text-sm">
+          <div>
+            <h4 className="font-bold text-sm text-rose-500 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              <span>Danger Zone</span>
+            </h4>
+            <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+              Irreversible actions that affect live discussions and data for this publication.
+            </p>
           </div>
 
-          {/* Delete Publication */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-rose-500/25 bg-[var(--bg-card)]">
-            <div>
-              <span className="font-bold text-xs sm:text-sm block text-[var(--text-main)]">
-                Delete Publication
-              </span>
-              <span className="text-xs text-[var(--text-muted)]">
-                Permanently delete <strong className="text-[var(--text-main)]">{currentSite?.name || selectedSite}</strong>, its embed configuration, author roster, and all discussion threads.
-              </span>
+          <div className="space-y-3 pt-1">
+            {/* Purge All Discussions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-[var(--border-card)] bg-[var(--bg-card)]">
+              <div>
+                <span className="font-bold text-xs sm:text-sm block text-[var(--text-main)]">
+                  Purge All Discussions & Comments
+                </span>
+                <span className="text-xs text-[var(--text-muted)]">
+                  Permanently remove all threads and comments for this publication while keeping the site and author roster intact.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPurgeConfirmText("");
+                  setShowPurgeModal(true);
+                }}
+                className="px-4 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Purge Data</span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setDeleteConfirmText("");
-                setShowDeleteModal(true);
-              }}
-              className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 shadow-sm"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Delete Publication</span>
-            </button>
+
+            {/* Delete Publication */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-rose-500/25 bg-[var(--bg-card)]">
+              <div>
+                <span className="font-bold text-xs sm:text-sm block text-[var(--text-main)]">
+                  Delete Publication
+                </span>
+                <span className="text-xs text-[var(--text-muted)]">
+                  Permanently delete <strong className="text-[var(--text-main)]">{currentSite?.name || selectedSite}</strong>, its embed configuration, collaborators, author roster, and all discussion threads.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteConfirmText("");
+                  setShowDeleteModal(true);
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 shadow-sm"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Publication</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Purge Confirmation Modal */}
       {showPurgeModal && (
@@ -435,7 +454,7 @@ export function SettingsTab({ selectedSite }: SettingsTabProps) {
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               This action cannot be undone. It will permanently delete{" "}
               <strong className="text-[var(--text-main)]">{currentSite?.name || selectedSite}</strong>,
-              all reader comments, discussion threads, and verified author entries. Type{" "}
+              all reader comments, discussion threads, collaborators, and verified author entries. Type{" "}
               <code className="px-1.5 py-0.5 rounded bg-[var(--bg-card-subtle)] font-mono text-rose-500">{selectedSite}</code>{" "}
               below to confirm.
             </p>

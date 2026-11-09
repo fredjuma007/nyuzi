@@ -18,6 +18,8 @@ export interface SiteItem {
   turnstileEnabled?: boolean | null;
   moderationRequired?: boolean | null;
   settings?: string | null;
+  userRole?: "owner" | "admin" | "moderator" | "viewer";
+  isShared?: boolean;
   createdAt?: string | Date;
 }
 
@@ -27,6 +29,7 @@ export interface TeamItem {
   slug: string;
   logo?: string | null;
   role?: string;
+  collaboratorSiteIds?: string[];
   createdAt?: string | Date;
 }
 

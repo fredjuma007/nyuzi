@@ -354,10 +354,17 @@ export function ProjectsHub({ onSelectSite }: ProjectsHubProps) {
                           </div>
                         </div>
 
-                        {/* Edge Status Indicator */}
-                        <div className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>Live Edge</span>
+                        {/* Edge Status & Shared Role Indicator */}
+                        <div className="shrink-0 flex items-center gap-1.5">
+                          {site.isShared && (
+                            <span className="px-2 py-0.5 rounded-full border border-[var(--brand-orange)]/30 bg-[var(--brand-orange)]/10 text-[var(--brand-orange)] text-[10px] font-bold uppercase tracking-wider">
+                              Shared · {site.userRole || "Moderator"}
+                            </span>
+                          )}
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>Live Edge</span>
+                          </div>
                         </div>
                       </div>
 

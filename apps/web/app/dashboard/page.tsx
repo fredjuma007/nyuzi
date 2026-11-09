@@ -27,6 +27,14 @@ export default function DashboardRootRedirect() {
     }
 
     const targetTeam = teams.find((t) => t.slug === activeTeamSlug) || teams[0];
+    if (
+      targetTeam.role === "collaborator" &&
+      Array.isArray(targetTeam.collaboratorSiteIds) &&
+      targetTeam.collaboratorSiteIds.length > 0
+    ) {
+      router.replace(`/dashboard/${targetTeam.slug}/${targetTeam.collaboratorSiteIds[0]}`);
+      return;
+    }
     router.replace(`/dashboard/${targetTeam.slug}`);
   }, [router, session, sessionPending, activeTeamSlug, teams, teamsLoading]);
 

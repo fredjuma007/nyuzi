@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, ensureTables } from "@/lib/db";
-import { organization, member, sites, threads, comments, authors } from "@nyuzi/db";
+import {
+  organization,
+  member,
+  sites,
+  threads,
+  comments,
+  authors,
+  siteCollaborators,
+} from "@nyuzi/db";
 import { eq, and, or, inArray } from "drizzle-orm";
 import { isPlatformAdmin } from "@/lib/admin";
 
@@ -46,7 +54,7 @@ export async function GET(req: Request) {
 
       const org = orgs[0];
 
-      // Security check: Verify that the current user is a member of this team or platform admin
+      // Security check: Verify that the current user is a member of this team, a site collaborator, or platform admin
       const isMember = await db
         .select()
         .from(member)
@@ -58,22 +66,55 @@ export async function GET(req: Request) {
         )
         .limit(1);
 
-      if (isMember.length === 0 && !isFred) {
-        return NextResponse.json(
-          { error: "Forbidden: You are not a member of this workspace" },
-          { status: 403 }
-        );
-      }
-
-      const teamSites = await db
+      const allTeamSites = await db
         .select()
         .from(sites)
         .where(eq(sites.organizationId, org.id));
 
-      return NextResponse.json({ sites: teamSites, team: org });
+      if (isMember.length > 0 || isFred) {
+        const enrichedSites = allTeamSites.map((s) => ({
+          ...s,
+          userRole: isFred ? "owner" : isMember[0]?.role || "owner",
+          isShared: false,
+        }));
+        return NextResponse.json({ sites: enrichedSites, team: org });
+      }
+
+      // Check if user is invited as a collaborator to specific site(s) in this workspace
+      const cleanEmail = session.user.email.toLowerCase();
+      const userCollabs = await db
+        .select()
+        .from(siteCollaborators)
+        .where(
+          or(
+            eq(siteCollaborators.userId, session.user.id),
+            eq(siteCollaborators.email, cleanEmail)
+          )
+        );
+
+      const collabBySiteId = new Map(
+        userCollabs.map((c) => [c.siteId, c])
+      );
+
+      const authorizedSites = allTeamSites
+        .filter((s) => collabBySiteId.has(s.id))
+        .map((s) => ({
+          ...s,
+          userRole: collabBySiteId.get(s.id)?.role || "moderator",
+          isShared: true,
+        }));
+
+      if (authorizedSites.length === 0) {
+        return NextResponse.json(
+          { error: "Forbidden: You do not have access to any publications in this workspace" },
+          { status: 403 }
+        );
+      }
+
+      return NextResponse.json({ sites: authorizedSites, team: org });
     }
 
-    // If no teamSlug query param, return user's authorized sites
+    // If no teamSlug query param, return user's authorized sites (owned + collaborated)
     const userMemberships = await db
       .select({ organizationId: member.organizationId })
       .from(member)
@@ -81,23 +122,31 @@ export async function GET(req: Request) {
 
     const orgIds = userMemberships.map((m: any) => m.organizationId);
 
+    const cleanEmail = session.user.email.toLowerCase();
+    const userCollabs = await db
+      .select()
+      .from(siteCollaborators)
+      .where(
+        or(
+          eq(siteCollaborators.userId, session.user.id),
+          eq(siteCollaborators.email, cleanEmail)
+        )
+      );
+    const collabSiteIds = userCollabs.map((c) => c.siteId);
+
     let userSites = [];
+    const conditions: any[] = [eq(sites.ownerId, session.user.id)];
     if (orgIds.length > 0) {
-      userSites = await db
-        .select()
-        .from(sites)
-        .where(
-          or(
-            eq(sites.ownerId, session.user.id),
-            inArray(sites.organizationId, orgIds)
-          )
-        );
-    } else {
-      userSites = await db
-        .select()
-        .from(sites)
-        .where(eq(sites.ownerId, session.user.id));
+      conditions.push(inArray(sites.organizationId, orgIds));
     }
+    if (collabSiteIds.length > 0) {
+      conditions.push(inArray(sites.id, collabSiteIds));
+    }
+
+    userSites = await db
+      .select()
+      .from(sites)
+      .where(or(...conditions));
 
     return NextResponse.json({ sites: userSites });
   } catch (err: any) {
@@ -270,6 +319,24 @@ export async function PATCH(req: Request) {
         isAuthorized = true;
       }
     }
+    if (!isAuthorized) {
+      const collab = await db
+        .select()
+        .from(siteCollaborators)
+        .where(
+          and(
+            eq(siteCollaborators.siteId, siteId),
+            or(
+              eq(siteCollaborators.userId, session.user.id),
+              eq(siteCollaborators.email, session.user.email.toLowerCase())
+            )
+          )
+        )
+        .limit(1);
+      if (collab.length > 0 && collab[0].role === "admin") {
+        isAuthorized = true;
+      }
+    }
 
     if (!isAuthorized) {
       return NextResponse.json(
@@ -377,10 +444,9 @@ export async function DELETE(req: Request) {
         isAuthorized = true;
       }
     }
-
     if (!isAuthorized) {
       return NextResponse.json(
-        { error: "Forbidden: Only workspace owners or admins can delete this publication" },
+        { error: "Forbidden: Only the publication owner can delete this publication" },
         { status: 403 }
       );
     }
@@ -396,6 +462,7 @@ export async function DELETE(req: Request) {
       });
     }
 
+    await db.delete(siteCollaborators).where(eq(siteCollaborators.siteId, siteId));
     await db.delete(authors).where(eq(authors.siteId, siteId));
     await db.delete(sites).where(eq(sites.id, siteId));
 

@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db, ensureTables } from "@/lib/db";
-import { organization, member, sites, threads, comments, authors } from "@nyuzi/db";
-import { eq, and, inArray, ne } from "drizzle-orm";
+import {
+  organization,
+  member,
+  sites,
+  threads,
+  comments,
+  authors,
+  siteCollaborators,
+} from "@nyuzi/db";
+import { eq, and, or, inArray, ne } from "drizzle-orm";
 import { isPlatformAdmin } from "@/lib/admin";
 
 export async function GET(req: Request) {
@@ -51,10 +59,57 @@ export async function GET(req: Request) {
       .innerJoin(organization, eq(member.organizationId, organization.id))
       .where(eq(member.userId, session.user.id));
 
-    const teamsList = userMemberships.map((m: any) => ({
-      ...m.org,
-      role: m.role,
-    }));
+    const teamsMap = new Map<string, any>();
+    for (const m of userMemberships) {
+      teamsMap.set(m.org.id, {
+        ...m.org,
+        role: m.role,
+      });
+    }
+
+    // Also check site-level collaborations for this user's email or userId
+    const cleanEmail = session.user.email.toLowerCase();
+    const userCollabs = await db
+      .select({
+        collab: siteCollaborators,
+        site: sites,
+        org: organization,
+      })
+      .from(siteCollaborators)
+      .innerJoin(sites, eq(siteCollaborators.siteId, sites.id))
+      .innerJoin(organization, eq(sites.organizationId, organization.id))
+      .where(
+        or(
+          eq(siteCollaborators.userId, session.user.id),
+          eq(siteCollaborators.email, cleanEmail)
+        )
+      );
+
+    for (const row of userCollabs) {
+      // Auto-link userId if not yet linked
+      if (!row.collab.userId) {
+        await db
+          .update(siteCollaborators)
+          .set({ userId: session.user.id })
+          .where(eq(siteCollaborators.id, row.collab.id));
+      }
+
+      const existingTeam = teamsMap.get(row.org.id);
+      if (!existingTeam) {
+        teamsMap.set(row.org.id, {
+          ...row.org,
+          role: "collaborator",
+          collaboratorSiteIds: [row.site.id],
+        });
+      } else if (existingTeam.role === "collaborator") {
+        existingTeam.collaboratorSiteIds = [
+          ...(existingTeam.collaboratorSiteIds || []),
+          row.site.id,
+        ];
+      }
+    }
+
+    const teamsList = Array.from(teamsMap.values());
 
     return NextResponse.json({ teams: teamsList });
   } catch (err: any) {

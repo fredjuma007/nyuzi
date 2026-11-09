@@ -25,6 +25,7 @@ import {
   Plus,
   ArrowLeft,
   UserCog,
+  UserPlus,
   Globe,
 } from "lucide-react";
 import { DashboardProvider, useDashboard } from "./context";
@@ -139,20 +140,17 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           badge: sites.length > 0 ? `${sites.length}` : null,
           exact: true,
         },
-        {
-          label: "Team Members",
-          href: `${teamBase}/members`,
-          icon: Users,
-          badge: null,
-          exact: false,
-        },
-        {
-          label: "Workspace Settings",
-          href: `${teamBase}/settings`,
-          icon: Settings,
-          badge: null,
-          exact: false,
-        },
+        ...(activeTeam?.role !== "collaborator"
+          ? [
+              {
+                label: "Workspace Settings",
+                href: `${teamBase}/settings`,
+                icon: Settings,
+                badge: null,
+                exact: false,
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -201,6 +199,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           badge: pendingDiscoveredCount > 0 ? `${pendingDiscoveredCount} New` : null,
           exact: false,
         },
+        {
+          label: "Collaborators",
+          href: `${siteBase}/collaborators`,
+          icon: UserPlus,
+          badge: null,
+          exact: false,
+        },
       ],
     },
     {
@@ -234,6 +239,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     if (pathname.includes("/studio")) return "Widget Embed Studio";
     if (pathname.includes("/threads")) return "Active Discussions";
     if (pathname.includes("/authors")) return "Author Roster";
+    if (pathname.includes("/collaborators")) return "Collaborators";
     if (pathname.includes("/settings")) return "Publication Settings";
     if (routeSiteId) return "Overview";
     return "Publications";

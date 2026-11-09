@@ -172,6 +172,16 @@ const SCHEMA_DDL = `
     "created_at" INTEGER NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS "site_collaborators" (
+    "id" TEXT PRIMARY KEY,
+    "site_id" TEXT NOT NULL REFERENCES "sites"("id") ON DELETE CASCADE,
+    "user_id" TEXT REFERENCES "user"("id") ON DELETE CASCADE,
+    "email" TEXT NOT NULL,
+    "name" TEXT,
+    "role" TEXT NOT NULL DEFAULT 'moderator',
+    "created_at" INTEGER NOT NULL
+  );
+
   INSERT OR IGNORE INTO "organization" ("id", "name", "slug", "created_at")
   VALUES ('org_fred_personal', 'Fred''s Projects', 'freds-projects', unixepoch() * 1000);
 
