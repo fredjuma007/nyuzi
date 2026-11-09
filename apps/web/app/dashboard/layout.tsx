@@ -363,10 +363,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                       <Link
                         key={`${group.group}-${item.label}`}
                         href={item.href}
-                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all group ${
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold border transition-colors focus:outline-none group ${
                           isActive
-                            ? "bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs border border-[var(--brand-orange)]/25"
-                            : "text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card-subtle)]"
+                            ? "bg-[var(--brand-orange-soft)] text-[var(--brand-orange)] font-bold shadow-xs border-[var(--brand-orange)]/25"
+                            : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card-subtle)]"
                         }`}
                       >
                         <div className="flex items-center gap-2.5">

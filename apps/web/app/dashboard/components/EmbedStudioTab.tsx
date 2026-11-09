@@ -488,7 +488,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
         <button
           type="button"
           onClick={() => setMobileTab("controls")}
-          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
             mobileTab === "controls"
               ? "bg-[var(--brand-orange)] text-white shadow-xs"
               : "text-[var(--text-secondary)] hover:text-[var(--text-main)]"
@@ -500,7 +500,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
         <button
           type="button"
           onClick={() => setMobileTab("preview")}
-          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+          className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
             mobileTab === "preview"
               ? "bg-[var(--brand-orange)] text-white shadow-xs"
               : "text-[var(--text-secondary)] hover:text-[var(--text-main)]"
@@ -531,7 +531,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
               <button
                 type="button"
                 onClick={() => handleToggleColorMode("light")}
-                className={`px-2 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold ${
+                className={`px-2 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold ${
                   (themeMode === "light" || (themeMode === "auto" && studioColorMode === "light"))
                     ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                     : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
@@ -544,7 +544,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
               <button
                 type="button"
                 onClick={() => handleToggleColorMode("dark")}
-                className={`px-2 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1 text-xs font-semibold ${
+                className={`px-2 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold ${
                   (themeMode === "dark" || (themeMode === "auto" && studioColorMode === "dark"))
                     ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                     : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
@@ -1069,7 +1069,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                   <button
                     type="button"
                     onClick={() => setSnippetMode("auto")}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors cursor-pointer ${
                       snippetMode === "auto"
                         ? "bg-[var(--brand-orange)] text-white shadow-xs"
                         : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
@@ -1080,7 +1080,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                   <button
                     type="button"
                     onClick={() => setSnippetMode("static")}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors cursor-pointer ${
                       snippetMode === "static"
                         ? "bg-[var(--brand-orange)] text-white shadow-xs"
                         : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
@@ -1148,7 +1148,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                 <button
                   type="button"
                   onClick={() => handleToggleColorMode("light")}
-                  className={`p-1 rounded-md transition-all cursor-pointer ${
+                  className={`p-1 rounded-md transition-colors cursor-pointer ${
                     (themeMode === "light" || (themeMode === "auto" && studioColorMode === "light"))
                       ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                       : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
@@ -1160,7 +1160,7 @@ export function EmbedStudioTab({ selectedSite, showToast }: EmbedStudioTabProps)
                 <button
                   type="button"
                   onClick={() => handleToggleColorMode("dark")}
-                  className={`p-1 rounded-md transition-all cursor-pointer ${
+                  className={`p-1 rounded-md transition-colors cursor-pointer ${
                     (themeMode === "dark" || (themeMode === "auto" && studioColorMode === "dark"))
                       ? "bg-[var(--bg-card)] text-[var(--brand-orange)] shadow-xs"
                       : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
